@@ -55,3 +55,51 @@ shell-db:
 # Install pre-commit hooks
 install-pre-commit:
     pre-commit install
+
+# Run pre-commit on all files
+lint:
+    pre-commit run --all-files
+
+# Update and freeze pre-commit hooks
+update-pre-commit:
+    pre-commit autoupdate --freeze
+
+# Run backend tests locally
+test-backend:
+    cd backend && uv run pytest
+
+# Run frontend tests locally
+test-frontend:
+    cd frontend && npm run test
+
+# Run all tests locally
+test-local: test-backend test-frontend
+
+# Install backend dependencies
+install-backend:
+    cd backend && uv sync --dev
+
+# Install frontend dependencies
+install-frontend:
+    cd frontend && npm ci
+
+# Install all dependencies
+install: install-backend install-frontend install-pre-commit
+
+# Run backend development server
+dev-backend:
+    cd backend && uv run uvicorn src.main:app --reload --host 0.0.0.0 --port 8000
+
+# Run frontend development server
+dev-frontend:
+    cd frontend && npm run dev
+
+# Format code
+format:
+    cd backend && uv run ruff format .
+    cd frontend && npm run format
+
+# Type check
+typecheck:
+    cd backend && uv run mypy .
+    cd frontend && npm run typecheck
