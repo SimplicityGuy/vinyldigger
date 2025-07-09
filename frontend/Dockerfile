@@ -45,8 +45,11 @@ FROM base AS builder
 # Set working directory
 WORKDIR /app
 
-# Copy dependencies
-COPY --from=deps /app/node_modules ./node_modules
+# Copy package files
+COPY package.json package-lock.json* ./
+
+# Install all dependencies (including dev) for building
+RUN npm ci
 
 # Copy application files
 COPY . .
