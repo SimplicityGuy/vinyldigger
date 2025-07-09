@@ -51,6 +51,13 @@ test-services-up:
 # Run tests in CI environment
 test-ci:
     docker-compose -f docker-compose.test.yml up -d
+    @echo "Waiting for services to be healthy..."
+    @timeout 120 bash -c 'until docker-compose -f docker-compose.test.yml ps | grep -E "\(healthy\)" | grep -q postgres; do sleep 2; echo "Waiting for postgres..."; done'
+    @timeout 120 bash -c 'until docker-compose -f docker-compose.test.yml ps | grep -E "\(healthy\)" | grep -q redis; do sleep 2; echo "Waiting for redis..."; done'
+    @timeout 120 bash -c 'until docker-compose -f docker-compose.test.yml ps | grep -E "\(healthy\)" | grep -q backend; do sleep 2; echo "Waiting for backend..."; done'
+    @timeout 120 bash -c 'until docker-compose -f docker-compose.test.yml ps | grep -E "\(healthy\)" | grep -q frontend; do sleep 2; echo "Waiting for frontend..."; done'
+    @timeout 120 bash -c 'until docker-compose -f docker-compose.test.yml ps | grep -E "\(healthy\)" | grep -q worker; do sleep 2; echo "Waiting for worker..."; done'
+    @echo "All services are healthy!"
     docker-compose -f docker-compose.test.yml ps
 
 # Stop test services

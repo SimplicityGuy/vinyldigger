@@ -10,6 +10,10 @@ FROM base AS development
 # Set environment variables
 ENV NODE_ENV=development
 
+# Install curl for health checks
+# hadolint ignore=DL3018
+RUN apk add --no-cache curl
+
 # Set working directory
 WORKDIR /app
 

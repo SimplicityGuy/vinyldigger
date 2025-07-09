@@ -160,11 +160,6 @@ jobs:
         run: |
           just test-ci
 
-      - name: Wait for services
-        run: |
-          timeout 60 bash -c 'until curl -f http://localhost:8000/health; do sleep 1; done'
-          timeout 60 bash -c 'until curl -f http://localhost:3000; do sleep 1; done'
-
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:

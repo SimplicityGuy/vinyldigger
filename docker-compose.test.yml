@@ -62,10 +62,11 @@ services:
     volumes:
       - ./backend:/app
     healthcheck:
-      test: ["CMD-SHELL", "python -c 'import urllib.request; urllib.request.urlopen(\"http://localhost:8000/health\")'"]
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
       interval: 10s
       timeout: 5s
-      retries: 3
+      retries: 5
+      start-period: 30s
 
   # Backend test runner (for unit/integration tests)
   backend-test:
@@ -112,6 +113,12 @@ services:
       sh -c "uv pip install --system -e . && su -c 'celery -A src.workers.celery_app worker --loglevel=info' appuser"
     volumes:
       - ./backend:/app
+    healthcheck:
+      test: ["CMD-SHELL", "celery -A src.workers.celery_app inspect ping -d celery@$$HOSTNAME"]
+      interval: 10s
+      timeout: 10s
+      retries: 5
+      start-period: 30s
 
   frontend:
     build:
@@ -132,7 +139,8 @@ services:
     command: >
       sh -c "npm install && npm run dev"
     healthcheck:
-      test: ["CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:3000 || exit 1"]
+      test: ["CMD", "curl", "-f", "http://localhost:3000"]
       interval: 10s
       timeout: 5s
-      retries: 3
+      retries: 5
+      start-period: 30s
