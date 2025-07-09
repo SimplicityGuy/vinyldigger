@@ -60,7 +60,8 @@ export class ErrorBoundary extends Component<Props, State> {
                 <CardTitle>Something went wrong</CardTitle>
               </div>
               <CardDescription>
-                An unexpected error occurred. Please try again or contact support if the problem persists.
+                An unexpected error occurred. Please try again or contact support if the problem
+                persists.
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
@@ -80,10 +81,7 @@ export class ErrorBoundary extends Component<Props, State> {
                 <Button onClick={this.handleReset} variant="default">
                   Go to Dashboard
                 </Button>
-                <Button
-                  onClick={() => window.location.reload()}
-                  variant="outline"
-                >
+                <Button onClick={() => window.location.reload()} variant="outline">
                   Reload Page
                 </Button>
               </div>

@@ -8,22 +8,22 @@ import type {
   UserPreferences,
   CollectionStatus,
   CreateSearchData,
-  UpdatePreferencesData
+  UpdatePreferencesData,
 } from '@/types/api'
 
 const API_BASE_URL = '/api/v1'
 
 export class ApiError extends Error {
-  constructor(public status: number, message: string) {
+  constructor(
+    public status: number,
+    message: string
+  ) {
     super(message)
     this.name = 'ApiError'
   }
 }
 
-async function fetchApi(
-  endpoint: string,
-  options: RequestInit = {}
-): Promise<Response> {
+async function fetchApi(endpoint: string, options: RequestInit = {}): Promise<Response> {
   const token = tokenService.getAccessToken()
 
   const headers: Record<string, string> = {

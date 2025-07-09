@@ -13,7 +13,7 @@ logger = get_logger(__name__)
 
 
 class BaseAPIService(ABC):
-    def __init__(self, service: APIService):
+    def __init__(self, service: APIService) -> None:
         self.service = service
         self.logger = logger
 

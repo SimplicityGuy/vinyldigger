@@ -33,11 +33,12 @@ export function useAuth() {
       })
     },
     onError: (error: unknown) => {
-      const message = error instanceof ApiError
-        ? error.message
-        : error instanceof Error
+      const message =
+        error instanceof ApiError
           ? error.message
-          : 'Invalid credentials'
+          : error instanceof Error
+            ? error.message
+            : 'Invalid credentials'
 
       toast({
         title: 'Login failed',
@@ -57,11 +58,12 @@ export function useAuth() {
       })
     },
     onError: (error: unknown) => {
-      const message = error instanceof ApiError
-        ? error.message
-        : error instanceof Error
+      const message =
+        error instanceof ApiError
           ? error.message
-          : 'Something went wrong'
+          : error instanceof Error
+            ? error.message
+            : 'Something went wrong'
 
       toast({
         title: 'Registration failed',

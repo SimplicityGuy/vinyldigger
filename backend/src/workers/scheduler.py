@@ -12,7 +12,7 @@ from src.workers.tasks import run_search_task
 logger = get_logger(__name__)
 
 
-async def check_scheduled_searches():
+async def check_scheduled_searches() -> None:
     logger.info("Checking for scheduled searches")
     async with AsyncSessionLocal() as db:
         try:
@@ -43,7 +43,7 @@ async def check_scheduled_searches():
             logger.error(f"Error checking scheduled searches: {str(e)}")
 
 
-def main():
+def main() -> None:
     scheduler = AsyncIOScheduler()
 
     # Run every hour

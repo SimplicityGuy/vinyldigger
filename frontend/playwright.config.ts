@@ -48,12 +48,13 @@ export default defineConfig({
     },
   ],
 
-  webServer: {
-    command: 'npm run dev',
-    port: 3000,
-    reuseExistingServer: !process.env.CI,
-    timeout: 120000,
-  },
+  // Disable webServer since we're using Docker Compose
+  // webServer: {
+  //   command: 'npm run dev',
+  //   port: 3000,
+  //   reuseExistingServer: !process.env.CI,
+  //   timeout: 120000,
+  // },
 
   // Global timeout
   timeout: process.env.CI ? 60000 : 30000,

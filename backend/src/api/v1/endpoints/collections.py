@@ -47,21 +47,29 @@ async def sync_collection(
 async def get_collection_status(
     current_user: Annotated[User, Depends(get_current_user)],
     db: AsyncSession = Depends(get_db),
-) -> Collection | None:
+) -> CollectionResponse:
     result = await db.execute(select(Collection).where(Collection.user_id == current_user.id))
     collection = result.scalar_one_or_none()
     if not collection:
         return CollectionResponse(id="", item_count=0, last_sync_at=None)
-    return collection
+    return CollectionResponse(
+        id=str(collection.id),
+        item_count=len(collection.discogs_data) if collection.discogs_data else 0,
+        last_sync_at=collection.last_sync_at.isoformat() if collection.last_sync_at else None,
+    )
 
 
 @router.get("/wantlist/status", response_model=WantListResponse)
 async def get_wantlist_status(
     current_user: Annotated[User, Depends(get_current_user)],
     db: AsyncSession = Depends(get_db),
-) -> WantList | None:
+) -> WantListResponse:
     result = await db.execute(select(WantList).where(WantList.user_id == current_user.id))
     wantlist = result.scalar_one_or_none()
     if not wantlist:
         return WantListResponse(id="", item_count=0, last_sync_at=None)
-    return wantlist
+    return WantListResponse(
+        id=str(wantlist.id),
+        item_count=len(wantlist.discogs_data) if wantlist.discogs_data else 0,
+        last_sync_at=wantlist.last_sync_at.isoformat() if wantlist.last_sync_at else None,
+    )

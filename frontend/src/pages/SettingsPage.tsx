@@ -65,9 +65,7 @@ function SettingsPageComponent() {
     <div className="space-y-6">
       <div>
         <h2 className="text-3xl font-bold tracking-tight">Settings</h2>
-        <p className="text-muted-foreground">
-          Configure your API keys and preferences
-        </p>
+        <p className="text-muted-foreground">Configure your API keys and preferences</p>
       </div>
 
       {/* API Keys */}
@@ -84,9 +82,7 @@ function SettingsPageComponent() {
             <div className="flex items-center gap-2">
               <Key className="h-4 w-4" />
               <h3 className="font-medium">Discogs API</h3>
-              {hasApiKey('discogs') && (
-                <span className="text-sm text-green-600">✓ Configured</span>
-              )}
+              {hasApiKey('discogs') && <span className="text-sm text-green-600">✓ Configured</span>}
             </div>
             <div className="grid gap-4 md:grid-cols-2">
               <div className="space-y-2">
@@ -135,9 +131,7 @@ function SettingsPageComponent() {
             <div className="flex items-center gap-2">
               <Key className="h-4 w-4" />
               <h3 className="font-medium">eBay API</h3>
-              {hasApiKey('ebay') && (
-                <span className="text-sm text-green-600">✓ Configured</span>
-              )}
+              {hasApiKey('ebay') && <span className="text-sm text-green-600">✓ Configured</span>}
             </div>
             <div className="grid gap-4 md:grid-cols-2">
               <div className="space-y-2">
@@ -187,9 +181,7 @@ function SettingsPageComponent() {
       <Card>
         <CardHeader>
           <CardTitle>Search Preferences</CardTitle>
-          <CardDescription>
-            Default settings for your searches
-          </CardDescription>
+          <CardDescription>Default settings for your searches</CardDescription>
         </CardHeader>
         <CardContent>
           <div className="grid gap-4 md:grid-cols-2">

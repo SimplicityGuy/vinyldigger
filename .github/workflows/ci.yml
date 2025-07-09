@@ -20,8 +20,13 @@ jobs:
       - name: Install just via arkade
         uses: alexellis/arkade-get@1eef818e467c387d3f50cfe0d2c565d1cbe82b03 # master
         with:
-          docker-compose: latest
           just: latest
+
+      - name: Install docker-compose
+        if: runner.os == 'Linux'
+        uses: alexellis/arkade-get@1eef818e467c387d3f50cfe0d2c565d1cbe82b03 # master
+        with:
+          docker-compose: latest
 
       - name: Install pre-commit
         run: |
@@ -72,8 +77,13 @@ jobs:
       - name: Install just via arkade
         uses: alexellis/arkade-get@1eef818e467c387d3f50cfe0d2c565d1cbe82b03 # master
         with:
-          docker-compose: latest
           just: latest
+
+      - name: Install docker-compose
+        if: runner.os == 'Linux'
+        uses: alexellis/arkade-get@1eef818e467c387d3f50cfe0d2c565d1cbe82b03 # master
+        with:
+          docker-compose: latest
 
       - name: Install dependencies
         run: just install-backend-ci
@@ -108,8 +118,13 @@ jobs:
       - name: Install just via arkade
         uses: alexellis/arkade-get@1eef818e467c387d3f50cfe0d2c565d1cbe82b03 # master
         with:
-          docker-compose: latest
           just: latest
+
+      - name: Install docker-compose
+        if: runner.os == 'Linux'
+        uses: alexellis/arkade-get@1eef818e467c387d3f50cfe0d2c565d1cbe82b03 # master
+        with:
+          docker-compose: latest
 
       - name: Install dependencies
         run: just install-frontend
@@ -133,8 +148,13 @@ jobs:
       - name: Install just via arkade
         uses: alexellis/arkade-get@1eef818e467c387d3f50cfe0d2c565d1cbe82b03 # master
         with:
-          docker-compose: latest
           just: latest
+
+      - name: Install docker-compose
+        if: runner.os == 'Linux'
+        uses: alexellis/arkade-get@1eef818e467c387d3f50cfe0d2c565d1cbe82b03 # master
+        with:
+          docker-compose: latest
 
       - name: Build and start services
         run: |

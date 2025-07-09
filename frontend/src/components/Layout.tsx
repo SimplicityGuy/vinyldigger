@@ -33,9 +33,7 @@ export function Layout() {
               <h1 className="text-2xl font-bold">VinylDigger</h1>
             </div>
             <div className="flex items-center gap-4">
-              <span className="text-sm text-muted-foreground">
-                {user?.email}
-              </span>
+              <span className="text-sm text-muted-foreground">{user?.email}</span>
               <Button
                 variant="ghost"
                 size="sm"

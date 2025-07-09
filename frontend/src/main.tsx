@@ -26,5 +26,5 @@ createRoot(rootElement).render(
         <App />
       </BrowserRouter>
     </QueryClientProvider>
-  </StrictMode>,
+  </StrictMode>
 )

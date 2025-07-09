@@ -12,13 +12,13 @@ class EbayService(BaseAPIService):
     SANDBOX_URL = "https://api.sandbox.ebay.com"
     PRODUCTION_URL = "https://api.ebay.com"
 
-    def __init__(self, use_sandbox: bool = False):
+    def __init__(self, use_sandbox: bool = False) -> None:
         super().__init__(APIService.EBAY)
         self.base_url = self.SANDBOX_URL if use_sandbox else self.PRODUCTION_URL
         self.client: AsyncClient | None = None
         self.access_token: str | None = None
 
-    async def __aenter__(self):
+    async def __aenter__(self) -> "EbayService":
         self.client = AsyncClient(
             base_url=self.base_url,
             headers={"Content-Type": "application/json"},
@@ -26,7 +26,7 @@ class EbayService(BaseAPIService):
         )
         return self
 
-    async def __aexit__(self, exc_type, exc_val, exc_tb):
+    async def __aexit__(self, exc_type: Any, exc_val: Any, exc_tb: Any) -> None:
         if self.client:
             await self.client.aclose()
 
@@ -54,7 +54,8 @@ class EbayService(BaseAPIService):
             response.raise_for_status()
 
             data = response.json()
-            return data.get("access_token")
+            access_token = data.get("access_token")
+            return str(access_token) if access_token else None
 
         except httpx.HTTPError as e:
             self.logger.error(f"eBay auth error: {str(e)}")
@@ -146,7 +147,7 @@ class EbayService(BaseAPIService):
         except httpx.HTTPError as e:
             self.logger.error(f"eBay API search error: {str(e)}")
             # If auth error, clear token to retry next time
-            if e.response and e.response.status_code == 401:
+            if hasattr(e, "response") and e.response and e.response.status_code == 401:
                 self.access_token = None
             return []
 
@@ -168,12 +169,13 @@ class EbayService(BaseAPIService):
             )
             response.raise_for_status()
 
-            return response.json()
+            result: dict[str, Any] = response.json()
+            return result
 
         except httpx.HTTPError as e:
             self.logger.error(f"eBay API error getting item {item_id}: {str(e)}")
             # If auth error, clear token to retry next time
-            if e.response and e.response.status_code == 401:
+            if hasattr(e, "response") and e.response and e.response.status_code == 401:
                 self.access_token = None
             return None
 

@@ -49,7 +49,7 @@ class TokenService {
     // Store refresh token with expiry (30 days)
     const refreshData = {
       token: refreshToken,
-      expiry: new Date().getTime() + 30 * 24 * 60 * 60 * 1000
+      expiry: new Date().getTime() + 30 * 24 * 60 * 60 * 1000,
     }
     localStorage.setItem(this.REFRESH_TOKEN_KEY, JSON.stringify(refreshData))
     this.tokenStorage.refresh_token = refreshToken

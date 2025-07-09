@@ -54,8 +54,11 @@ services:
         condition: service_healthy
       redis:
         condition: service_healthy
+    user: root
     command: >
-      sh -c "uvicorn src.main:app --host 0.0.0.0 --port 8000 --reload"
+      sh -c "uv pip install --system -e . &&
+             alembic upgrade head &&
+             su -c 'uvicorn src.main:app --host 0.0.0.0 --port 8000 --reload' appuser"
     volumes:
       - ./backend:/app
     healthcheck:
@@ -81,8 +84,9 @@ services:
         condition: service_healthy
       redis:
         condition: service_healthy
+    user: root
     command: >
-      sh -c "pytest -v --tb=short --cov=src --cov-report=term --cov-report=html"
+      sh -c "uv pip install --system -e '.[dev]' && su -c 'pytest -v --tb=short --cov=src --cov-report=term --cov-report=html' appuser"
     volumes:
       - ./backend:/app
 
@@ -103,7 +107,9 @@ services:
         condition: service_healthy
       backend:
         condition: service_healthy
-    command: celery -A src.workers.celery_app worker --loglevel=info
+    user: root
+    command: >
+      sh -c "uv pip install --system -e . && su -c 'celery -A src.workers.celery_app worker --loglevel=info' appuser"
     volumes:
       - ./backend:/app
 
@@ -119,7 +125,14 @@ services:
         condition: service_healthy
     environment:
       - NODE_ENV=test
+      - API_URL=http://backend:8000
     volumes:
       - ./frontend:/app
       - /app/node_modules
-    command: npm run dev
+    command: >
+      sh -c "npm install && npm run dev"
+    healthcheck:
+      test: ["CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:3000 || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 3

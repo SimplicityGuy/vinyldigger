@@ -59,12 +59,8 @@ export const DashboardPage = memo(function DashboardPage() {
             <Package className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">
-              {collectionStatus?.item_count || 0}
-            </div>
-            <p className="text-xs text-muted-foreground">
-              Records in your collection
-            </p>
+            <div className="text-2xl font-bold">{collectionStatus?.item_count || 0}</div>
+            <p className="text-xs text-muted-foreground">Records in your collection</p>
           </CardContent>
         </Card>
 
@@ -74,12 +70,8 @@ export const DashboardPage = memo(function DashboardPage() {
             <Heart className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">
-              {wantListStatus?.item_count || 0}
-            </div>
-            <p className="text-xs text-muted-foreground">
-              Records on your want list
-            </p>
+            <div className="text-2xl font-bold">{wantListStatus?.item_count || 0}</div>
+            <p className="text-xs text-muted-foreground">Records on your want list</p>
           </CardContent>
         </Card>
 
@@ -94,9 +86,7 @@ export const DashboardPage = memo(function DashboardPage() {
                 ? new Date(collectionStatus.last_sync_at).toLocaleDateString()
                 : 'Never'}
             </div>
-            <p className="text-xs text-muted-foreground">
-              Synced with Discogs
-            </p>
+            <p className="text-xs text-muted-foreground">Synced with Discogs</p>
           </CardContent>
         </Card>
       </div>
@@ -105,9 +95,7 @@ export const DashboardPage = memo(function DashboardPage() {
       <Card>
         <CardHeader>
           <CardTitle>Quick Actions</CardTitle>
-          <CardDescription>
-            Common tasks to manage your collection
-          </CardDescription>
+          <CardDescription>Common tasks to manage your collection</CardDescription>
         </CardHeader>
         <CardContent className="flex gap-4">
           <Button

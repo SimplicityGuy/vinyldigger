@@ -68,8 +68,11 @@ async function globalSetup() {
             const redisHealthy = lines.some(line =>
               line.includes('redis') && line.includes('healthy')
             )
+            const frontendHealthy = lines.some(line =>
+              line.includes('frontend') && line.includes('healthy')
+            )
 
-            if (backendHealthy && postgresHealthy && redisHealthy) {
+            if (backendHealthy && postgresHealthy && redisHealthy && frontendHealthy) {
               clearInterval(checkHealth)
               clearTimeout(timeout)
               console.log('All services are healthy!')
@@ -79,13 +82,29 @@ async function globalSetup() {
         }, 2000)
       })
 
-      // Additional wait to ensure backend is fully ready
+      // Additional wait to ensure services are fully ready
       await new Promise(resolve => setTimeout(resolve, 5000))
 
       // Verify backend is accessible via health endpoint
-      const healthCheckResponse = await fetch('http://localhost:8000/health')
-      if (!healthCheckResponse.ok) {
-        throw new Error('Backend health check failed')
+      try {
+        const healthCheckResponse = await fetch('http://localhost:8000/health')
+        if (!healthCheckResponse.ok) {
+          throw new Error(`Backend health check failed with status: ${healthCheckResponse.status}`)
+        }
+      } catch (error) {
+        console.error('Backend health check error:', error)
+        throw new Error('Backend is not accessible at http://localhost:8000/health')
+      }
+
+      // Verify frontend is accessible
+      try {
+        const frontendCheckResponse = await fetch('http://localhost:3000')
+        if (!frontendCheckResponse.ok) {
+          console.error(`Frontend check failed with status: ${frontendCheckResponse.status}`)
+        }
+      } catch (error) {
+        console.error('Frontend check error:', error)
+        throw new Error('Frontend is not accessible at http://localhost:3000')
       }
     } else {
       console.log('Test services are already running')

@@ -11,9 +11,10 @@ export default defineConfig({
   },
   server: {
     port: 3000,
+    host: true, // Listen on all interfaces to allow Docker access
     proxy: {
       '/api': {
-        target: 'http://localhost:8000',
+        target: process.env.API_URL || 'http://localhost:8000',
         changeOrigin: true,
       },
     },

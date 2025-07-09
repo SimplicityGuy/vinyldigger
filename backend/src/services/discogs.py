@@ -11,11 +11,11 @@ from src.services.base import BaseAPIService
 class DiscogsService(BaseAPIService):
     BASE_URL = "https://api.discogs.com"
 
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__(APIService.DISCOGS)
         self.client: AsyncClient | None = None
 
-    async def __aenter__(self):
+    async def __aenter__(self) -> "DiscogsService":
         self.client = AsyncClient(
             base_url=self.BASE_URL,
             headers={"User-Agent": "VinylDigger/1.0"},
@@ -23,7 +23,7 @@ class DiscogsService(BaseAPIService):
         )
         return self
 
-    async def __aexit__(self, exc_type, exc_val, exc_tb):
+    async def __aexit__(self, exc_type: Any, exc_val: Any, exc_tb: Any) -> None:
         if self.client:
             await self.client.aclose()
 

@@ -1,9 +1,11 @@
 import asyncio
 from datetime import datetime
+from typing import Any
 from uuid import UUID
 
 from celery import Task
 from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.core.database import AsyncSessionLocal
 from src.core.logging import get_logger
@@ -17,17 +19,17 @@ from src.workers.celery_app import celery_app
 logger = get_logger(__name__)
 
 
-class AsyncTask(Task):
-    def run(self, *args, **kwargs):
+class AsyncTask(Task):  # type: ignore[misc]
+    def run(self, *args: Any, **kwargs: Any) -> Any:
         return asyncio.run(self.async_run(*args, **kwargs))
 
-    async def async_run(self, *args, **kwargs):
+    async def async_run(self, *args: Any, **kwargs: Any) -> None:
         raise NotImplementedError
 
 
 @celery_app.task(bind=True, base=AsyncTask)
 class RunSearchTask(AsyncTask):
-    async def async_run(self, search_id: str, user_id: str):
+    async def async_run(self, search_id: str, user_id: str) -> None:
         logger.info(f"Running search {search_id} for user {user_id}")
         async with AsyncSessionLocal() as db:
             try:
@@ -75,7 +77,14 @@ class RunSearchTask(AsyncTask):
                 await db.rollback()
                 raise
 
-    async def _search_discogs(self, db, search, user_id, collection_releases, wantlist_releases):
+    async def _search_discogs(
+        self,
+        db: AsyncSession,
+        search: SavedSearch,
+        user_id: str,
+        collection_releases: set[Any],
+        wantlist_releases: set[Any],
+    ) -> int:
         results_added = 0
 
         try:
@@ -116,7 +125,14 @@ class RunSearchTask(AsyncTask):
 
         return results_added
 
-    async def _search_ebay(self, db, search, user_id, collection_releases, wantlist_releases):
+    async def _search_ebay(
+        self,
+        db: AsyncSession,
+        search: SavedSearch,
+        user_id: str,
+        collection_releases: set[Any],
+        wantlist_releases: set[Any],
+    ) -> int:
         results_added = 0
 
         try:
@@ -137,9 +153,9 @@ class RunSearchTask(AsyncTask):
                             SearchResult.platform == SearchPlatform.EBAY,
                         )
                     )
-                    if existing.scalar():
+                    existing_result = existing.scalar()
+                    if existing_result:
                         # Update price history if price changed
-                        existing_result = existing.scalar()
                         current_price = item.get("price", 0)
                         if existing_result.item_data.get("price") != current_price:
                             price_history = PriceHistory(
@@ -183,7 +199,7 @@ class RunSearchTask(AsyncTask):
 
 @celery_app.task(bind=True, base=AsyncTask)
 class SyncCollectionTask(AsyncTask):
-    async def async_run(self, user_id: str):
+    async def async_run(self, user_id: str) -> None:
         logger.info(f"Syncing collection for user {user_id}")
         async with AsyncSessionLocal() as db:
             try:

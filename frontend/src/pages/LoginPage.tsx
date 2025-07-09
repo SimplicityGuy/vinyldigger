@@ -7,7 +7,14 @@ import { Disc } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card'
 import { useAuth } from '@/hooks/useAuth'
 import { loginSchema } from '@/lib/api'
 
@@ -31,31 +38,18 @@ function LoginPageComponent() {
             <Disc className="h-12 w-12 text-primary" />
           </div>
           <CardTitle className="text-2xl">Welcome to VinylDigger</CardTitle>
-          <CardDescription>
-            Sign in to your account to continue
-          </CardDescription>
+          <CardDescription>Sign in to your account to continue</CardDescription>
         </CardHeader>
         <form onSubmit={handleSubmit((data) => login(data))}>
           <CardContent className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="email">Email</Label>
-              <Input
-                id="email"
-                type="email"
-                placeholder="you@example.com"
-                {...register('email')}
-              />
-              {errors.email && (
-                <p className="text-sm text-destructive">{errors.email.message}</p>
-              )}
+              <Input id="email" type="email" placeholder="you@example.com" {...register('email')} />
+              {errors.email && <p className="text-sm text-destructive">{errors.email.message}</p>}
             </div>
             <div className="space-y-2">
               <Label htmlFor="password">Password</Label>
-              <Input
-                id="password"
-                type="password"
-                {...register('password')}
-              />
+              <Input id="password" type="password" {...register('password')} />
               {errors.password && (
                 <p className="text-sm text-destructive">{errors.password.message}</p>
               )}
@@ -72,10 +66,7 @@ function LoginPageComponent() {
             </Button>
             <p className="text-center text-sm text-muted-foreground">
               Don't have an account?{' '}
-              <Link
-                to="/register"
-                className="font-medium text-primary hover:underline"
-              >
+              <Link to="/register" className="font-medium text-primary hover:underline">
                 Sign up
               </Link>
             </p>

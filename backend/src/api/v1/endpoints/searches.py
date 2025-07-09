@@ -1,4 +1,4 @@
-from typing import Annotated
+from typing import Annotated, Any
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, status
@@ -19,7 +19,7 @@ class SavedSearchCreate(BaseModel):
     name: str
     query: str
     platform: SearchPlatform
-    filters: dict = {}
+    filters: dict[str, Any] = {}
     check_interval_hours: int = 24
 
 
@@ -28,14 +28,14 @@ class SavedSearchResponse(BaseModel):
     name: str
     query: str
     platform: SearchPlatform
-    filters: dict
+    filters: dict[str, Any]
     is_active: bool
     check_interval_hours: int
     last_checked_at: str | None
 
     @field_validator("id", mode="before")
     @classmethod
-    def convert_uuid_to_str(cls, v):
+    def convert_uuid_to_str(cls, v: UUID | str) -> str:
         if isinstance(v, UUID):
             return str(v)
         return v
@@ -48,7 +48,7 @@ class SearchResultResponse(BaseModel):
     id: str
     platform: SearchPlatform
     item_id: str
-    item_data: dict
+    item_data: dict[str, Any]
     is_in_collection: bool
     is_in_wantlist: bool
     created_at: str
