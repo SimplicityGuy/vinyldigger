@@ -7,6 +7,19 @@ on:
     branches: [main]
 
 jobs:
+  pre-commit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+
+      - name: Run pre-commit
+        uses: pre-commit/action@2c7b3805fd2a0fd8c1884dcaebf91fc102a13ecd # v3.0.1
+
   backend-test:
     runs-on: ubuntu-latest
     services:
@@ -49,17 +62,6 @@ jobs:
         run: |
           uv sync --dev
 
-      - name: Run linting
-        working-directory: backend
-        run: |
-          uv run ruff check .
-          uv run ruff format --check .
-
-      - name: Run type checking
-        working-directory: backend
-        run: |
-          uv run mypy .
-
       - name: Run tests
         working-directory: backend
         env:
@@ -90,14 +92,6 @@ jobs:
         working-directory: frontend
         run: npm ci
 
-      - name: Run linting
-        working-directory: frontend
-        run: npm run lint
-
-      - name: Run type checking
-        working-directory: frontend
-        run: npm run typecheck
-
       - name: Run tests
         working-directory: frontend
         run: npm run test:ci
@@ -108,7 +102,7 @@ jobs:
 
   e2e-test:
     runs-on: ubuntu-latest
-    needs: [backend-test, frontend-test]
+    needs: [pre-commit, backend-test, frontend-test]
 
     steps:
       - uses: actions/checkout@v4

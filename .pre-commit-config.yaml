@@ -33,6 +33,30 @@ repos:
     hooks:
       - id: hadolint-docker
 
+  - repo: https://github.com/pre-commit/mirrors-eslint
+    rev: v9.17.0  # frozen
+    hooks:
+      - id: eslint
+        files: ^frontend/.*\.[jt]sx?$
+        additional_dependencies:
+          - eslint@9.17.0
+          - '@eslint/js@9.17.0'
+          - 'typescript-eslint@8.20.0'
+          - 'eslint-plugin-react-hooks@5.1.0'
+          - 'eslint-plugin-react-refresh@0.4.20'
+          - 'typescript@5.7.3'
+
+  - repo: local
+    hooks:
+      - id: frontend-typecheck
+        name: Frontend TypeScript Check
+        entry: sh -c 'cd frontend && npm run typecheck'
+        language: system
+        files: ^frontend/.*\.[jt]sx?$
+        pass_filenames: false
+        always_run: false
+        require_serial: true
+
   - repo: https://github.com/commitizen-tools/commitizen
     rev: c710c9f541ae452547fdce5c360929f007ec4867  # frozen: v4.8.3
     hooks:
