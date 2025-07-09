@@ -1,3 +1,8 @@
+# Build arguments for dynamic labels
+ARG BUILD_DATE
+ARG VCS_REF
+ARG VERSION=0.1.0
+
 # Base image
 FROM node:22-alpine AS base
 
@@ -63,6 +68,23 @@ RUN npm run build
 
 # Production stage
 FROM nginx:alpine AS runner
+
+# Re-declare build arguments for use in this stage
+ARG BUILD_DATE
+ARG VCS_REF
+ARG VERSION=0.1.0
+
+# OCI standard labels - https://github.com/opencontainers/image-spec/blob/main/annotations.md
+LABEL org.opencontainers.image.created="${BUILD_DATE}" \
+      org.opencontainers.image.title="VinylDigger Frontend" \
+      org.opencontainers.image.description="Frontend application for VinylDigger - vinyl record discovery tool" \
+      org.opencontainers.image.authors="VinylDigger" \
+      org.opencontainers.image.vendor="VinylDigger" \
+      org.opencontainers.image.version="${VERSION}" \
+      org.opencontainers.image.revision="${VCS_REF}" \
+      org.opencontainers.image.source="https://github.com/vinyldigger/virtualdigger" \
+      org.opencontainers.image.documentation="https://github.com/vinyldigger/virtualdigger/blob/main/README.md" \
+      org.opencontainers.image.licenses="MIT"
 
 # Install wget for health check
 # hadolint ignore=DL3018

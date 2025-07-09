@@ -66,7 +66,6 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
-      start-period: 30s
 
   # Backend test runner (for unit/integration tests)
   backend-test:
@@ -118,7 +117,6 @@ services:
       interval: 10s
       timeout: 10s
       retries: 5
-      start-period: 30s
 
   frontend:
     build:
@@ -143,4 +141,3 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
-      start-period: 30s

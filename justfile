@@ -2,9 +2,13 @@
 default:
     @just --list
 
-# Build all Docker images
+# Build all Docker images with OCI labels
 build:
-    docker-compose build
+    ./scripts/docker-build.sh
+
+# Build a specific Docker image with OCI labels (e.g., just build-service backend)
+build-service service:
+    ./scripts/docker-build.sh {{service}}
 
 # Start all services
 up:
