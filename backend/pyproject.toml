@@ -19,6 +19,7 @@ dependencies = [
     "python-multipart>=0.0.12",
     "apscheduler>=3.10.4",
     "cryptography>=43.0.3",
+    "email-validator>=2.2.0",
 ]
 
 [project.optional-dependencies]
@@ -35,6 +36,9 @@ dev = [
     "faker>=30.8.2",
     "pytest-httpx>=0.30.0",
     "factory-boy>=3.3.1",
+    "aiosqlite>=0.20.0",
+    "greenlet>=3.1.1",
+    "types-python-jose>=3.3.0.20241014",
 ]
 
 [build-system]

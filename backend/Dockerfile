@@ -1,6 +1,7 @@
 FROM python:3.13-slim AS base
 
 # Install system dependencies
+# hadolint ignore=DL3008
 RUN apt-get update && apt-get install -y --no-install-recommends \
     gcc \
     g++ \
@@ -18,6 +19,12 @@ COPY pyproject.toml ./
 
 # Install dependencies
 RUN uv pip install --system -e .
+
+# Install dev dependencies for testing
+ARG INSTALL_DEV=false
+RUN if [ "$INSTALL_DEV" = "true" ]; then \
+    uv pip install --system -e ".[dev]"; \
+    fi
 
 # Copy application code
 COPY . .
