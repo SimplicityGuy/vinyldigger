@@ -47,21 +47,30 @@ function SearchesPageComponent() {
             Manage your saved searches and view results
           </p>
         </div>
-        <Button onClick={() => setIsCreating(true)} className="gap-2">
+        <Button
+          onClick={() => setIsCreating(true)}
+          className="gap-2"
+          aria-label="Create a new search"
+        >
           <Plus className="h-4 w-4" />
           New Search
         </Button>
       </div>
 
       {isLoading ? (
-        <div className="flex justify-center py-8">
+        <div className="flex justify-center py-8" role="status" aria-label="Loading searches">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
+          <span className="sr-only">Loading searches...</span>
         </div>
       ) : searches.length === 0 ? (
         <Card>
           <CardContent className="flex flex-col items-center justify-center py-12">
             <p className="text-muted-foreground mb-4">No searches yet</p>
-            <Button onClick={() => setIsCreating(true)} className="gap-2">
+            <Button
+              onClick={() => setIsCreating(true)}
+              className="gap-2"
+              aria-label="Create your first search"
+            >
               <Plus className="h-4 w-4" />
               Create your first search
             </Button>

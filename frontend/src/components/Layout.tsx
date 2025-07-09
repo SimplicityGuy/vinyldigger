@@ -16,8 +16,16 @@ export function Layout() {
 
   return (
     <div className="min-h-screen bg-background">
+      {/* Skip navigation link for keyboard users */}
+      <a
+        href="#main-content"
+        className="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 focus:z-50 focus:px-4 focus:py-2 focus:bg-primary focus:text-primary-foreground focus:rounded"
+      >
+        Skip to main content
+      </a>
+
       {/* Header */}
-      <header className="border-b">
+      <header className="border-b" role="banner">
         <div className="container mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
@@ -33,6 +41,7 @@ export function Layout() {
                 size="sm"
                 onClick={logout}
                 className="gap-2"
+                aria-label="Logout from VinylDigger"
               >
                 <LogOut className="h-4 w-4" />
                 Logout
@@ -45,7 +54,7 @@ export function Layout() {
       <div className="container mx-auto px-4 py-8">
         <div className="grid grid-cols-12 gap-8">
           {/* Sidebar */}
-          <nav className="col-span-3">
+          <nav className="col-span-3" aria-label="Main navigation">
             <ul className="space-y-2">
               {navigation.map((item) => {
                 const Icon = item.icon
@@ -53,6 +62,7 @@ export function Layout() {
                   <li key={item.name}>
                     <Link
                       to={item.href}
+                      aria-current={location.pathname === item.href ? 'page' : undefined}
                       className={cn(
                         'flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors',
                         location.pathname === item.href
@@ -70,7 +80,7 @@ export function Layout() {
           </nav>
 
           {/* Main content */}
-          <main className="col-span-9">
+          <main id="main-content" className="col-span-9" role="main">
             <Outlet />
           </main>
         </div>

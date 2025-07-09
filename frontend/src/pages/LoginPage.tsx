@@ -27,7 +27,7 @@ function LoginPageComponent() {
     <div className="flex min-h-screen items-center justify-center">
       <Card className="w-full max-w-md">
         <CardHeader className="text-center">
-          <div className="mx-auto mb-4">
+          <div className="mx-auto mb-4" aria-hidden="true">
             <Disc className="h-12 w-12 text-primary" />
           </div>
           <CardTitle className="text-2xl">Welcome to VinylDigger</CardTitle>
@@ -66,6 +66,7 @@ function LoginPageComponent() {
               type="submit"
               className="w-full"
               disabled={isLoginLoading}
+              aria-busy={isLoginLoading}
             >
               {isLoginLoading ? 'Signing in...' : 'Sign in'}
             </Button>
