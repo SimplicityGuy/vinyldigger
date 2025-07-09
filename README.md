@@ -3,14 +3,16 @@
 [![Python](https://img.shields.io/badge/Python-3.13-blue.svg)](https://www.python.org/downloads/)
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.115.0-009688.svg)](https://fastapi.tiangolo.com/)
 [![React](https://img.shields.io/badge/React-19.0-61dafb.svg)](https://react.dev/)
-[![TypeScript](https://img.shields.io/badge/TypeScript-5.6-3178c6.svg)](https://www.typescriptlang.org/)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5.7-3178c6.svg)](https://www.typescriptlang.org/)
 [![Docker](https://img.shields.io/badge/Docker-Ready-2496ed.svg)](https://www.docker.com/)
 [![PostgreSQL](https://img.shields.io/badge/PostgreSQL-16-336791.svg)](https://www.postgresql.org/)
 [![Redis](https://img.shields.io/badge/Redis-7-dc382d.svg)](https://redis.io/)
 [![Node.js](https://img.shields.io/badge/Node.js-22-339933.svg)](https://nodejs.org/)
+[![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-4.0-38B2AC.svg)](https://tailwindcss.com/)
+[![uv](https://img.shields.io/badge/uv-0.5-purple.svg)](https://github.com/astral-sh/uv)
 
-[![CI](https://github.com/yourusername/vinyldigger/workflows/CI/badge.svg)](https://github.com/yourusername/vinyldigger/actions)
-[![Build](https://github.com/yourusername/vinyldigger/workflows/Build%20and%20Push%20Docker%20Images/badge.svg)](https://github.com/yourusername/vinyldigger/actions)
+[![CI](https://github.com/robert/virtualdigger/workflows/CI/badge.svg)](https://github.com/robert/virtualdigger/actions)
+[![Build](https://github.com/robert/virtualdigger/workflows/Build%20and%20Push%20Docker%20Images/badge.svg)](https://github.com/robert/virtualdigger/actions)
 [![pre-commit](https://img.shields.io/badge/pre--commit-enabled-brightgreen?logo=pre-commit)](https://github.com/pre-commit/pre-commit)
 [![Ruff](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json)](https://github.com/astral-sh/ruff)
 [![mypy](https://img.shields.io/badge/mypy-checked-blue)](http://mypy-lang.org/)
@@ -48,32 +50,36 @@ A powerful web application that automates vinyl record discovery and comparison 
 - **API Documentation**: Auto-generated OpenAPI/Swagger
 
 ### Frontend
-- **Framework**: React 19 with TypeScript
-- **Build Tool**: Vite
-- **Styling**: Tailwind CSS with Radix UI
+- **Framework**: React 19 with TypeScript 5.7
+- **Build Tool**: Vite 6.0
+- **Styling**: Tailwind CSS v4 with Radix UI
 - **State Management**: TanStack Query (React Query)
 - **Routing**: React Router v7
 - **Forms**: React Hook Form with Zod validation
 
 ### DevOps & Tooling
 - **Containerization**: Docker & Docker Compose
-- **CI/CD**: GitHub Actions
-- **Code Quality**: Pre-commit hooks, Ruff, mypy
+- **CI/CD**: GitHub Actions with Dependabot
+- **Code Quality**: Pre-commit hooks, Ruff, mypy, ESLint
 - **Testing**: pytest, Vitest, Playwright
 - **Package Management**: uv (Python), npm (Node.js)
+- **Task Runner**: Just
 
 ## 📋 Prerequisites
 
 - Docker and Docker Compose
 - Git
-- Just (optional, for convenience commands) - Install from https://github.com/casey/just
+- Just (recommended for convenience commands) - Install from https://github.com/casey/just
+- For local development:
+  - Python 3.13 with uv - Install from https://github.com/astral-sh/uv
+  - Node.js 22+ with npm
 
 ## 🚀 Quick Start
 
 1. **Clone the repository**
    ```bash
-   git clone https://github.com/yourusername/vinyldigger.git
-   cd vinyldigger
+   git clone https://github.com/robert/virtualdigger.git
+   cd virtualdigger
    ```
 
 2. **Set up environment**
@@ -95,36 +101,62 @@ A powerful web application that automates vinyl record discovery and comparison 
 
 ## 🔧 Development Setup
 
-### Install Pre-commit Hooks
+### Initial Setup
 ```bash
-just install-pre-commit
-# Or: pre-commit install
+# Install all dependencies and pre-commit hooks
+just install
 ```
 
 ### Backend Development
 ```bash
+# Start backend development server
+just dev-backend
+
+# Or manually:
 cd backend
 uv sync --dev
-uv run uvicorn src.main:app --reload
+uv run uvicorn src.main:app --reload --host 0.0.0.0 --port 8000
 ```
 
 ### Frontend Development
 ```bash
+# Start frontend development server
+just dev-frontend
+
+# Or manually:
 cd frontend
-npm install
+npm ci
 npm run dev
+```
+
+### Code Quality
+```bash
+# Run all pre-commit checks
+just lint
+
+# Format code
+just format
+
+# Type checking
+just typecheck
+
+# Update pre-commit hooks
+just update-pre-commit
 ```
 
 ### Run Tests
 ```bash
-# All tests
+# All tests in Docker
 just test
 
-# Backend tests
-cd backend && uv run pytest
+# Local tests
+just test-local
 
-# Frontend tests
-cd frontend && npm test
+# Backend tests only
+just test-backend
+
+# Frontend tests only
+just test-frontend
 
 # E2E tests
 cd frontend && npm run test:e2e
@@ -158,6 +190,15 @@ just down
 
 # Clean up
 just clean
+
+# Run database migrations
+just migrate
+
+# Open shell in backend container
+just shell-backend
+
+# Open PostgreSQL shell
+just shell-db
 ```
 
 ## 🔐 Configuration

@@ -15,10 +15,14 @@ VinylDigger is a web application that automates vinyl record discovery across Di
 - **Python 3.13**: Latest version for performance improvements
 - **FastAPI**: Modern, fast, async Python web framework
 - **React 19**: Latest React with concurrent features
-- **TypeScript**: Type safety for the frontend
-- **PostgreSQL**: Robust relational database with JSON support
-- **Redis**: Cache and message broker for Celery
+- **TypeScript 5.7**: Type safety for the frontend
+- **PostgreSQL 16**: Robust relational database with JSON support
+- **Redis 7**: Cache and message broker for Celery
 - **Docker**: Containerization for consistent environments
+- **Tailwind CSS v4**: Utility-first CSS framework
+- **Vite 6**: Fast build tool and dev server
+- **uv**: Fast Python package installer and resolver
+- **Just**: Command runner for project tasks
 
 ### Code Organization
 
@@ -78,17 +82,39 @@ frontend/
 ### Code Quality
 - **Pre-commit Hooks**: Enforce code standards before commit
 - **Type Checking**: mypy for Python, TypeScript for frontend
-- **Linting**: ruff for Python, ESLint for TypeScript
+- **Linting**: Ruff for Python, ESLint v9 for TypeScript
 - **Testing**: pytest for backend, Vitest for frontend
+- **Formatting**: Ruff for Python, Prettier for TypeScript
+
+### Development Workflow
+```bash
+# Install all dependencies
+just install
+
+# Run pre-commit checks
+just lint
+
+# Format code
+just format
+
+# Type check
+just typecheck
+
+# Update dependencies
+just update-pre-commit
+```
 
 ### Database Migrations
 ```bash
 # Create new migration
 cd backend
-alembic revision --autogenerate -m "Description"
+uv run alembic revision --autogenerate -m "Description"
 
 # Apply migrations
-alembic upgrade head
+uv run alembic upgrade head
+
+# Or use just command
+just migrate
 ```
 
 ### API Development
@@ -153,7 +179,7 @@ alembic upgrade head
 
 ### Modifying Database Schema
 1. Update SQLAlchemy model
-2. Create migration: `alembic revision --autogenerate`
+2. Create migration: `cd backend && uv run alembic revision --autogenerate -m "Description"`
 3. Review migration file
 4. Test migration up/down
 5. Update related code
@@ -195,3 +221,50 @@ alembic upgrade head
 - Price prediction ML model
 - Mobile app
 - Multi-language support
+
+## Development Best Practices
+
+### Essential Development Rules
+1. **Always use uv** for Python package management - never use pip directly
+2. **Use the justfile** for common commands, or add new commands if they're frequently used
+3. **Run pre-commit checks** before committing: `just lint` or `pre-commit run --all-files`
+4. **Keep pre-commit hooks frozen**: `just update-pre-commit` or `pre-commit autoupdate --freeze`
+5. **GitHub Actions security**: Always pin non-GitHub/Docker actions to their SHA
+
+### Quick Command Reference
+```bash
+# Development
+just install          # Install all dependencies
+just dev-backend      # Start backend dev server
+just dev-frontend     # Start frontend dev server
+
+# Code Quality
+just lint             # Run all pre-commit checks
+just format           # Format code
+just typecheck        # Type check
+
+# Testing
+just test             # Run tests in Docker
+just test-local       # Run tests locally
+just test-backend     # Backend tests only
+just test-frontend    # Frontend tests only
+
+# Docker
+just up               # Start all services
+just down             # Stop all services
+just logs             # View logs
+just clean            # Clean up everything
+```
+
+### CI/CD Notes
+- GitHub Actions are configured with:
+  - Pre-commit checks run separately for better visibility
+  - Dependabot for automatic dependency updates
+  - SHA pinning for all third-party actions
+  - Separate jobs for backend, frontend, and E2E tests
+
+### Troubleshooting Tips
+1. **Pre-commit failures**: Run `just lint` to see all issues
+2. **Type errors**: Check both `mypy` (backend) and `tsc` (frontend) output
+3. **Docker issues**: Use `just clean` to reset everything
+4. **Dependency conflicts**: Delete lock files and regenerate with `just install`
