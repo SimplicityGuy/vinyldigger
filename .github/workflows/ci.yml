@@ -57,18 +57,19 @@ jobs:
       - name: Install uv
         uses: astral-sh/setup-uv@f3bcaebff5eace81a1c062af9f9011aae482ca9d # v3.2.0
 
+      - name: Install just via arkade
+        uses: alexellis/arkade-get@8391dd7c2ae8ece497d2f7cf4fe98d05bde78cbe # v1.0.0
+        with:
+          just: latest
+
       - name: Install dependencies
-        working-directory: backend
-        run: |
-          uv pip install -e ".[dev]" --system
+        run: just install-backend-ci
 
       - name: Run tests
-        working-directory: backend
         env:
           DATABASE_URL: postgresql://test:test@localhost:5432/vinyldigger_test
           REDIS_URL: redis://localhost:6379
-        run: |
-          pytest --cov=src --cov-report=xml
+        run: just test-backend-ci
 
       - name: Upload coverage
         uses: codecov/codecov-action@b9fd7d16f6d7d1b5d2bec1a2887e65ceed900238 # v4.6.0
@@ -88,17 +89,19 @@ jobs:
           cache: 'npm'
           cache-dependency-path: frontend/package-lock.json
 
+      - name: Install just via arkade
+        uses: alexellis/arkade-get@8391dd7c2ae8ece497d2f7cf4fe98d05bde78cbe # v1.0.0
+        with:
+          just: latest
+
       - name: Install dependencies
-        working-directory: frontend
-        run: npm ci
+        run: just install-frontend
 
       - name: Run tests
-        working-directory: frontend
-        run: npm run test:ci
+        run: just test-frontend-ci
 
       - name: Build
-        working-directory: frontend
-        run: npm run build
+        run: just build-frontend
 
   e2e-test:
     runs-on: ubuntu-latest

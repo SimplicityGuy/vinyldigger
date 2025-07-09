@@ -68,9 +68,21 @@ update-pre-commit:
 test-backend:
     cd backend && uv run pytest
 
+# Run backend tests in CI with coverage
+test-backend-ci:
+    cd backend && pytest --cov=src --cov-report=xml
+
 # Run frontend tests locally
 test-frontend:
     cd frontend && npm run test
+
+# Run frontend tests in CI
+test-frontend-ci:
+    cd frontend && npm run test:ci
+
+# Build frontend
+build-frontend:
+    cd frontend && npm run build
 
 # Run all tests locally
 test-local: test-backend test-frontend
@@ -78,6 +90,10 @@ test-local: test-backend test-frontend
 # Install backend dependencies
 install-backend:
     cd backend && uv sync --dev
+
+# Install backend dependencies for CI (system install)
+install-backend-ci:
+    cd backend && uv pip install -e ".[dev]" --system
 
 # Install frontend dependencies
 install-frontend:
