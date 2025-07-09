@@ -1,5 +1,9 @@
 FROM node:22-alpine AS base
 
+# Development stage for running dev server
+FROM base AS development
+WORKDIR /app
+
 # Install dependencies only when needed
 FROM base AS deps
 WORKDIR /app
