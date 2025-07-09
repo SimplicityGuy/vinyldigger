@@ -27,9 +27,7 @@ class DiscogsService(BaseAPIService):
         if self.client:
             await self.client.aclose()
 
-    async def search(
-        self, query: str, filters: dict[str, Any], credentials: dict[str, str]
-    ) -> list[dict[str, Any]]:
+    async def search(self, query: str, filters: dict[str, Any], credentials: dict[str, str]) -> list[dict[str, Any]]:
         if not self.client:
             raise RuntimeError("Service not initialized. Use async with context.")
 
@@ -76,17 +74,13 @@ class DiscogsService(BaseAPIService):
             self.logger.error(f"Discogs API error: {str(e)}")
             return []
 
-    async def get_item_details(
-        self, item_id: str, credentials: dict[str, str]
-    ) -> dict[str, Any] | None:
+    async def get_item_details(self, item_id: str, credentials: dict[str, str]) -> dict[str, Any] | None:
         if not self.client:
             raise RuntimeError("Service not initialized. Use async with context.")
 
         try:
             # Get release details
-            response = await self.client.get(
-                f"/releases/{item_id}", params={"token": credentials["key"]}
-            )
+            response = await self.client.get(f"/releases/{item_id}", params={"token": credentials["key"]})
             response.raise_for_status()
 
             release_data = response.json()
@@ -113,17 +107,13 @@ class DiscogsService(BaseAPIService):
             self.logger.error(f"Discogs API error getting item {item_id}: {str(e)}")
             return None
 
-    async def sync_collection(
-        self, credentials: dict[str, str]
-    ) -> list[dict[str, Any]]:
+    async def sync_collection(self, credentials: dict[str, str]) -> list[dict[str, Any]]:
         if not self.client:
             raise RuntimeError("Service not initialized. Use async with context.")
 
         try:
             # Get user info first
-            user_response = await self.client.get(
-                "/oauth/identity", params={"token": credentials["key"]}
-            )
+            user_response = await self.client.get("/oauth/identity", params={"token": credentials["key"]})
             user_response.raise_for_status()
             user_data = user_response.json()
             username = user_data["username"]
@@ -174,9 +164,7 @@ class DiscogsService(BaseAPIService):
 
         try:
             # Get user info first
-            user_response = await self.client.get(
-                "/oauth/identity", params={"token": credentials["key"]}
-            )
+            user_response = await self.client.get("/oauth/identity", params={"token": credentials["key"]})
             user_response.raise_for_status()
             user_data = user_response.json()
             username = user_data["username"]

@@ -38,18 +38,18 @@ class RunSearchTask(AsyncTask):
                     return
 
                 # Check user's collection and want list for matching
-                collection_items = await db.execute(
-                    select(Collection).where(Collection.user_id == UUID(user_id))
-                )
+                collection_items = await db.execute(select(Collection).where(Collection.user_id == UUID(user_id)))
                 collection_releases = {
-                    item.release_id for item in collection_items.scalars()
+                    item.discogs_data.get("release_id") or item.discogs_data.get("id")
+                    for item in collection_items.scalars()
+                    if item.discogs_data
                 }
 
-                wantlist_items = await db.execute(
-                    select(WantList).where(WantList.user_id == UUID(user_id))
-                )
+                wantlist_items = await db.execute(select(WantList).where(WantList.user_id == UUID(user_id)))
                 wantlist_releases = {
-                    item.release_id for item in wantlist_items.scalars()
+                    item.discogs_data.get("release_id") or item.discogs_data.get("id")
+                    for item in wantlist_items.scalars()
+                    if item.discogs_data
                 }
 
                 results_added = 0
@@ -69,18 +69,13 @@ class RunSearchTask(AsyncTask):
                 search.last_checked_at = datetime.utcnow()
                 await db.commit()
 
-                logger.info(
-                    f"Search {search_id} completed successfully. "
-                    f"Added {results_added} new results."
-                )
+                logger.info(f"Search {search_id} completed successfully. Added {results_added} new results.")
             except Exception as e:
                 logger.error(f"Error running search {search_id}: {str(e)}")
                 await db.rollback()
                 raise
 
-    async def _search_discogs(
-        self, db, search, user_id, collection_releases, wantlist_releases
-    ):
+    async def _search_discogs(self, db, search, user_id, collection_releases, wantlist_releases):
         results_added = 0
 
         try:
@@ -121,9 +116,7 @@ class RunSearchTask(AsyncTask):
 
         return results_added
 
-    async def _search_ebay(
-        self, db, search, user_id, collection_releases, wantlist_releases
-    ):
+    async def _search_ebay(self, db, search, user_id, collection_releases, wantlist_releases):
         results_added = 0
 
         try:
@@ -212,33 +205,34 @@ class SyncCollectionTask(AsyncTask):
                         existing = await db.execute(
                             select(Collection).where(
                                 Collection.user_id == UUID(user_id),
-                                Collection.release_id == release_id,
+                                Collection.discogs_data["release_id"].as_string() == str(release_id),
                             )
                         )
                         existing_item = existing.scalar()
 
                         if existing_item:
                             # Update existing
-                            existing_item.instance_id = item["instance_id"]
-                            existing_item.date_added = datetime.fromisoformat(
-                                item["date_added"].replace("Z", "+00:00")
-                            )
-                            existing_item.basic_information = item["basic_information"]
-                            existing_item.notes = item.get("notes", "")
-                            existing_item.rating = item.get("rating", 0)
+                            existing_item.discogs_data = {
+                                "release_id": release_id,
+                                "instance_id": item["instance_id"],
+                                "date_added": item["date_added"],
+                                "basic_information": item["basic_information"],
+                                "notes": item.get("notes", ""),
+                                "rating": item.get("rating", 0),
+                            }
                             collection_updated += 1
                         else:
                             # Add new
                             collection_item = Collection(
                                 user_id=UUID(user_id),
-                                release_id=release_id,
-                                instance_id=item["instance_id"],
-                                date_added=datetime.fromisoformat(
-                                    item["date_added"].replace("Z", "+00:00")
-                                ),
-                                basic_information=item["basic_information"],
-                                notes=item.get("notes", ""),
-                                rating=item.get("rating", 0),
+                                discogs_data={
+                                    "release_id": release_id,
+                                    "instance_id": item["instance_id"],
+                                    "date_added": item["date_added"],
+                                    "basic_information": item["basic_information"],
+                                    "notes": item.get("notes", ""),
+                                    "rating": item.get("rating", 0),
+                                },
                             )
                             db.add(collection_item)
                             collection_added += 1
@@ -255,31 +249,32 @@ class SyncCollectionTask(AsyncTask):
                         existing = await db.execute(
                             select(WantList).where(
                                 WantList.user_id == UUID(user_id),
-                                WantList.release_id == release_id,
+                                WantList.discogs_data["release_id"].as_string() == str(release_id),
                             )
                         )
                         existing_item = existing.scalar()
 
                         if existing_item:
                             # Update existing
-                            existing_item.date_added = datetime.fromisoformat(
-                                item["date_added"].replace("Z", "+00:00")
-                            )
-                            existing_item.basic_information = item["basic_information"]
-                            existing_item.notes = item.get("notes", "")
-                            existing_item.rating = item.get("rating", 0)
+                            existing_item.discogs_data = {
+                                "release_id": release_id,
+                                "date_added": item["date_added"],
+                                "basic_information": item["basic_information"],
+                                "notes": item.get("notes", ""),
+                                "rating": item.get("rating", 0),
+                            }
                             wantlist_updated += 1
                         else:
                             # Add new
                             wantlist_item = WantList(
                                 user_id=UUID(user_id),
-                                release_id=release_id,
-                                date_added=datetime.fromisoformat(
-                                    item["date_added"].replace("Z", "+00:00")
-                                ),
-                                basic_information=item["basic_information"],
-                                notes=item.get("notes", ""),
-                                rating=item.get("rating", 0),
+                                discogs_data={
+                                    "release_id": release_id,
+                                    "date_added": item["date_added"],
+                                    "basic_information": item["basic_information"],
+                                    "notes": item.get("notes", ""),
+                                    "rating": item.get("rating", 0),
+                                },
                             )
                             db.add(wantlist_item)
                             wantlist_added += 1

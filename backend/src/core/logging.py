@@ -24,9 +24,7 @@ def setup_logging() -> None:
 
     # Set specific loggers
     logging.getLogger("uvicorn").setLevel(log_level)
-    logging.getLogger("sqlalchemy.engine").setLevel(
-        logging.INFO if settings.debug else logging.WARNING
-    )
+    logging.getLogger("sqlalchemy.engine").setLevel(logging.INFO if settings.debug else logging.WARNING)
 
     # Reduce noise from some libraries
     logging.getLogger("httpx").setLevel(logging.WARNING)

@@ -62,9 +62,7 @@ async def update_api_key(
         # Update existing key
         existing_key.encrypted_key = api_key_encryption.encrypt_key(api_key_data.key)
         if api_key_data.secret:
-            existing_key.encrypted_secret = api_key_encryption.encrypt_key(
-                api_key_data.secret
-            )
+            existing_key.encrypted_secret = api_key_encryption.encrypt_key(api_key_data.secret)
         api_key = existing_key
     else:
         # Create new key
@@ -72,11 +70,7 @@ async def update_api_key(
             user_id=current_user.id,
             service=api_key_data.service,
             encrypted_key=api_key_encryption.encrypt_key(api_key_data.key),
-            encrypted_secret=(
-                api_key_encryption.encrypt_key(api_key_data.secret)
-                if api_key_data.secret
-                else None
-            ),
+            encrypted_secret=(api_key_encryption.encrypt_key(api_key_data.secret) if api_key_data.secret else None),
         )
         db.add(api_key)
 

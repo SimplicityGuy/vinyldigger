@@ -21,8 +21,7 @@ async def check_scheduled_searches():
             result = await db.execute(
                 select(SavedSearch).where(
                     SavedSearch.is_active,
-                    (SavedSearch.last_checked_at.is_(None))
-                    | (SavedSearch.last_checked_at < now - timedelta(hours=1)),
+                    (SavedSearch.last_checked_at.is_(None)) | (SavedSearch.last_checked_at < now - timedelta(hours=1)),
                 )
             )
             searches = result.scalars().all()
@@ -34,9 +33,7 @@ async def check_scheduled_searches():
                 else:
                     # Check if enough time has passed
                     time_since_last = now - search.last_checked_at
-                    should_run = time_since_last >= timedelta(
-                        hours=search.check_interval_hours
-                    )
+                    should_run = time_since_last >= timedelta(hours=search.check_interval_hours)
 
                 if should_run:
                     logger.info(f"Queueing search {search.id}")

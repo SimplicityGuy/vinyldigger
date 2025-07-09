@@ -82,9 +82,7 @@ async def get_searches(
     current_user: Annotated[User, Depends(get_current_user)],
     db: AsyncSession = Depends(get_db),
 ) -> list[SavedSearch]:
-    result = await db.execute(
-        select(SavedSearch).where(SavedSearch.user_id == current_user.id)
-    )
+    result = await db.execute(select(SavedSearch).where(SavedSearch.user_id == current_user.id))
     return list(result.scalars().all())
 
 

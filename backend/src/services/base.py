@@ -17,14 +17,8 @@ class BaseAPIService(ABC):
         self.service = service
         self.logger = logger
 
-    async def get_api_credentials(
-        self, db: AsyncSession, user_id: UUID
-    ) -> dict[str, str] | None:
-        result = await db.execute(
-            select(APIKey).where(
-                APIKey.user_id == user_id, APIKey.service == self.service
-            )
-        )
+    async def get_api_credentials(self, db: AsyncSession, user_id: UUID) -> dict[str, str] | None:
+        result = await db.execute(select(APIKey).where(APIKey.user_id == user_id, APIKey.service == self.service))
         api_key = result.scalar_one_or_none()
 
         if not api_key:
@@ -33,27 +27,19 @@ class BaseAPIService(ABC):
         credentials = {"key": api_key_encryption.decrypt_key(api_key.encrypted_key)}
 
         if api_key.encrypted_secret:
-            credentials["secret"] = api_key_encryption.decrypt_key(
-                api_key.encrypted_secret
-            )
+            credentials["secret"] = api_key_encryption.decrypt_key(api_key.encrypted_secret)
 
         return credentials
 
     @abstractmethod
-    async def search(
-        self, query: str, filters: dict[str, Any], credentials: dict[str, str]
-    ) -> list[dict[str, Any]]:
+    async def search(self, query: str, filters: dict[str, Any], credentials: dict[str, str]) -> list[dict[str, Any]]:
         pass
 
     @abstractmethod
-    async def get_item_details(
-        self, item_id: str, credentials: dict[str, str]
-    ) -> dict[str, Any] | None:
+    async def get_item_details(self, item_id: str, credentials: dict[str, str]) -> dict[str, Any] | None:
         pass
 
-    def format_search_result(
-        self, raw_item: dict[str, Any], platform: str
-    ) -> dict[str, Any]:
+    def format_search_result(self, raw_item: dict[str, Any], platform: str) -> dict[str, Any]:
         return {
             "platform": platform,
             "item_id": str(raw_item.get("id", "")),

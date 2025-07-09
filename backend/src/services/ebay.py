@@ -60,9 +60,7 @@ class EbayService(BaseAPIService):
             self.logger.error(f"eBay auth error: {str(e)}")
             return None
 
-    async def search(
-        self, query: str, filters: dict[str, Any], credentials: dict[str, str]
-    ) -> list[dict[str, Any]]:
+    async def search(self, query: str, filters: dict[str, Any], credentials: dict[str, str]) -> list[dict[str, Any]]:
         if not self.client:
             raise RuntimeError("Service not initialized. Use async with context.")
 
@@ -85,11 +83,7 @@ class EbayService(BaseAPIService):
 
         # Condition filter
         if "condition" in filters:
-            conditions = (
-                filters["condition"]
-                if isinstance(filters["condition"], list)
-                else [filters["condition"]]
-            )
+            conditions = filters["condition"] if isinstance(filters["condition"], list) else [filters["condition"]]
             condition_values = {
                 "new": "NEW",
                 "like_new": "LIKE_NEW",
@@ -102,9 +96,7 @@ class EbayService(BaseAPIService):
 
         # Price range
         if "min_price" in filters:
-            filter_parts.append(
-                f"price:[{filters['min_price']}..{filters.get('max_price', '*')}]"
-            )
+            filter_parts.append(f"price:[{filters['min_price']}..{filters.get('max_price', '*')}]")
         elif "max_price" in filters:
             filter_parts.append(f"price:[0..{filters['max_price']}]")
 
@@ -158,9 +150,7 @@ class EbayService(BaseAPIService):
                 self.access_token = None
             return []
 
-    async def get_item_details(
-        self, item_id: str, credentials: dict[str, str]
-    ) -> dict[str, Any] | None:
+    async def get_item_details(self, item_id: str, credentials: dict[str, str]) -> dict[str, Any] | None:
         if not self.client:
             raise RuntimeError("Service not initialized. Use async with context.")
 
@@ -198,9 +188,7 @@ class EbayService(BaseAPIService):
             shipping_options = item.get("shippingOptions", [])
             shipping_cost = 0.0
             if shipping_options:
-                shipping_cost = float(
-                    shipping_options[0].get("shippingCost", {}).get("value", 0)
-                )
+                shipping_cost = float(shipping_options[0].get("shippingCost", {}).get("value", 0))
 
             # Extract seller info
             seller = item.get("seller", {})
@@ -215,12 +203,9 @@ class EbayService(BaseAPIService):
                 "currency": currency,
                 "shipping_cost": shipping_cost,
                 "total_price": price + shipping_cost,
-                "buy_it_now": item.get("buyingOptions", [])
-                and "FIXED_PRICE" in item["buyingOptions"],
-                "auction": item.get("buyingOptions", [])
-                and "AUCTION" in item["buyingOptions"],
-                "best_offer": item.get("buyingOptions", [])
-                and "BEST_OFFER" in item["buyingOptions"],
+                "buy_it_now": item.get("buyingOptions", []) and "FIXED_PRICE" in item["buyingOptions"],
+                "auction": item.get("buyingOptions", []) and "AUCTION" in item["buyingOptions"],
+                "best_offer": item.get("buyingOptions", []) and "BEST_OFFER" in item["buyingOptions"],
                 "current_bid_price": item.get("currentBidPrice", {}).get("value"),
                 "seller": {
                     "username": seller.get("username"),
@@ -234,13 +219,9 @@ class EbayService(BaseAPIService):
                     "postal_code": item.get("itemLocation", {}).get("postalCode"),
                 },
                 "image_url": item.get("image", {}).get("imageUrl"),
-                "additional_images": [
-                    img.get("imageUrl") for img in item.get("additionalImages", [])
-                ],
+                "additional_images": [img.get("imageUrl") for img in item.get("additionalImages", [])],
                 "item_web_url": item.get("itemWebUrl"),
-                "categories": [
-                    cat.get("categoryName") for cat in item.get("categories", [])
-                ],
+                "categories": [cat.get("categoryName") for cat in item.get("categories", [])],
                 "item_end_date": item.get("itemEndDate"),
             }
         except Exception as e:

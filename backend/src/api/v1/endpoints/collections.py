@@ -48,9 +48,7 @@ async def get_collection_status(
     current_user: Annotated[User, Depends(get_current_user)],
     db: AsyncSession = Depends(get_db),
 ) -> Collection | None:
-    result = await db.execute(
-        select(Collection).where(Collection.user_id == current_user.id)
-    )
+    result = await db.execute(select(Collection).where(Collection.user_id == current_user.id))
     collection = result.scalar_one_or_none()
     if not collection:
         return CollectionResponse(id="", item_count=0, last_sync_at=None)
@@ -62,9 +60,7 @@ async def get_wantlist_status(
     current_user: Annotated[User, Depends(get_current_user)],
     db: AsyncSession = Depends(get_db),
 ) -> WantList | None:
-    result = await db.execute(
-        select(WantList).where(WantList.user_id == current_user.id)
-    )
+    result = await db.execute(select(WantList).where(WantList.user_id == current_user.id))
     wantlist = result.scalar_one_or_none()
     if not wantlist:
         return WantListResponse(id="", item_count=0, last_sync_at=None)
