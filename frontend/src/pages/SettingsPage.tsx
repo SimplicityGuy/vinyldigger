@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, memo } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { Key, Save } from 'lucide-react'
 import { Button } from '@/components/ui/button'
@@ -9,7 +9,7 @@ import { configApi } from '@/lib/api'
 import { useToast } from '@/hooks/useToast'
 import type { ApiKey } from '@/types/api'
 
-export function SettingsPage() {
+function SettingsPageComponent() {
   const { toast } = useToast()
   const queryClient = useQueryClient()
   const [apiKeys, setApiKeys] = useState({
@@ -223,3 +223,5 @@ export function SettingsPage() {
     </div>
   )
 }
+
+export const SettingsPage = memo(SettingsPageComponent)

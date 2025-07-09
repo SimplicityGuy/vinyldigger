@@ -1,3 +1,4 @@
+import { memo } from 'react'
 import { Link } from 'react-router-dom'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
@@ -12,7 +13,7 @@ import { loginSchema } from '@/lib/api'
 
 type LoginForm = z.infer<typeof loginSchema>
 
-export function LoginPage() {
+function LoginPageComponent() {
   const { login, isLoginLoading } = useAuth()
   const {
     register,
@@ -83,3 +84,5 @@ export function LoginPage() {
     </div>
   )
 }
+
+export const LoginPage = memo(LoginPageComponent)

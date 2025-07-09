@@ -1,3 +1,4 @@
+import { memo } from 'react'
 import { Link } from 'react-router-dom'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
@@ -12,7 +13,7 @@ import { registerSchema } from '@/lib/api'
 
 type RegisterForm = z.infer<typeof registerSchema>
 
-export function RegisterPage() {
+function RegisterPageComponent() {
   const { register: registerUser, isRegisterLoading } = useAuth()
   const {
     register,
@@ -99,3 +100,5 @@ export function RegisterPage() {
     </div>
   )
 }
+
+export const RegisterPage = memo(RegisterPageComponent)

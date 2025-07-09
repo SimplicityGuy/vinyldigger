@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, memo } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { Plus, Play, Trash2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
@@ -7,7 +7,7 @@ import { searchApi } from '@/lib/api'
 import { useToast } from '@/hooks/useToast'
 import type { Search } from '@/types/api'
 
-export function SearchesPage() {
+function SearchesPageComponent() {
   const { toast } = useToast()
   const queryClient = useQueryClient()
   const [, setIsCreating] = useState(false)
@@ -119,3 +119,5 @@ export function SearchesPage() {
     </div>
   )
 }
+
+export const SearchesPage = memo(SearchesPageComponent)
