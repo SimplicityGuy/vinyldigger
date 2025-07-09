@@ -17,12 +17,13 @@ jobs:
         with:
           python-version: '3.13'
 
-      - name: Install just via arkade
-        uses: alexellis/arkade-get@1eef818e467c387d3f50cfe0d2c565d1cbe82b03 # master
+      - name: Install just
+        uses: extractions/setup-just@dd310ad5a97d8e7b41793f8ef055398d51ad4de6 # v2.0.0
         with:
-          just: latest
+          just-version: '1.38.0'  # Pin to specific version for reliability
 
       - name: Install docker-compose
+        if: runner.os == 'Linux'  # Not needed on other platforms
         uses: alexellis/arkade-get@1eef818e467c387d3f50cfe0d2c565d1cbe82b03 # master
         with:
           docker-compose: latest
@@ -44,19 +45,21 @@ jobs:
           POSTGRES_PASSWORD: test
           POSTGRES_DB: vinyldigger_test
         options: >-
-          --health-cmd pg_isready
-          --health-interval 10s
+          --health-cmd "pg_isready -U test -d vinyldigger_test"
+          --health-interval 5s
           --health-timeout 5s
-          --health-retries 5
+          --health-retries 10
+          --health-start-period 10s
         ports:
           - 5432:5432
       redis:
         image: redis:7
         options: >-
           --health-cmd "redis-cli ping"
-          --health-interval 10s
+          --health-interval 5s
           --health-timeout 5s
-          --health-retries 5
+          --health-retries 10
+          --health-start-period 10s
         ports:
           - 6379:6379
 
@@ -73,18 +76,35 @@ jobs:
         with:
           enable-cache: true
 
-      - name: Install just via arkade
-        uses: alexellis/arkade-get@1eef818e467c387d3f50cfe0d2c565d1cbe82b03 # master
+      - name: Install just
+        uses: extractions/setup-just@dd310ad5a97d8e7b41793f8ef055398d51ad4de6 # v2.0.0
         with:
-          just: latest
+          just-version: '1.38.0'  # Pin to specific version for reliability
 
       - name: Install docker-compose
+        if: runner.os == 'Linux'  # Not needed on other platforms
         uses: alexellis/arkade-get@1eef818e467c387d3f50cfe0d2c565d1cbe82b03 # master
         with:
           docker-compose: latest
 
       - name: Install dependencies
         run: just install-backend-ci
+
+      - name: Wait for services
+        run: |
+          echo "Waiting for PostgreSQL..."
+          until pg_isready -h localhost -p 5432 -U test; do
+            echo "PostgreSQL is unavailable - sleeping"
+            sleep 2
+          done
+          echo "PostgreSQL is up"
+
+          echo "Waiting for Redis..."
+          until redis-cli -h localhost ping; do
+            echo "Redis is unavailable - sleeping"
+            sleep 2
+          done
+          echo "Redis is up"
 
       - name: Run tests
         env:
@@ -113,12 +133,13 @@ jobs:
           cache: 'npm'
           cache-dependency-path: frontend/package-lock.json
 
-      - name: Install just via arkade
-        uses: alexellis/arkade-get@1eef818e467c387d3f50cfe0d2c565d1cbe82b03 # master
+      - name: Install just
+        uses: extractions/setup-just@dd310ad5a97d8e7b41793f8ef055398d51ad4de6 # v2.0.0
         with:
-          just: latest
+          just-version: '1.38.0'  # Pin to specific version for reliability
 
       - name: Install docker-compose
+        if: runner.os == 'Linux'  # Not needed on other platforms
         uses: alexellis/arkade-get@1eef818e467c387d3f50cfe0d2c565d1cbe82b03 # master
         with:
           docker-compose: latest
@@ -142,12 +163,13 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
-      - name: Install just via arkade
-        uses: alexellis/arkade-get@1eef818e467c387d3f50cfe0d2c565d1cbe82b03 # master
+      - name: Install just
+        uses: extractions/setup-just@dd310ad5a97d8e7b41793f8ef055398d51ad4de6 # v2.0.0
         with:
-          just: latest
+          just-version: '1.38.0'  # Pin to specific version for reliability
 
       - name: Install docker-compose
+        if: runner.os == 'Linux'  # Not needed on other platforms
         uses: alexellis/arkade-get@1eef818e467c387d3f50cfe0d2c565d1cbe82b03 # master
         with:
           docker-compose: latest

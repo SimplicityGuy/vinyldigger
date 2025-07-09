@@ -1,0 +1,48 @@
+name: 'Setup Common Tools'
+description: 'Install common tools used across workflows (just, docker-compose)'
+inputs:
+  install-just:
+    description: 'Whether to install just'
+    required: false
+    default: 'true'
+  just-version:
+    description: 'Version of just to install'
+    required: false
+    default: '1.38.0'
+  install-docker-compose:
+    description: 'Whether to install docker-compose'
+    required: false
+    default: 'true'
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Install just
+      if: inputs.install-just == 'true'
+      uses: extractions/setup-just@dd310ad5a97d8e7b41793f8ef055398d51ad4de6 # v2.0.0
+      with:
+        just-version: ${{ inputs.just-version }}
+
+    - name: Install docker-compose (Linux)
+      if: inputs.install-docker-compose == 'true' && runner.os == 'Linux'
+      uses: alexellis/arkade-get@1eef818e467c387d3f50cfe0d2c565d1cbe82b03 # master
+      with:
+        docker-compose: latest
+
+    - name: Verify installations
+      shell: bash
+      run: |
+        echo "=== Tool versions ==="
+        if [[ "${{ inputs.install-just }}" == "true" ]]; then
+          echo -n "just: "
+          just --version || echo "NOT FOUND"
+        fi
+
+        if [[ "${{ inputs.install-docker-compose }}" == "true" ]]; then
+          echo -n "docker-compose: "
+          docker-compose --version || docker compose version || echo "NOT FOUND"
+        fi
+
+        # Always available
+        echo -n "docker: "
+        docker --version || echo "NOT FOUND"

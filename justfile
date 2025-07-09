@@ -56,12 +56,24 @@ test-services-up:
 test-ci:
     docker-compose -f docker-compose.test.yml up -d
     @echo "Waiting for services to be healthy..."
-    @timeout 120 bash -c 'until docker-compose -f docker-compose.test.yml ps | grep -E "\(healthy\)" | grep -q postgres; do sleep 2; echo "Waiting for postgres..."; done'
-    @timeout 120 bash -c 'until docker-compose -f docker-compose.test.yml ps | grep -E "\(healthy\)" | grep -q redis; do sleep 2; echo "Waiting for redis..."; done'
-    @timeout 120 bash -c 'until docker-compose -f docker-compose.test.yml ps | grep -E "\(healthy\)" | grep -q backend; do sleep 2; echo "Waiting for backend..."; done'
-    @timeout 120 bash -c 'until docker-compose -f docker-compose.test.yml ps | grep -E "\(healthy\)" | grep -q frontend; do sleep 2; echo "Waiting for frontend..."; done'
-    @timeout 120 bash -c 'until docker-compose -f docker-compose.test.yml ps | grep -E "\(healthy\)" | grep -q worker; do sleep 2; echo "Waiting for worker..."; done'
+    @# Wait for PostgreSQL
+    @timeout 120 bash -c 'until docker-compose -f docker-compose.test.yml exec -T postgres pg_isready -U test; do sleep 2; echo "Waiting for postgres..."; done'
+    @echo "✓ PostgreSQL is ready"
+    @# Wait for Redis
+    @timeout 120 bash -c 'until docker-compose -f docker-compose.test.yml exec -T redis redis-cli ping | grep -q PONG; do sleep 2; echo "Waiting for redis..."; done'
+    @echo "✓ Redis is ready"
+    @# Wait for backend
+    @timeout 180 bash -c 'until curl -f http://localhost:8000/health 2>/dev/null; do sleep 2; echo "Waiting for backend..."; done'
+    @echo "✓ Backend API is ready"
+    @# Wait for frontend
+    @timeout 180 bash -c 'until curl -f http://localhost:3000 2>/dev/null; do sleep 2; echo "Waiting for frontend..."; done'
+    @echo "✓ Frontend is ready"
+    @# Wait for worker
+    @timeout 120 bash -c 'until docker-compose -f docker-compose.test.yml exec -T worker celery -A src.workers.celery_app inspect ping 2>/dev/null; do sleep 2; echo "Waiting for worker..."; done'
+    @echo "✓ Worker is ready"
     @echo "All services are healthy!"
+    @# Give services a moment to stabilize
+    @sleep 5
     docker-compose -f docker-compose.test.yml ps
 
 # Stop test services

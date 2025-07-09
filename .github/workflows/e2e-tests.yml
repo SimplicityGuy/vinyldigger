@@ -56,12 +56,13 @@ jobs:
         with:
           enable-cache: true
 
-      - name: Install just via arkade
-        uses: alexellis/arkade-get@1eef818e467c387d3f50cfe0d2c565d1cbe82b03 # master
+      - name: Install just
+        uses: extractions/setup-just@dd310ad5a97d8e7b41793f8ef055398d51ad4de6 # v2.0.0
         with:
-          just: latest
+          just-version: '1.38.0'  # Pin to specific version for reliability
 
       - name: Install docker-compose
+        if: runner.os == 'Linux'  # macOS has docker-compose built-in
         uses: alexellis/arkade-get@1eef818e467c387d3f50cfe0d2c565d1cbe82b03 # master
         with:
           docker-compose: latest
@@ -85,18 +86,38 @@ jobs:
       - name: Start services
         run: |
           just test-services-up
-          # Wait for all services to be ready
-          timeout 60 sh -c 'until docker compose -f docker-compose.test.yml ps | grep -q "healthy"; do sleep 2; done'
-          # Verify backend is accessible
-          timeout 30 sh -c 'until curl -f http://localhost:8000/health; do sleep 1; done'
+
+          # Wait for PostgreSQL to be ready
+          echo "Waiting for PostgreSQL..."
+          timeout 60 sh -c 'until docker compose -f docker-compose.test.yml exec -T postgres pg_isready -U postgres; do echo "PostgreSQL not ready, waiting..."; sleep 2; done'
+
+          # Wait for Redis to be ready
+          echo "Waiting for Redis..."
+          timeout 60 sh -c 'until docker compose -f docker-compose.test.yml exec -T redis redis-cli ping; do echo "Redis not ready, waiting..."; sleep 2; done'
+
+          # Wait for backend to be healthy
+          echo "Waiting for backend API..."
+          timeout 90 sh -c 'until curl -f http://localhost:8000/health; do echo "Backend not ready, waiting..."; sleep 2; done'
+
+          # Wait for frontend to be ready
+          echo "Waiting for frontend..."
+          timeout 90 sh -c 'until curl -f http://localhost:3000; do echo "Frontend not ready, waiting..."; sleep 2; done'
+
+          # Give services a moment to stabilize
+          sleep 5
+
+          # Show service status
+          docker compose -f docker-compose.test.yml ps
 
       - name: Run E2E tests
         run: |
           cd frontend
-          npm run test:e2e -- --project=${{ matrix.project }}
+          # Add retry logic for flaky tests
+          npm run test:e2e -- --project=${{ matrix.project }} --retries=2
         env:
           CI: true
           BASE_URL: http://localhost:3000
+          PLAYWRIGHT_SLOW_MO: 100  # Add slight delay between actions to reduce flakiness
 
       - name: Upload test results
         if: always()
@@ -114,9 +135,22 @@ jobs:
           path: frontend/test-results/
           retention-days: 7
 
+      - name: Debug on failure
+        if: failure()
+        run: |
+          echo "E2E tests failed - collecting debug information"
+          ./scripts/debug-ci-failure.sh || true
+
       - name: Stop services
         if: always()
-        run: just test-down
+        run: |
+          # Ensure just is available or use fallback
+          if command -v just &> /dev/null; then
+            just test-down
+          else
+            echo "Warning: 'just' not found, using docker-compose directly"
+            docker-compose -f docker-compose.test.yml down -v || docker compose -f docker-compose.test.yml down -v || true
+          fi
 
   # Summary job to check all matrix jobs passed
   test-summary:

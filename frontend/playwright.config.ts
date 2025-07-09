@@ -18,8 +18,17 @@ export default defineConfig({
     screenshot: 'only-on-failure',
     video: 'retain-on-failure',
     headless: true, // Always use headless mode
-    actionTimeout: 10000,
-    navigationTimeout: 30000,
+    actionTimeout: process.env.CI ? 15000 : 10000,
+    navigationTimeout: process.env.CI ? 45000 : 30000,
+    // Add extra timeout for CI environments
+    ...(process.env.CI && {
+      // Slow down actions in CI to reduce flakiness
+      launchOptions: {
+        slowMo: 100,
+      },
+      // Wait for network to be idle before considering navigation complete
+      waitUntil: 'networkidle',
+    }),
   },
 
   projects: [

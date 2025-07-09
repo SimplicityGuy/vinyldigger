@@ -166,15 +166,27 @@ See the [Testing Guide](docs/testing.md) for detailed testing instructions.
 
 ## 📚 Documentation
 
+### Documentation Hub
+📖 **[View Complete Documentation Index](docs/README.md)** - Comprehensive guide to all documentation
+
 ### Quick Links
-- [API Documentation](docs/api.md) - Complete REST API reference
+- [API Documentation](docs/api.md) - Complete REST API reference with examples
 - [Architecture Overview](docs/architecture.md) - System design and technical details
 - [Testing Guide](docs/testing.md) - Running and writing tests
 - [Deployment Guide](docs/deployment.md) - Production deployment instructions
 - [Contributing Guidelines](CONTRIBUTING.md) - How to contribute to the project
+- [E2E Testing Guide](frontend/tests/e2e/README.md) - End-to-end testing documentation
+
+### Additional Documentation
+- [CI/CD Troubleshooting](docs/ci-troubleshooting-fixes.md) - GitHub Actions fixes and solutions
+- [Docker OCI Labels](docs/docker-oci-labels.md) - Container labeling standards
+- [Project Context](CLAUDE.md) - AI assistant configuration and project guidelines
 
 ### Interactive API Documentation
-Once the application is running, visit http://localhost:8000/api/docs for interactive Swagger UI.
+Once the application is running, visit:
+- **Swagger UI**: http://localhost:8000/api/docs
+- **ReDoc**: http://localhost:8000/api/redoc
+- **OpenAPI Schema**: http://localhost:8000/api/openapi.json
 
 ### Key API Endpoints
 - `POST /api/v1/auth/register` - User registration
@@ -227,7 +239,74 @@ After registering and logging in, add your API keys in the Settings page:
    - Required: Client ID and Client Secret
 
 ### Environment Variables
+Key environment variables in `.env`:
+```bash
+# Application
+SECRET_KEY=your-secret-key-here
+ENVIRONMENT=development
+
+# Database
+DATABASE_URL=postgresql://user:password@localhost:5432/vinyldigger
+
+# Redis
+REDIS_URL=redis://localhost:6379
+
+# Frontend URL (for CORS)
+FRONTEND_URL=http://localhost:3000
+```
+
 See `.env.example` for all available configuration options.
+
+## 🏗️ Project Structure
+
+```
+vinyldigger/
+├── backend/                # FastAPI backend
+│   ├── src/               # Source code
+│   │   ├── api/v1/        # API endpoints
+│   │   ├── core/          # Core utilities
+│   │   ├── models/        # Database models
+│   │   ├── services/      # Business logic
+│   │   └── workers/       # Background tasks
+│   ├── tests/             # Backend tests
+│   └── alembic/           # Database migrations
+├── frontend/              # React frontend
+│   ├── src/               # Source code
+│   │   ├── components/    # UI components
+│   │   ├── pages/         # Page components
+│   │   ├── hooks/         # Custom hooks
+│   │   ├── lib/           # Utilities
+│   │   └── services/      # API client
+│   └── tests/             # Frontend tests
+├── docs/                  # Documentation
+├── docker-compose.yml     # Docker configuration
+├── justfile              # Task automation
+└── .env.example          # Environment template
+```
+
+## 🚨 Troubleshooting
+
+### Common Issues
+
+#### Docker Issues
+- **Containers not starting**: Run `just clean` to reset everything
+- **Port conflicts**: Ensure ports 3000, 8000, 5432, 6379 are free
+- **Volume permissions**: Check Docker has proper file permissions
+
+#### Development Issues
+- **Import errors**: Check for circular imports, use TYPE_CHECKING
+- **Type errors**: Run `just typecheck` to see all issues
+- **Pre-commit failures**: Run `just lint` to see specific problems
+
+#### Database Issues
+- **Migration conflicts**: Reset with `cd backend && uv run alembic downgrade base && uv run alembic upgrade head`
+- **Connection errors**: Check DATABASE_URL in .env matches docker-compose
+
+#### API Issues
+- **401 Unauthorized**: Token may be expired, try logging in again
+- **CORS errors**: Check FRONTEND_URL in backend .env
+
+See [CI/CD Troubleshooting](docs/ci-troubleshooting-fixes.md) for GitHub Actions issues.
 
 ## 🤝 Contributing
 
