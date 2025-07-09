@@ -25,7 +25,7 @@ export function useAuth() {
         description: 'You have successfully logged in.',
       })
     },
-    onError: (error: any) => {
+    onError: (error: Error) => {
       toast({
         title: 'Login failed',
         description: error.message || 'Invalid credentials',
@@ -43,7 +43,7 @@ export function useAuth() {
         description: 'Please log in with your new account.',
       })
     },
-    onError: (error: any) => {
+    onError: (error: Error) => {
       toast({
         title: 'Registration failed',
         description: error.message || 'Something went wrong',

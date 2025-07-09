@@ -14,10 +14,10 @@ async function fetchApi(
   options: RequestInit = {}
 ): Promise<Response> {
   const token = localStorage.getItem('access_token')
-  
-  const headers: HeadersInit = {
+
+  const headers: Record<string, string> = {
     'Content-Type': 'application/json',
-    ...options.headers,
+    ...(options.headers as Record<string, string>),
   }
 
   if (token) {
@@ -59,19 +59,19 @@ export const authApi = {
     const formData = new FormData()
     formData.append('username', data.email)
     formData.append('password', data.password)
-    
+
     const response = await fetchApi('/auth/login', {
       method: 'POST',
       body: formData,
       headers: {},
     })
-    
+
     const result = await response.json()
     const tokens = tokenSchema.parse(result)
-    
+
     localStorage.setItem('access_token', tokens.access_token)
     localStorage.setItem('refresh_token', tokens.refresh_token)
-    
+
     return tokens
   },
 
@@ -80,7 +80,7 @@ export const authApi = {
       method: 'POST',
       body: JSON.stringify(data),
     })
-    
+
     return response.json()
   },
 
@@ -114,7 +114,7 @@ export const configApi = {
     return response.json()
   },
 
-  async updatePreferences(data: any) {
+  async updatePreferences(data: Record<string, unknown>) {
     const response = await fetchApi('/config/preferences', {
       method: 'PUT',
       body: JSON.stringify(data),
@@ -124,7 +124,7 @@ export const configApi = {
 }
 
 export const searchApi = {
-  async createSearch(data: any) {
+  async createSearch(data: Record<string, unknown>) {
     const response = await fetchApi('/searches', {
       method: 'POST',
       body: JSON.stringify(data),

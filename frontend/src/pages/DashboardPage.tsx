@@ -25,7 +25,7 @@ export function DashboardPage() {
         title: 'Sync started',
         description: 'Your collection is being synced with Discogs.',
       })
-    } catch (error) {
+    } catch {
       toast({
         title: 'Sync failed',
         description: 'Failed to start collection sync.',

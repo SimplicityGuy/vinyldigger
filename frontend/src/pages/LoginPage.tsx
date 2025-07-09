@@ -34,7 +34,7 @@ export function LoginPage() {
             Sign in to your account to continue
           </CardDescription>
         </CardHeader>
-        <form onSubmit={handleSubmit(login)}>
+        <form onSubmit={handleSubmit((data) => login(data))}>
           <CardContent className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="email">Email</Label>

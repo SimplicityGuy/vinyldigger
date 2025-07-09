@@ -34,7 +34,7 @@ export function RegisterPage() {
             Start discovering vinyl records today
           </CardDescription>
         </CardHeader>
-        <form onSubmit={handleSubmit(registerUser)}>
+        <form onSubmit={handleSubmit((data) => registerUser(data))}>
           <CardContent className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="email">Email</Label>

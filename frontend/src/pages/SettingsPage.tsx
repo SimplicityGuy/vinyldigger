@@ -7,6 +7,7 @@ import { Label } from '@/components/ui/label'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { configApi } from '@/lib/api'
 import { useToast } from '@/hooks/useToast'
+import type { ApiKey } from '@/types/api'
 
 export function SettingsPage() {
   const { toast } = useToast()
@@ -27,7 +28,7 @@ export function SettingsPage() {
   })
 
   const updateApiKeyMutation = useMutation({
-    mutationFn: ({ service, key, secret }: any) =>
+    mutationFn: ({ service, key, secret }: { service: string; key: string; secret?: string }) =>
       configApi.updateApiKey(service, key, secret),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['api-keys'] })
@@ -57,7 +58,7 @@ export function SettingsPage() {
   }
 
   const hasApiKey = (service: string) => {
-    return existingKeys.some((key: any) => key.service === service)
+    return existingKeys.some((key: ApiKey) => key.service === service)
   }
 
   return (

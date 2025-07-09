@@ -5,11 +5,12 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { searchApi } from '@/lib/api'
 import { useToast } from '@/hooks/useToast'
+import type { Search } from '@/types/api'
 
 export function SearchesPage() {
   const { toast } = useToast()
   const queryClient = useQueryClient()
-  const [isCreating, setIsCreating] = useState(false)
+  const [, setIsCreating] = useState(false)
 
   const { data: searches = [], isLoading } = useQuery({
     queryKey: ['searches'],
@@ -68,7 +69,7 @@ export function SearchesPage() {
         </Card>
       ) : (
         <div className="grid gap-4">
-          {searches.map((search: any) => (
+          {searches.map((search: Search) => (
             <Card key={search.id}>
               <CardHeader>
                 <div className="flex items-center justify-between">
