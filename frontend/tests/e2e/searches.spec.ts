@@ -252,7 +252,7 @@ test.describe('Searches Page - Mobile View', () => {
     await page.goto('/searches')
 
     // Header should be visible
-    await expect(page.getByText('Searches', { exact: true })).toBeVisible()
+    await expect(page.getByRole('heading', { name: 'Searches' })).toBeVisible()
 
     // New search button should be visible and accessible
     const newSearchButton = page.getByRole('button', { name: 'Create a new search' })

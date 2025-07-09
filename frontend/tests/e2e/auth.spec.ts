@@ -258,7 +258,8 @@ test.describe('Authentication Flow', () => {
       await expect(page).toHaveURL('/login')
 
       // Should show logout success toast
-      await expect(page.getByText('Logged out')).toBeVisible()
+      const toast = page.locator('[role="status"]').filter({ hasText: 'Logged out' }).first()
+      await expect(toast).toBeVisible()
       await expect(page.getByText('You have been logged out successfully.')).toBeVisible()
 
       // Should clear auth tokens
@@ -308,7 +309,8 @@ test.describe('Mobile Authentication', () => {
     await page.getByRole('button', { name: 'Sign in' }).click()
 
     // Toast should be visible on mobile
-    await expect(page.getByText('Login failed')).toBeVisible()
+    const toast = page.locator('[role="status"]').filter({ hasText: 'Login failed' }).first()
+    await expect(toast).toBeVisible()
     await expect(page.getByText('Invalid credentials')).toBeVisible()
   })
 })

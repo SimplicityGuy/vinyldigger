@@ -73,7 +73,7 @@ test.describe('Settings Page', () => {
     await page.goto('/settings')
 
     // Check page header
-    await expect(page.getByText('Settings', { exact: true })).toBeVisible()
+    await expect(page.getByRole('heading', { name: 'Settings' })).toBeVisible()
     await expect(page.getByText('Manage your account and application settings')).toBeVisible()
 
     // Check API Keys section
@@ -331,7 +331,7 @@ test.describe('Settings Page - Mobile View', () => {
     await page.goto('/settings')
 
     // Header should be visible
-    await expect(page.getByText('Settings', { exact: true })).toBeVisible()
+    await expect(page.getByRole('heading', { name: 'Settings' })).toBeVisible()
 
     // Cards should stack vertically
     const cards = page.locator('.card')
