@@ -24,7 +24,21 @@ ps:
 
 # Run all tests
 test:
-    docker-compose -f docker-compose.test.yml up --abort-on-container-exit --exit-code-from backend
+    docker-compose -f docker-compose.test.yml run --rm backend-test
+
+# Run backend tests in Docker
+test-docker-backend:
+    docker-compose -f docker-compose.test.yml run --rm backend-test
+
+# Run e2e tests (starts all services)
+test-e2e:
+    docker-compose -f docker-compose.test.yml up -d
+    cd frontend && npm run test:e2e
+    docker-compose -f docker-compose.test.yml down -v
+
+# Start test services for manual testing
+test-services-up:
+    docker-compose -f docker-compose.test.yml up -d
 
 # Run tests in CI environment
 test-ci:

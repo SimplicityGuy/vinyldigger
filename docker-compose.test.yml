@@ -1,3 +1,10 @@
+# Test environment configuration
+#
+# Usage:
+# - Run backend tests: docker-compose -f docker-compose.test.yml run --rm backend-test
+# - Run services for e2e tests: docker-compose -f docker-compose.test.yml up -d
+# - Run all tests with just: just test
+
 services:
   postgres:
     image: postgres:16-alpine
@@ -6,9 +13,11 @@ services:
       POSTGRES_PASSWORD: test
       POSTGRES_DB: vinyldigger_test
     ports:
-      - "5433:5432"
+      - "5432:5432"
+    tmpfs:
+      - /var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U test"]
+      test: ["CMD-SHELL", "pg_isready -U test -d vinyldigger_test"]
       interval: 5s
       timeout: 5s
       retries: 5
@@ -16,28 +25,30 @@ services:
   redis:
     image: redis:7-alpine
     ports:
-      - "6380:6379"
+      - "6379:6379"
+    tmpfs:
+      - /data
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
       interval: 5s
       timeout: 5s
       retries: 5
 
+  # Backend service for running the API (used by e2e tests)
   backend:
     build:
       context: ./backend
       dockerfile: Dockerfile
-      args:
-        INSTALL_DEV: "true"
     environment:
       DATABASE_URL: postgresql+asyncpg://test:test@postgres:5432/vinyldigger_test
       REDIS_URL: redis://redis:6379
       CELERY_BROKER_URL: redis://redis:6379/0
       CELERY_RESULT_BACKEND: redis://redis:6379/0
-      SECRET_KEY: test-secret-key
-      CORS_ORIGINS: '["http://localhost:3000"]'
+      SECRET_KEY: test-secret-key-for-testing
+      DEBUG: "true"
+      CORS_ORIGINS: "http://localhost:3000,http://localhost:8000"
     ports:
-      - "8001:8000"
+      - "8000:8000"
     depends_on:
       postgres:
         condition: service_healthy
@@ -45,21 +56,72 @@ services:
         condition: service_healthy
     command: >
       sh -c "alembic upgrade head &&
-             uvicorn src.main:app --host 0.0.0.0 --port 8000"
+             uvicorn src.main:app --host 0.0.0.0 --port 8000 --reload"
+    volumes:
+      - ./backend:/app
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      test: ["CMD", "curl", "-f", "http://localhost:8000/api/v1/health"]
       interval: 10s
       timeout: 5s
       retries: 3
+
+  # Backend test runner (for unit/integration tests)
+  backend-test:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    environment:
+      DATABASE_URL: postgresql+asyncpg://test:test@postgres:5432/vinyldigger_test
+      REDIS_URL: redis://redis:6379
+      CELERY_BROKER_URL: redis://redis:6379/0
+      CELERY_RESULT_BACKEND: redis://redis:6379/0
+      SECRET_KEY: test-secret-key-for-testing
+      DEBUG: "true"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    command: >
+      sh -c "alembic upgrade head &&
+             pytest -v --tb=short --cov=src --cov-report=term --cov-report=html"
+    volumes:
+      - ./backend:/app
+
+  worker:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    environment:
+      DATABASE_URL: postgresql+asyncpg://test:test@postgres:5432/vinyldigger_test
+      REDIS_URL: redis://redis:6379
+      CELERY_BROKER_URL: redis://redis:6379/0
+      CELERY_RESULT_BACKEND: redis://redis:6379/0
+      SECRET_KEY: test-secret-key-for-testing
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      backend:
+        condition: service_healthy
+    command: celery -A src.workers.celery_app worker --loglevel=info
+    volumes:
+      - ./backend:/app
 
   frontend:
     build:
       context: ./frontend
       dockerfile: Dockerfile
+      target: development
     ports:
-      - "3001:3000"
+      - "3000:3000"
     depends_on:
       backend:
         condition: service_healthy
     environment:
       - NODE_ENV=test
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+    command: npm run dev

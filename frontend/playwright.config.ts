@@ -6,13 +6,20 @@ export default defineConfig({
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 2 : 0,
   workers: process.env.CI ? 1 : undefined,
-  reporter: 'html',
+  reporter: process.env.CI ? [['github'], ['html', { open: 'never' }]] : 'html',
+
   use: {
-    baseURL: 'http://localhost:3000',
+    baseURL: process.env.BASE_URL || 'http://localhost:3000',
     trace: 'on-first-retry',
+    screenshot: 'only-on-failure',
+    video: 'retain-on-failure',
+    headless: true, // Always use headless mode
+    actionTimeout: 10000,
+    navigationTimeout: 30000,
   },
 
   projects: [
+    // Desktop browsers
     {
       name: 'chromium',
       use: { ...devices['Desktop Chrome'] },
@@ -25,10 +32,30 @@ export default defineConfig({
       name: 'webkit',
       use: { ...devices['Desktop Safari'] },
     },
+
+    // Mobile browsers
+    {
+      name: 'mobile-safari-iphone',
+      use: { ...devices['iPhone 14'] },
+    },
+    {
+      name: 'mobile-safari-ipad',
+      use: { ...devices['iPad Pro 11'] },
+    },
   ],
 
   webServer: {
     command: 'npm run dev',
     port: 3000,
+    reuseExistingServer: !process.env.CI,
+    timeout: 120000,
+  },
+
+  // Global timeout
+  timeout: process.env.CI ? 60000 : 30000,
+
+  // Expect timeout
+  expect: {
+    timeout: 5000,
   },
 })
