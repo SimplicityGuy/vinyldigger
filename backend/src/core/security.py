@@ -1,3 +1,5 @@
+import base64
+import hashlib
 from datetime import UTC, datetime, timedelta
 from typing import Any
 
@@ -62,9 +64,17 @@ def decode_token(token: str) -> dict[str, Any]:
 
 class APIKeyEncryption:
     def __init__(self) -> None:
-        # Using Fernet.generate_key() for now
-        # TODO: Derive key from settings.secret_key properly
-        self.cipher_suite = Fernet(Fernet.generate_key())
+        # Derive a consistent encryption key from the secret key
+        # This ensures encrypted API keys can be decrypted after service restarts
+        key_material = hashlib.pbkdf2_hmac(
+            "sha256",
+            settings.secret_key.encode(),
+            b"api_key_encryption_salt",  # Static salt for consistency
+            100000,  # Iterations
+        )
+        # Fernet requires a 32-byte base64-encoded key
+        fernet_key = base64.urlsafe_b64encode(key_material[:32])
+        self.cipher_suite = Fernet(fernet_key)
 
     def encrypt_key(self, api_key: str) -> str:
         return self.cipher_suite.encrypt(api_key.encode()).decode()
