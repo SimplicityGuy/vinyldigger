@@ -10,10 +10,10 @@ jobs:
   pre-commit:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.2.2
+      - uses: actions/checkout@v4.2.2
 
       - name: Set up Python
-        uses: actions/setup-python@0b93645e9fea7318ecaed2b359559ac225c90a2b # v5.3.0
+        uses: actions/setup-python@v5.3.0
         with:
           python-version: '3.13'
 
@@ -57,10 +57,10 @@ jobs:
           - 6379:6379
 
     steps:
-      - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.2.2
+      - uses: actions/checkout@v4.2.2
 
       - name: Set up Python
-        uses: actions/setup-python@0b93645e9fea7318ecaed2b359559ac225c90a2b # v5.3.0
+        uses: actions/setup-python@v5.3.0
         with:
           python-version: '3.13'
 
@@ -92,10 +92,10 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.2.2
+      - uses: actions/checkout@v4.2.2
 
       - name: Set up Node.js
-        uses: actions/setup-node@0a44ba7841725637a19e28fa30b79a866c81b0a6 # v4.0.4
+        uses: actions/setup-node@v4.0.4
         with:
           node-version: '22'
           cache: 'npm'
@@ -120,10 +120,10 @@ jobs:
     needs: [pre-commit, backend-test, frontend-test]
 
     steps:
-      - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.2.2
+      - uses: actions/checkout@v4.2.2
 
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@e44ac4d395202048d0d8e66aaf017104c343f3f3 # v3.7.2
+        uses: docker/setup-buildx-action@v3.7.2
 
       - name: Install just via arkade
         uses: alexellis/arkade-get@1eef818e467c387d3f50cfe0d2c565d1cbe82b03 # master
@@ -140,7 +140,7 @@ jobs:
           timeout 60 bash -c 'until curl -f http://localhost:3000; do sleep 1; done'
 
       - name: Set up Node.js
-        uses: actions/setup-node@0a44ba7841725637a19e28fa30b79a866c81b0a6 # v4.0.4
+        uses: actions/setup-node@v4.0.4
         with:
           node-version: '22'
           cache: 'npm'
@@ -157,7 +157,7 @@ jobs:
         run: just test-e2e
 
       - name: Upload Playwright report
-        uses: actions/upload-artifact@6f51ac03b9356f520e9adb1b1b7802705f340c2b # v4.5.0
+        uses: actions/upload-artifact@v4.5.0
         if: always()
         with:
           name: playwright-report
