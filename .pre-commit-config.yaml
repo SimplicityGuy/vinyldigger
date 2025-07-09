@@ -37,7 +37,7 @@ repos:
     hooks:
       - id: frontend-eslint
         name: Frontend ESLint
-        entry: sh -c 'cd frontend && npm run lint'
+        entry: sh -c 'cd frontend && [ -d node_modules ] || npm ci; npm run lint'
         language: system
         files: ^frontend/.*\.[jt]sx?$
         pass_filenames: false
@@ -48,7 +48,7 @@ repos:
     hooks:
       - id: frontend-typecheck
         name: Frontend TypeScript Check
-        entry: sh -c 'cd frontend && npm run typecheck'
+        entry: sh -c 'cd frontend && [ -d node_modules ] || npm ci; npm run typecheck'
         language: system
         files: ^frontend/.*\.[jt]sx?$
         pass_filenames: false
