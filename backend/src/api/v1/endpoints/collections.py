@@ -9,7 +9,7 @@ from src.api.v1.endpoints.auth import get_current_user
 from src.core.database import get_db
 from src.models.collection import Collection, WantList
 from src.models.user import User
-from src.services.discogs import DiscogsService
+from src.workers.tasks import sync_collection_task
 
 router = APIRouter()
 
@@ -38,8 +38,7 @@ async def sync_collection(
     db: AsyncSession = Depends(get_db),
 ) -> dict[str, str]:
     # Queue sync task
-    discogs_service = DiscogsService()
-    await discogs_service.queue_sync(current_user.id)
+    sync_collection_task.delay(str(current_user.id))
 
     return {"message": "Collection sync queued successfully"}
 
