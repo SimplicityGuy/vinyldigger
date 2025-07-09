@@ -2,6 +2,9 @@
 default:
     @just --list
 
+# Docker Compose command detection - prefer docker-compose, fallback to docker compose
+docker_compose := if `which docker-compose >/dev/null 2>&1; echo $?` == "0" { "docker-compose" } else { "docker compose" }
+
 # Build all Docker images with OCI labels
 build:
     ./scripts/docker-build.sh
@@ -12,33 +15,33 @@ build-service service:
 
 # Start all services
 up:
-    docker-compose up -d
+    {{docker_compose}} up -d
 
 # Stop all services
 down:
-    docker-compose down
+    {{docker_compose}} down
 
 # Show logs from all services
 logs:
-    docker-compose logs -f
+    {{docker_compose}} logs -f
 
 # Show running services
 ps:
-    docker-compose ps
+    {{docker_compose}} ps
 
 # Run all tests
 test:
-    docker-compose -f docker-compose.test.yml run --rm backend-test
+    {{docker_compose}} -f docker-compose.test.yml run --rm backend-test
 
 # Run backend tests in Docker
 test-docker-backend:
-    docker-compose -f docker-compose.test.yml run --rm backend-test
+    {{docker_compose}} -f docker-compose.test.yml run --rm backend-test
 
 # Run e2e tests (starts all services)
 test-e2e:
-    docker-compose -f docker-compose.test.yml up -d
+    {{docker_compose}} -f docker-compose.test.yml up -d
     cd frontend && npm run test:e2e
-    docker-compose -f docker-compose.test.yml down -v
+    {{docker_compose}} -f docker-compose.test.yml down -v
 
 # Run e2e tests locally with automatic service management
 test-e2e-local:
@@ -50,17 +53,17 @@ test-e2e-ui:
 
 # Start test services for manual testing
 test-services-up:
-    docker-compose -f docker-compose.test.yml up -d
+    {{docker_compose}} -f docker-compose.test.yml up -d
 
 # Run tests in CI environment
 test-ci:
-    docker-compose -f docker-compose.test.yml up -d
+    {{docker_compose}} -f docker-compose.test.yml up -d
     @echo "Waiting for services to be healthy..."
     @# Wait for PostgreSQL
-    @timeout 120 bash -c 'until docker-compose -f docker-compose.test.yml exec -T postgres pg_isready -U test; do sleep 2; echo "Waiting for postgres..."; done'
+    @timeout 120 bash -c 'until {{docker_compose}} -f docker-compose.test.yml exec -T postgres pg_isready -U test; do sleep 2; echo "Waiting for postgres..."; done'
     @echo "✓ PostgreSQL is ready"
     @# Wait for Redis
-    @timeout 120 bash -c 'until docker-compose -f docker-compose.test.yml exec -T redis redis-cli ping | grep -q PONG; do sleep 2; echo "Waiting for redis..."; done'
+    @timeout 120 bash -c 'until {{docker_compose}} -f docker-compose.test.yml exec -T redis redis-cli ping | grep -q PONG; do sleep 2; echo "Waiting for redis..."; done'
     @echo "✓ Redis is ready"
     @# Wait for backend
     @timeout 180 bash -c 'until curl -f http://localhost:8000/health 2>/dev/null; do sleep 2; echo "Waiting for backend..."; done'
@@ -69,23 +72,41 @@ test-ci:
     @timeout 180 bash -c 'until curl -f http://localhost:3000 2>/dev/null; do sleep 2; echo "Waiting for frontend..."; done'
     @echo "✓ Frontend is ready"
     @# Wait for worker
-    @timeout 120 bash -c 'until docker-compose -f docker-compose.test.yml exec -T worker celery -A src.workers.celery_app inspect ping 2>/dev/null; do sleep 2; echo "Waiting for worker..."; done'
+    @timeout 120 bash -c 'until {{docker_compose}} -f docker-compose.test.yml exec -T worker celery -A src.workers.celery_app inspect ping 2>/dev/null; do sleep 2; echo "Waiting for worker..."; done'
     @echo "✓ Worker is ready"
     @echo "All services are healthy!"
     @# Give services a moment to stabilize
     @sleep 5
-    docker-compose -f docker-compose.test.yml ps
+    {{docker_compose}} -f docker-compose.test.yml ps
 
 # Stop test services
 test-down:
-    docker-compose -f docker-compose.test.yml down -v
+    {{docker_compose}} -f docker-compose.test.yml down -v
+
+# Wait for test services to be ready (for CI)
+test-wait:
+    @echo "Waiting for PostgreSQL..."
+    @timeout 120 bash -c 'until {{docker_compose}} -f docker-compose.test.yml exec -T postgres pg_isready -U postgres; do echo "PostgreSQL not ready, waiting..."; sleep 2; done'
+    @echo "✓ PostgreSQL is ready"
+    @echo "Waiting for Redis..."
+    @timeout 120 bash -c 'until {{docker_compose}} -f docker-compose.test.yml exec -T redis redis-cli ping; do echo "Redis not ready, waiting..."; sleep 2; done'
+    @echo "✓ Redis is ready"
+    @echo "Waiting for backend API..."
+    @timeout 180 bash -c 'until curl -f http://localhost:8000/health 2>/dev/null; do echo "Backend not ready, waiting..."; sleep 2; done'
+    @echo "✓ Backend API is ready"
+    @echo "Waiting for frontend..."
+    @timeout 180 bash -c 'until curl -f http://localhost:3000 2>/dev/null; do echo "Frontend not ready, waiting..."; sleep 2; done'
+    @echo "✓ Frontend is ready"
+    @echo "All services are healthy!"
+    @sleep 5
+    {{docker_compose}} -f docker-compose.test.yml ps
 
 # Clean up all temporary build artifacts and caches
 clean: clean-docker clean-python clean-frontend clean-misc
 
 # Clean up Docker containers, volumes, and images
 clean-docker:
-    docker-compose down -v
+    {{docker_compose}} down -v
     docker system prune -f
 
 # Clean up Python build artifacts and caches
@@ -119,15 +140,15 @@ clean-misc:
 
 # Run database migrations
 migrate:
-    docker-compose exec backend uv run alembic upgrade head
+    {{docker_compose}} exec backend uv run alembic upgrade head
 
 # Open a shell in the backend container
 shell-backend:
-    docker-compose exec backend /bin/sh
+    {{docker_compose}} exec backend /bin/sh
 
 # Open a PostgreSQL shell
 shell-db:
-    docker-compose exec postgres psql -U postgres vinyldigger
+    {{docker_compose}} exec postgres psql -U postgres vinyldigger
 
 # Install pre-commit hooks
 install-pre-commit:
