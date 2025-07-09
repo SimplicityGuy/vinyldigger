@@ -108,7 +108,7 @@ shell-db:
 
 # Install pre-commit hooks
 install-pre-commit:
-    uv pip install pre-commit --system
+    pip install pre-commit
     pre-commit install
 
 # Run pre-commit on all files
