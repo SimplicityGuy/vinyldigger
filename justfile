@@ -96,7 +96,7 @@ clean-misc:
 
 # Run database migrations
 migrate:
-    docker-compose exec backend alembic upgrade head
+    docker-compose exec backend uv run alembic upgrade head
 
 # Open a shell in the backend container
 shell-backend:
@@ -108,15 +108,16 @@ shell-db:
 
 # Install pre-commit hooks
 install-pre-commit:
+    uv pip install pre-commit --system
     pre-commit install
 
 # Run pre-commit on all files
 lint:
-    pre-commit run --all-files
+    uv run pre-commit run --all-files
 
 # Update and freeze pre-commit hooks
 update-pre-commit:
-    pre-commit autoupdate --freeze
+    uv run pre-commit autoupdate --freeze
 
 # Run backend tests locally
 test-backend:
