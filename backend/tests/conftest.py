@@ -1,9 +1,17 @@
 import asyncio
+import os
 from collections.abc import AsyncGenerator
 
 import pytest
 from httpx import ASGITransport, AsyncClient
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
+
+# Set test environment variables before importing the app
+os.environ.setdefault("DATABASE_URL", "postgresql+asyncpg://test:test@localhost:5432/vinyldigger_test")
+os.environ.setdefault("REDIS_URL", "redis://localhost:6379/0")
+os.environ.setdefault("SECRET_KEY", "test-secret-key-for-testing-only")
+os.environ.setdefault("CELERY_BROKER_URL", "redis://localhost:6379/1")
+os.environ.setdefault("CELERY_RESULT_BACKEND", "redis://localhost:6379/2")
 
 from src.core.database import Base, get_db
 from src.main import app

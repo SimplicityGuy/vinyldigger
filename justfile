@@ -124,7 +124,7 @@ test-backend:
 
 # Run backend tests in CI with coverage
 test-backend-ci:
-    cd backend && pytest --cov=src --cov-report=xml
+    cd backend && uv run pytest --cov=src --cov-report=xml
 
 # Run frontend tests locally
 test-frontend:
