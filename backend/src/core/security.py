@@ -23,7 +23,7 @@ def create_access_token(
         )
 
     to_encode = {"exp": expire, "sub": str(subject), "type": "access"}
-    encoded_jwt = jwt.encode(
+    encoded_jwt: str = jwt.encode(
         to_encode, settings.secret_key, algorithm=settings.algorithm
     )
     return encoded_jwt
@@ -38,23 +38,25 @@ def create_refresh_token(
         expire = datetime.now(UTC) + timedelta(days=settings.refresh_token_expire_days)
 
     to_encode = {"exp": expire, "sub": str(subject), "type": "refresh"}
-    encoded_jwt = jwt.encode(
+    encoded_jwt: str = jwt.encode(
         to_encode, settings.secret_key, algorithm=settings.algorithm
     )
     return encoded_jwt
 
 
 def verify_password(plain_password: str, hashed_password: str) -> bool:
-    return pwd_context.verify(plain_password, hashed_password)
+    result: bool = pwd_context.verify(plain_password, hashed_password)
+    return result
 
 
 def get_password_hash(password: str) -> str:
-    return pwd_context.hash(password)
+    hashed: str = pwd_context.hash(password)
+    return hashed
 
 
 def decode_token(token: str) -> dict[str, Any]:
     try:
-        payload = jwt.decode(
+        payload: dict[str, Any] = jwt.decode(
             token, settings.secret_key, algorithms=[settings.algorithm]
         )
         return payload

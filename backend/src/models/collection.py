@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from datetime import datetime
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 from uuid import UUID, uuid4
 
 from sqlalchemy import JSON, DateTime, ForeignKey, func
@@ -23,7 +23,7 @@ class Collection(Base):
     user_id: Mapped[UUID] = mapped_column(
         PGUUID(as_uuid=True), ForeignKey("users.id"), nullable=False
     )
-    discogs_data: Mapped[dict] = mapped_column(JSON, default=dict)
+    discogs_data: Mapped[dict[str, Any]] = mapped_column(JSON, default=dict)
     item_count: Mapped[int] = mapped_column(default=0)
     last_sync_at: Mapped[datetime | None] = mapped_column(
         DateTime(timezone=True), nullable=True
@@ -48,7 +48,7 @@ class WantList(Base):
     user_id: Mapped[UUID] = mapped_column(
         PGUUID(as_uuid=True), ForeignKey("users.id"), nullable=False
     )
-    discogs_data: Mapped[dict] = mapped_column(JSON, default=dict)
+    discogs_data: Mapped[dict[str, Any]] = mapped_column(JSON, default=dict)
     item_count: Mapped[int] = mapped_column(default=0)
     last_sync_at: Mapped[datetime | None] = mapped_column(
         DateTime(timezone=True), nullable=True

@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from datetime import datetime
 from enum import Enum
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 from uuid import UUID, uuid4
 
 from sqlalchemy import JSON, DateTime, ForeignKey, String, func
@@ -36,7 +36,7 @@ class SavedSearch(Base):
     platform: Mapped[SearchPlatform] = mapped_column(
         SQLEnum(SearchPlatform), nullable=False
     )
-    filters: Mapped[dict] = mapped_column(JSON, default=dict)
+    filters: Mapped[dict[str, Any]] = mapped_column(JSON, default=dict)
     is_active: Mapped[bool] = mapped_column(default=True)
     check_interval_hours: Mapped[int] = mapped_column(default=24)
     last_checked_at: Mapped[datetime | None] = mapped_column(
@@ -69,7 +69,7 @@ class SearchResult(Base):
         SQLEnum(SearchPlatform), nullable=False
     )
     item_id: Mapped[str] = mapped_column(String(255), nullable=False)
-    item_data: Mapped[dict] = mapped_column(JSON, nullable=False)
+    item_data: Mapped[dict[str, Any]] = mapped_column(JSON, nullable=False)
     is_in_collection: Mapped[bool] = mapped_column(default=False)
     is_in_wantlist: Mapped[bool] = mapped_column(default=False)
     created_at: Mapped[datetime] = mapped_column(
