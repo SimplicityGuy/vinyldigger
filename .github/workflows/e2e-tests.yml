@@ -127,7 +127,7 @@ jobs:
   test-summary:
     name: E2E Tests Summary
     runs-on: ubuntu-latest
-    timeout-minutes: 2  # Summary check typically takes < 30 sec, 1.5x safety factor
+    timeout-minutes: 5  # Summary check typically takes < 30 sec, rounded to factor of 5
     needs: test
     if: always()
 
