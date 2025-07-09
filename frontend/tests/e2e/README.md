@@ -34,9 +34,53 @@ Comprehensive end-to-end tests for VinylDigger using Playwright.
 
 ## Running Tests
 
-### Run all tests
+### Automatic Backend Setup
+The e2e tests now automatically manage the backend services. When you run tests locally, they will:
+1. Check if Docker services are already running
+2. Start services if needed (postgres, redis, backend, frontend)
+3. Wait for all services to be healthy
+4. Run the tests
+5. Stop services after tests complete (unless configured otherwise)
+
+### Quick Start
 ```bash
+# From the frontend directory
 npm run test:e2e
+```
+
+### Manual Service Management
+If you prefer to manage services manually:
+
+```bash
+# Start services
+just test-services-up
+
+# Run tests (skip automatic setup)
+SKIP_DOCKER_SETUP=1 npm run test:e2e
+
+# Stop services when done
+just test-down
+```
+
+### Keep Services Running
+To keep services running after tests (useful for debugging):
+
+```bash
+KEEP_SERVICES_RUNNING=1 npm run test:e2e
+```
+
+### Using the Test Script
+A convenience script is provided:
+
+```bash
+# Run tests with automatic setup
+./tests/e2e/local-test.sh
+
+# Keep services running after tests
+./tests/e2e/local-test.sh --keep-running
+
+# Skip Docker setup (assumes services are running)
+./tests/e2e/local-test.sh --skip-setup
 ```
 
 ### Run specific browser

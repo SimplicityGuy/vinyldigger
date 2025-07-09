@@ -8,6 +8,10 @@ export default defineConfig({
   workers: process.env.CI ? 1 : undefined,
   reporter: process.env.CI ? [['github'], ['html', { open: 'never' }]] : 'html',
 
+  // Global setup to ensure backend is running
+  globalSetup: './playwright.global-setup.ts',
+  globalTeardown: './playwright.global-teardown.ts',
+
   use: {
     baseURL: process.env.BASE_URL || 'http://localhost:3000',
     trace: 'on-first-retry',

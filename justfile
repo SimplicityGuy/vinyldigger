@@ -36,6 +36,14 @@ test-e2e:
     cd frontend && npm run test:e2e
     docker-compose -f docker-compose.test.yml down -v
 
+# Run e2e tests locally with automatic service management
+test-e2e-local:
+    cd frontend && npm run test:e2e
+
+# Run e2e tests in UI mode for debugging
+test-e2e-ui:
+    cd frontend && npm run test:e2e:ui
+
 # Start test services for manual testing
 test-services-up:
     docker-compose -f docker-compose.test.yml up -d

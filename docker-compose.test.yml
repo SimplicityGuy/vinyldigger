@@ -46,7 +46,7 @@ services:
       CELERY_RESULT_BACKEND: redis://redis:6379/0
       SECRET_KEY: test-secret-key-for-testing
       DEBUG: "true"
-      CORS_ORIGINS: "http://localhost:3000,http://localhost:8000"
+      CORS_ORIGINS: '["http://localhost:3000", "http://localhost:8000"]'
     ports:
       - "8000:8000"
     depends_on:
@@ -60,7 +60,7 @@ services:
     volumes:
       - ./backend:/app
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8000/api/v1/health"]
+      test: ["CMD-SHELL", "python -c 'import urllib.request; urllib.request.urlopen(\"http://localhost:8000/health\")'"]
       interval: 10s
       timeout: 5s
       retries: 3

@@ -86,11 +86,33 @@ npm run test -- --coverage
 ```
 
 #### E2E Tests
+
+**Automatic Setup (Recommended)**
 ```bash
-# Run all e2e tests (headless)
-cd frontend
+# From frontend directory - automatically starts backend services
 npm run test:e2e
 
+# Keep services running after tests
+KEEP_SERVICES_RUNNING=1 npm run test:e2e
+
+# Skip automatic Docker setup (if services already running)
+SKIP_DOCKER_SETUP=1 npm run test:e2e
+```
+
+**Using Just Commands**
+```bash
+# Run with explicit service management
+just test-e2e
+
+# Run with automatic service management
+just test-e2e-local
+
+# Run in UI mode
+just test-e2e-ui
+```
+
+**Advanced Options**
+```bash
 # Run specific browser
 npm run test:e2e -- --project=chromium
 npm run test:e2e -- --project=firefox
@@ -101,11 +123,17 @@ npm run test:e2e -- --project=mobile-safari-ipad
 # Run in UI mode (interactive)
 npm run test:e2e:ui
 
+# Run with visible browser
+npm run test:e2e:headed
+
 # Run specific test file
 npm run test:e2e -- tests/e2e/auth.spec.ts
 
 # Debug mode
-npm run test:e2e -- --debug
+npm run test:e2e:debug
+
+# Generate new tests with codegen
+npm run test:e2e:codegen
 ```
 
 ## Test Environment
