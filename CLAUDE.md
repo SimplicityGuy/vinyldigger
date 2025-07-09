@@ -179,13 +179,13 @@ alembic upgrade head
 ### Common Issues
 1. **Import Errors**: Check for circular imports, use TYPE_CHECKING
 2. **Migration Conflicts**: Reset migrations in development
-3. **Docker Issues**: Clean volumes with `make clean`
+3. **Docker Issues**: Clean volumes with `just clean`
 4. **Type Errors**: Update type stubs, check mypy config
 
 ### Debugging Tips
 - Use `docker-compose logs -f [service]` for logs
 - Check Redis with `redis-cli` in container
-- PostgreSQL shell: `make shell-db`
+- PostgreSQL shell: `just shell-db`
 - API testing: Use /api/docs Swagger UI
 
 ## Future Enhancements

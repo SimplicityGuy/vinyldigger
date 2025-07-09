@@ -66,7 +66,7 @@ A powerful web application that automates vinyl record discovery and comparison 
 
 - Docker and Docker Compose
 - Git
-- Make (optional, for convenience commands)
+- Just (optional, for convenience commands) - Install from https://github.com/casey/just
 
 ## 🚀 Quick Start
 
@@ -84,8 +84,8 @@ A powerful web application that automates vinyl record discovery and comparison 
 
 3. **Start the application**
    ```bash
-   make up
-   # Or without make: docker-compose up -d
+   just up
+   # Or without just: docker-compose up -d
    ```
 
 4. **Access the application**
@@ -97,7 +97,7 @@ A powerful web application that automates vinyl record discovery and comparison 
 
 ### Install Pre-commit Hooks
 ```bash
-make install-pre-commit
+just install-pre-commit
 # Or: pre-commit install
 ```
 
@@ -118,7 +118,7 @@ npm run dev
 ### Run Tests
 ```bash
 # All tests
-make test
+just test
 
 # Backend tests
 cd backend && uv run pytest
@@ -145,19 +145,19 @@ Once the application is running, visit http://localhost:8000/api/docs for intera
 
 ```bash
 # Build images
-make build
+just build
 
 # Start services
-make up
+just up
 
 # View logs
-make logs
+just logs
 
 # Stop services
-make down
+just down
 
 # Clean up
-make clean
+just clean
 ```
 
 ## 🔐 Configuration

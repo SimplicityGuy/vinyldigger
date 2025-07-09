@@ -3,9 +3,9 @@
 ## Development Setup
 
 1. Clone the repository
-2. Install pre-commit hooks: `make install-pre-commit`
+2. Install pre-commit hooks: `just install-pre-commit`
 3. Copy `.env.example` to `.env`
-4. Start services: `make up`
+4. Start services: `just up`
 
 ## Code Style
 
@@ -15,7 +15,7 @@
 
 ## Testing
 
-- Run all tests: `make test`
+- Run all tests: `just test`
 - Backend tests: `cd backend && uv run pytest`
 - Frontend tests: `cd frontend && npm test`
 
