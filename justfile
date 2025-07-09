@@ -57,10 +57,42 @@ test-ci:
 test-down:
     docker-compose -f docker-compose.test.yml down -v
 
-# Clean up containers, volumes, and images
-clean:
+# Clean up all temporary build artifacts and caches
+clean: clean-docker clean-python clean-frontend clean-misc
+
+# Clean up Docker containers, volumes, and images
+clean-docker:
     docker-compose down -v
     docker system prune -f
+
+# Clean up Python build artifacts and caches
+clean-python:
+    find backend -type d -name "__pycache__" -exec rm -rf {} + 2>/dev/null || true
+    find backend -type d -name ".mypy_cache" -exec rm -rf {} + 2>/dev/null || true
+    find backend -type d -name ".pytest_cache" -exec rm -rf {} + 2>/dev/null || true
+    find backend -type d -name ".ruff_cache" -exec rm -rf {} + 2>/dev/null || true
+    find backend -type d -name "*.egg-info" -exec rm -rf {} + 2>/dev/null || true
+    find backend -type f -name "*.pyc" -delete 2>/dev/null || true
+    find backend -type f -name "*.pyo" -delete 2>/dev/null || true
+    find backend -type f -name ".coverage" -delete 2>/dev/null || true
+    find backend -type f -name "coverage.xml" -delete 2>/dev/null || true
+
+# Clean up frontend build artifacts and caches
+clean-frontend:
+    rm -rf frontend/node_modules
+    rm -rf frontend/dist
+    rm -rf frontend/.vite
+    rm -rf frontend/build
+    rm -rf frontend/.next
+    rm -rf frontend/playwright-report
+    rm -rf frontend/test-results
+    rm -rf frontend/coverage
+
+# Clean up miscellaneous files
+clean-misc:
+    find . -type f -name ".DS_Store" -delete 2>/dev/null || true
+    find . -type f -name "*.log" -delete 2>/dev/null || true
+    find . -type d -name ".tmp" -exec rm -rf {} + 2>/dev/null || true
 
 # Run database migrations
 migrate:
