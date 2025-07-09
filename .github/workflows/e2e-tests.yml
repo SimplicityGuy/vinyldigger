@@ -16,7 +16,7 @@ jobs:
   test:
     name: E2E Tests - ${{ matrix.project }}
     runs-on: ${{ matrix.os }}
-    timeout-minutes: 30
+    timeout-minutes: 30  # E2E matrix tests typically take 18-22 min, 1.5x safety factor
 
     strategy:
       fail-fast: false
@@ -127,6 +127,7 @@ jobs:
   test-summary:
     name: E2E Tests Summary
     runs-on: ubuntu-latest
+    timeout-minutes: 2  # Summary check typically takes < 30 sec, 1.5x safety factor
     needs: test
     if: always()
 

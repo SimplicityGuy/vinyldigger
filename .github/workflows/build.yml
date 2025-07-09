@@ -13,6 +13,7 @@ env:
 jobs:
   build-and-push:
     runs-on: ubuntu-latest
+    timeout-minutes: 25  # Docker builds typically take 10-15 min, 1.5x safety factor
     permissions:
       contents: read
       packages: write
