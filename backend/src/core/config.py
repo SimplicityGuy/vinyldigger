@@ -33,7 +33,9 @@ class Settings(BaseSettings):
     def parse_cors_origins(cls, v: Any) -> list[str]:
         if isinstance(v, str):
             return [origin.strip() for origin in v.split(",")]
-        return v
+        if isinstance(v, list):
+            return v
+        return []
 
     # External APIs
     discogs_api_url: str = "https://api.discogs.com"
@@ -52,4 +54,4 @@ class Settings(BaseSettings):
     debug: bool = False
 
 
-settings = Settings()
+settings = Settings()  # type: ignore[call-arg]
