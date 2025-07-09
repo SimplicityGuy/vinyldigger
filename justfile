@@ -113,11 +113,11 @@ install-pre-commit:
 
 # Run pre-commit on all files
 lint:
-    uv run pre-commit run --all-files
+    pre-commit run --all-files
 
 # Update and freeze pre-commit hooks
 update-pre-commit:
-    uv run pre-commit autoupdate --freeze
+    pre-commit autoupdate --freeze
 
 # Run backend tests locally
 test-backend:

@@ -59,8 +59,8 @@ jobs:
       - name: Install just and docker-compose via arkade
         uses: alexellis/arkade-get@1eef818e467c387d3f50cfe0d2c565d1cbe82b03 # master
         with:
-          just: latest
           docker-compose: latest
+          just: latest
 
       - name: Install dependencies
         run: just install
