@@ -1,4 +1,15 @@
 import { z } from 'zod'
+import { tokenService } from './token-service'
+import type {
+  User,
+  ApiKey,
+  SavedSearch,
+  SearchResult,
+  UserPreferences,
+  CollectionStatus,
+  CreateSearchData,
+  UpdatePreferencesData
+} from '@/types/api'
 
 const API_BASE_URL = '/api/v1'
 
@@ -13,7 +24,7 @@ async function fetchApi(
   endpoint: string,
   options: RequestInit = {}
 ): Promise<Response> {
-  const token = localStorage.getItem('access_token')
+  const token = tokenService.getAccessToken()
 
   const headers: Record<string, string> = {
     'Content-Type': 'application/json',
@@ -27,14 +38,69 @@ async function fetchApi(
   const response = await fetch(`${API_BASE_URL}${endpoint}`, {
     ...options,
     headers,
+    credentials: 'same-origin', // Include cookies for CSRF protection
   })
 
+  // Handle token refresh on 401
+  if (response.status === 401 && tokenService.getRefreshToken()) {
+    const refreshed = await refreshAccessToken()
+    if (refreshed) {
+      // Retry original request with new token
+      const newToken = tokenService.getAccessToken()
+      if (newToken) {
+        headers['Authorization'] = `Bearer ${newToken}`
+        return fetch(`${API_BASE_URL}${endpoint}`, {
+          ...options,
+          headers,
+          credentials: 'same-origin',
+        })
+      }
+    }
+  }
+
   if (!response.ok) {
-    const errorData = await response.json().catch(() => ({ detail: 'Unknown error' }))
-    throw new ApiError(response.status, errorData.detail || 'Request failed')
+    let errorMessage = 'Request failed'
+    try {
+      const errorData = await response.json()
+      errorMessage = errorData.detail || errorData.message || errorMessage
+    } catch {
+      // Response might not be JSON
+      errorMessage = `HTTP ${response.status}: ${response.statusText}`
+    }
+    throw new ApiError(response.status, errorMessage)
   }
 
   return response
+}
+
+async function refreshAccessToken(): Promise<boolean> {
+  try {
+    const refreshToken = tokenService.getRefreshToken()
+    if (!refreshToken) return false
+
+    const response = await fetch(`${API_BASE_URL}/auth/refresh`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ refresh_token: refreshToken }),
+      credentials: 'same-origin',
+    })
+
+    if (response.ok) {
+      const data = await response.json()
+      const tokens = tokenSchema.parse(data)
+      tokenService.updateAccessToken(tokens.access_token)
+      return true
+    }
+
+    // Refresh failed, clear tokens
+    tokenService.clearTokens()
+    return false
+  } catch {
+    tokenService.clearTokens()
+    return false
+  }
 }
 
 // Auth schemas
@@ -69,8 +135,7 @@ export const authApi = {
     const result = await response.json()
     const tokens = tokenSchema.parse(result)
 
-    localStorage.setItem('access_token', tokens.access_token)
-    localStorage.setItem('refresh_token', tokens.refresh_token)
+    tokenService.setTokens(tokens.access_token, tokens.refresh_token)
 
     return tokens
   },
@@ -84,14 +149,17 @@ export const authApi = {
     return response.json()
   },
 
-  async getMe() {
+  async getMe(): Promise<User> {
     const response = await fetchApi('/auth/me')
     return response.json()
   },
 
   logout() {
-    localStorage.removeItem('access_token')
-    localStorage.removeItem('refresh_token')
+    tokenService.clearTokens()
+  },
+
+  hasValidTokens() {
+    return tokenService.hasValidTokens()
   },
 }
 
@@ -104,17 +172,17 @@ export const configApi = {
     return response.json()
   },
 
-  async getApiKeys() {
+  async getApiKeys(): Promise<ApiKey[]> {
     const response = await fetchApi('/config/api-keys')
     return response.json()
   },
 
-  async getPreferences() {
+  async getPreferences(): Promise<UserPreferences> {
     const response = await fetchApi('/config/preferences')
     return response.json()
   },
 
-  async updatePreferences(data: Record<string, unknown>) {
+  async updatePreferences(data: UpdatePreferencesData): Promise<UserPreferences> {
     const response = await fetchApi('/config/preferences', {
       method: 'PUT',
       body: JSON.stringify(data),
@@ -124,7 +192,7 @@ export const configApi = {
 }
 
 export const searchApi = {
-  async createSearch(data: Record<string, unknown>) {
+  async createSearch(data: CreateSearchData): Promise<SavedSearch> {
     const response = await fetchApi('/searches', {
       method: 'POST',
       body: JSON.stringify(data),
@@ -132,24 +200,24 @@ export const searchApi = {
     return response.json()
   },
 
-  async getSearches() {
+  async getSearches(): Promise<SavedSearch[]> {
     const response = await fetchApi('/searches')
     return response.json()
   },
 
-  async runSearch(searchId: string) {
+  async runSearch(searchId: string): Promise<{ message: string }> {
     const response = await fetchApi(`/searches/${searchId}/run`, {
       method: 'POST',
     })
     return response.json()
   },
 
-  async getSearchResults(searchId: string) {
+  async getSearchResults(searchId: string): Promise<SearchResult[]> {
     const response = await fetchApi(`/searches/${searchId}/results`)
     return response.json()
   },
 
-  async deleteSearch(searchId: string) {
+  async deleteSearch(searchId: string): Promise<{ message: string }> {
     const response = await fetchApi(`/searches/${searchId}`, {
       method: 'DELETE',
     })
@@ -158,19 +226,19 @@ export const searchApi = {
 }
 
 export const collectionApi = {
-  async syncCollection() {
+  async syncCollection(): Promise<{ message: string }> {
     const response = await fetchApi('/collections/sync', {
       method: 'POST',
     })
     return response.json()
   },
 
-  async getCollectionStatus() {
+  async getCollectionStatus(): Promise<CollectionStatus> {
     const response = await fetchApi('/collections/status')
     return response.json()
   },
 
-  async getWantListStatus() {
+  async getWantListStatus(): Promise<CollectionStatus> {
     const response = await fetchApi('/collections/wantlist/status')
     return response.json()
   },

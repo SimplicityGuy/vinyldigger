@@ -1,3 +1,5 @@
+// API type definitions
+
 export interface User {
   id: string
   email: string
@@ -7,63 +9,84 @@ export interface User {
 }
 
 export interface ApiKey {
-  id: string
   service: 'discogs' | 'ebay'
-  username: string
+  has_key: boolean
+  created_at?: string
+  updated_at?: string
+}
+
+export interface SearchFilters {
+  format?: string
+  genre?: string
+  style?: string
+  year_from?: number
+  year_to?: number
+  min_price?: number
+  max_price?: number
+  condition?: string[]
+  category_id?: string
+  item_location?: string
+  sort?: 'price_asc' | 'price_desc' | 'date_desc' | 'distance'
+  limit?: number
+  offset?: number
+}
+
+export interface SavedSearch {
+  id: string
+  name: string
+  query: string
+  platform: 'ebay' | 'discogs' | 'both'
+  filters: SearchFilters
+  is_active: boolean
+  check_interval_hours: number
+  last_checked_at?: string
+  created_at: string
+  updated_at: string
+}
+
+export interface SearchResult {
+  id: string
+  search_id: string
+  platform: 'ebay' | 'discogs'
+  item_id: string
+  item_data: Record<string, unknown>
+  is_in_collection: boolean
+  is_in_wantlist: boolean
   created_at: string
 }
 
 export interface UserPreferences {
   email_notifications: boolean
-  search_frequency: string
-  max_price: number
-  min_condition: string
+  notification_frequency: 'immediate' | 'daily' | 'weekly'
+  currency: string
+  default_search_platform: 'ebay' | 'discogs' | 'both'
+  min_record_condition?: string
+  min_sleeve_condition?: string
+  seller_location_preference?: string
+  check_interval_hours?: number
 }
 
-export interface Search {
+export interface CollectionStatus {
   id: string
+  item_count: number
+  last_sync_at?: string
+}
+
+export interface CreateSearchData {
   name: string
   query: string
-  platform: string
-  platforms: string[]
-  max_price?: number
-  min_condition?: string
-  is_active: boolean
-  created_at: string
-  updated_at: string
-  last_run?: string
-  last_checked_at?: string
-  check_interval_hours: number
-  result_count?: number
+  platform: 'ebay' | 'discogs' | 'both'
+  filters?: SearchFilters
+  is_active?: boolean
+  check_interval_hours?: number
 }
 
-export interface LoginResponse {
-  access_token: string
-  refresh_token: string
-  token_type: string
+export interface UpdatePreferencesData {
+  email_notifications?: boolean
+  notification_frequency?: 'immediate' | 'daily' | 'weekly'
+  currency?: string
+  default_search_platform?: 'ebay' | 'discogs' | 'both'
 }
 
-export interface RegisterData {
-  email: string
-  password: string
-  discogs_username?: string
-}
-
-export interface LoginData {
-  email: string
-  password: string
-}
-
-export interface ApiKeyData {
-  service: 'discogs' | 'ebay'
-  key: string
-  secret?: string
-}
-
-export interface SearchData {
-  name: string
-  query: string
-  platforms: string[]
-  max_price?: number
-  min_condition?: string
-}
+// Export alias for backward compatibility
+export type Search = SavedSearch

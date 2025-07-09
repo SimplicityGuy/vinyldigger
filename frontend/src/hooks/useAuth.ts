@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useNavigate } from 'react-router-dom'
-import { authApi } from '@/lib/api'
+import { authApi, ApiError } from '@/lib/api'
 import { useToast } from './useToast'
 
 export function useAuth() {
@@ -11,8 +11,15 @@ export function useAuth() {
   const { data: user, isLoading } = useQuery({
     queryKey: ['user'],
     queryFn: authApi.getMe,
-    retry: false,
-    enabled: !!localStorage.getItem('access_token'),
+    retry: (failureCount, error) => {
+      // Don't retry on 401/403
+      if (error instanceof ApiError && [401, 403].includes(error.status)) {
+        return false
+      }
+      return failureCount < 2
+    },
+    enabled: authApi.hasValidTokens(),
+    staleTime: 5 * 60 * 1000, // Consider data fresh for 5 minutes
   })
 
   const loginMutation = useMutation({
@@ -25,10 +32,16 @@ export function useAuth() {
         description: 'You have successfully logged in.',
       })
     },
-    onError: (error: Error) => {
+    onError: (error: unknown) => {
+      const message = error instanceof ApiError
+        ? error.message
+        : error instanceof Error
+          ? error.message
+          : 'Invalid credentials'
+
       toast({
         title: 'Login failed',
-        description: error.message || 'Invalid credentials',
+        description: message,
         variant: 'destructive',
       })
     },
@@ -43,10 +56,16 @@ export function useAuth() {
         description: 'Please log in with your new account.',
       })
     },
-    onError: (error: Error) => {
+    onError: (error: unknown) => {
+      const message = error instanceof ApiError
+        ? error.message
+        : error instanceof Error
+          ? error.message
+          : 'Something went wrong'
+
       toast({
         title: 'Registration failed',
-        description: error.message || 'Something went wrong',
+        description: message,
         variant: 'destructive',
       })
     },

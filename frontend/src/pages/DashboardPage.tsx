@@ -1,12 +1,14 @@
-import { useQuery } from '@tanstack/react-query'
+import { memo } from 'react'
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { AlertCircle, Package, Heart, RefreshCw } from 'lucide-react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { collectionApi } from '@/lib/api'
 import { useToast } from '@/hooks/useToast'
 
-export function DashboardPage() {
+export const DashboardPage = memo(function DashboardPage() {
   const { toast } = useToast()
+  const queryClient = useQueryClient()
 
   const { data: collectionStatus } = useQuery({
     queryKey: ['collection-status'],
@@ -18,21 +20,27 @@ export function DashboardPage() {
     queryFn: collectionApi.getWantListStatus,
   })
 
-  const handleSync = async () => {
-    try {
-      await collectionApi.syncCollection()
+  const syncMutation = useMutation({
+    mutationFn: collectionApi.syncCollection,
+    onSuccess: () => {
       toast({
         title: 'Sync started',
         description: 'Your collection is being synced with Discogs.',
       })
-    } catch {
+      // Invalidate queries after a delay to allow sync to progress
+      setTimeout(() => {
+        queryClient.invalidateQueries({ queryKey: ['collection-status'] })
+        queryClient.invalidateQueries({ queryKey: ['wantlist-status'] })
+      }, 5000)
+    },
+    onError: () => {
       toast({
         title: 'Sync failed',
         description: 'Failed to start collection sync.',
         variant: 'destructive',
       })
-    }
-  }
+    },
+  })
 
   return (
     <div className="space-y-6">
@@ -102,9 +110,13 @@ export function DashboardPage() {
           </CardDescription>
         </CardHeader>
         <CardContent className="flex gap-4">
-          <Button onClick={handleSync} className="gap-2">
-            <RefreshCw className="h-4 w-4" />
-            Sync Collection
+          <Button
+            onClick={() => syncMutation.mutate()}
+            disabled={syncMutation.isPending}
+            className="gap-2"
+          >
+            <RefreshCw className={`h-4 w-4 ${syncMutation.isPending ? 'animate-spin' : ''}`} />
+            {syncMutation.isPending ? 'Syncing...' : 'Sync Collection'}
           </Button>
         </CardContent>
       </Card>
@@ -131,4 +143,4 @@ export function DashboardPage() {
       )}
     </div>
   )
-}
+})
