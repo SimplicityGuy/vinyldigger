@@ -3,6 +3,15 @@ FROM node:22-alpine AS base
 # Development stage for running dev server
 FROM base AS development
 WORKDIR /app
+# Copy package files
+COPY package.json package-lock.json* ./
+# Install dependencies
+RUN npm ci
+# Copy application files
+COPY . .
+# Expose port
+EXPOSE 3000
+# The dev command is provided by docker-compose
 
 # Install dependencies only when needed
 FROM base AS deps

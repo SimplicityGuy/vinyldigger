@@ -20,6 +20,7 @@ dependencies = [
     "apscheduler>=3.10.4",
     "cryptography>=43.0.3",
     "email-validator>=2.2.0",
+    "greenlet>=3.2.3",
 ]
 
 [project.optional-dependencies]
