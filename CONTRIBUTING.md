@@ -57,7 +57,7 @@ Thank you for your interest in contributing to VinylDigger! This document provid
 - Follow PEP 8, enforced by Ruff
 - Use type hints for all functions
 - Write docstrings for public functions and classes
-- Maximum line length: 88 characters
+- Maximum line length: 120 characters
 
 #### TypeScript (Frontend)
 - Follow the ESLint v9 configuration

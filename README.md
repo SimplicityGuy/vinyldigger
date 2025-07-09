@@ -162,16 +162,28 @@ just test-frontend
 cd frontend && npm run test:e2e
 ```
 
-## 📚 API Documentation
+See the [Testing Guide](docs/testing.md) for detailed testing instructions.
 
-Once the application is running, visit http://localhost:8000/api/docs for interactive API documentation.
+## 📚 Documentation
 
-### Key Endpoints
+### Quick Links
+- [API Documentation](docs/api.md) - Complete REST API reference
+- [Architecture Overview](docs/architecture.md) - System design and technical details
+- [Testing Guide](docs/testing.md) - Running and writing tests
+- [Deployment Guide](docs/deployment.md) - Production deployment instructions
+- [Contributing Guidelines](CONTRIBUTING.md) - How to contribute to the project
+
+### Interactive API Documentation
+Once the application is running, visit http://localhost:8000/api/docs for interactive Swagger UI.
+
+### Key API Endpoints
 - `POST /api/v1/auth/register` - User registration
 - `POST /api/v1/auth/login` - User login
 - `GET /api/v1/searches` - List saved searches
 - `POST /api/v1/searches` - Create new search
 - `POST /api/v1/collections/sync` - Sync Discogs collection
+
+See the [complete API documentation](docs/api.md) for all endpoints and examples.
 
 ## 🐳 Docker Commands
 
@@ -235,8 +247,11 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 ## 📞 Support
 
 - Create an issue for bug reports or feature requests
-- Check the [API documentation](http://localhost:8000/api/docs)
+- Check the [API documentation](docs/api.md) or interactive docs at http://localhost:8000/api/docs
 - Review [CONTRIBUTING.md](CONTRIBUTING.md) for development guidelines
+- See [Architecture documentation](docs/architecture.md) for system design details
+- Consult the [Testing guide](docs/testing.md) for test instructions
+- Follow the [Deployment guide](docs/deployment.md) for production setup
 
 ---
 
