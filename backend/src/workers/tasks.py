@@ -47,9 +47,9 @@ class RunSearchTask(AsyncTask):
 class SyncCollectionTask(AsyncTask):
     async def async_run(self, user_id: str):
         logger.info(f"Syncing collection for user {user_id}")
-        async with AsyncSessionLocal() as db:
+        async with AsyncSessionLocal():
             try:
-                # TODO: Implement actual Discogs sync logic
+                # TODO: Implement actual Discogs sync logic with db session
                 logger.info(f"Collection sync for user {user_id} completed")
             except Exception as e:
                 logger.error(f"Error syncing collection for user {user_id}: {str(e)}")

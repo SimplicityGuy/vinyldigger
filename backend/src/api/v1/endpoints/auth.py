@@ -1,9 +1,10 @@
 from datetime import timedelta
 from typing import Annotated
+from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
-from pydantic import BaseModel, EmailStr
+from pydantic import BaseModel, EmailStr, field_validator
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -33,6 +34,13 @@ class UserResponse(BaseModel):
     email: str
     discogs_username: str | None
 
+    @field_validator("id", mode="before")
+    @classmethod
+    def convert_uuid_to_str(cls, v):
+        if isinstance(v, UUID):
+            return str(v)
+        return v
+
     class Config:
         from_attributes = True
 
@@ -55,13 +63,18 @@ async def get_current_user(
                 status_code=status.HTTP_401_UNAUTHORIZED,
                 detail="Invalid authentication credentials",
             )
-    except ValueError:
+    except ValueError as e:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid authentication credentials",
-        )
+        ) from e
 
-    result = await db.execute(select(User).where(User.id == user_id))
+    # Convert string user_id to UUID for database query
+    from uuid import UUID as UUID_type
+
+    user_uuid = UUID_type(user_id)
+
+    result = await db.execute(select(User).where(User.id == user_uuid))
     user = result.scalar_one_or_none()
     if user is None:
         raise HTTPException(
@@ -136,14 +149,19 @@ async def refresh_token(
         user_id = payload.get("sub")
         if user_id is None:
             raise ValueError("Invalid token")
-    except ValueError:
+    except ValueError as e:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid refresh token",
-        )
+        ) from e
 
     # Verify user exists
-    result = await db.execute(select(User).where(User.id == user_id))
+    # Convert string user_id to UUID for database query
+    from uuid import UUID as UUID_type
+
+    user_uuid = UUID_type(user_id)
+
+    result = await db.execute(select(User).where(User.id == user_uuid))
     user = result.scalar_one_or_none()
     if not user:
         raise HTTPException(

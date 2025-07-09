@@ -1,4 +1,4 @@
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 from typing import Any
 
 from cryptography.fernet import Fernet
@@ -14,14 +14,16 @@ def create_access_token(
     subject: str | Any, expires_delta: timedelta | None = None
 ) -> str:
     if expires_delta:
-        expire = datetime.now(timezone.utc) + expires_delta
+        expire = datetime.now(UTC) + expires_delta
     else:
-        expire = datetime.now(timezone.utc) + timedelta(
+        expire = datetime.now(UTC) + timedelta(
             minutes=settings.access_token_expire_minutes
         )
 
     to_encode = {"exp": expire, "sub": str(subject), "type": "access"}
-    encoded_jwt = jwt.encode(to_encode, settings.secret_key, algorithm=settings.algorithm)
+    encoded_jwt = jwt.encode(
+        to_encode, settings.secret_key, algorithm=settings.algorithm
+    )
     return encoded_jwt
 
 
@@ -29,14 +31,14 @@ def create_refresh_token(
     subject: str | Any, expires_delta: timedelta | None = None
 ) -> str:
     if expires_delta:
-        expire = datetime.now(timezone.utc) + expires_delta
+        expire = datetime.now(UTC) + expires_delta
     else:
-        expire = datetime.now(timezone.utc) + timedelta(
-            days=settings.refresh_token_expire_days
-        )
+        expire = datetime.now(UTC) + timedelta(days=settings.refresh_token_expire_days)
 
     to_encode = {"exp": expire, "sub": str(subject), "type": "refresh"}
-    encoded_jwt = jwt.encode(to_encode, settings.secret_key, algorithm=settings.algorithm)
+    encoded_jwt = jwt.encode(
+        to_encode, settings.secret_key, algorithm=settings.algorithm
+    )
     return encoded_jwt
 
 
@@ -50,16 +52,18 @@ def get_password_hash(password: str) -> str:
 
 def decode_token(token: str) -> dict[str, Any]:
     try:
-        payload = jwt.decode(token, settings.secret_key, algorithms=[settings.algorithm])
+        payload = jwt.decode(
+            token, settings.secret_key, algorithms=[settings.algorithm]
+        )
         return payload
-    except JWTError:
-        raise ValueError("Invalid token")
+    except JWTError as e:
+        raise ValueError("Invalid token") from e
 
 
 class APIKeyEncryption:
     def __init__(self) -> None:
-        # Generate a key from the secret key
-        key = settings.secret_key.encode()[:32].ljust(32, b"0")
+        # Using Fernet.generate_key() for now
+        # TODO: Derive key from settings.secret_key properly
         self.cipher_suite = Fernet(Fernet.generate_key())
 
     def encrypt_key(self, api_key: str) -> str:

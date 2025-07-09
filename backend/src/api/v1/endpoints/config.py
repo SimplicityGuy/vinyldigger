@@ -90,9 +90,7 @@ async def get_api_keys(
     current_user: Annotated[User, Depends(get_current_user)],
     db: AsyncSession = Depends(get_db),
 ) -> list[APIKey]:
-    result = await db.execute(
-        select(APIKey).where(APIKey.user_id == current_user.id)
-    )
+    result = await db.execute(select(APIKey).where(APIKey.user_id == current_user.id))
     return list(result.scalars().all())
 
 

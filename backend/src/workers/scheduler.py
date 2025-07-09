@@ -20,9 +20,9 @@ async def check_scheduled_searches():
             now = datetime.utcnow()
             result = await db.execute(
                 select(SavedSearch).where(
-                    SavedSearch.is_active == True,
-                    (SavedSearch.last_checked_at == None) |
-                    (SavedSearch.last_checked_at < now - timedelta(hours=1))
+                    SavedSearch.is_active,
+                    (SavedSearch.last_checked_at.is_(None))
+                    | (SavedSearch.last_checked_at < now - timedelta(hours=1)),
                 )
             )
             searches = result.scalars().all()
@@ -48,7 +48,7 @@ async def check_scheduled_searches():
 
 def main():
     scheduler = AsyncIOScheduler()
-    
+
     # Run every hour
     scheduler.add_job(
         check_scheduled_searches,
@@ -57,10 +57,10 @@ def main():
         id="check_searches",
         replace_existing=True,
     )
-    
+
     scheduler.start()
     logger.info("Scheduler started")
-    
+
     try:
         asyncio.get_event_loop().run_forever()
     except (KeyboardInterrupt, SystemExit):

@@ -7,4 +7,6 @@ api_router = APIRouter()
 api_router.include_router(auth.router, prefix="/auth", tags=["authentication"])
 api_router.include_router(config.router, prefix="/config", tags=["configuration"])
 api_router.include_router(searches.router, prefix="/searches", tags=["searches"])
-api_router.include_router(collections.router, prefix="/collections", tags=["collections"])
+api_router.include_router(
+    collections.router, prefix="/collections", tags=["collections"]
+)

@@ -13,7 +13,9 @@ from src.models.search import SearchPlatform
 class PriceHistory(Base):
     __tablename__ = "price_history"
 
-    id: Mapped[UUID] = mapped_column(PGUUID(as_uuid=True), primary_key=True, default=uuid4)
+    id: Mapped[UUID] = mapped_column(
+        PGUUID(as_uuid=True), primary_key=True, default=uuid4
+    )
     platform: Mapped[SearchPlatform] = mapped_column(String(50), nullable=False)
     item_id: Mapped[str] = mapped_column(String(255), nullable=False, index=True)
     price: Mapped[Decimal] = mapped_column(Numeric(10, 2), nullable=False)

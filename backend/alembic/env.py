@@ -1,11 +1,11 @@
 import asyncio
 from logging.config import fileConfig
 
-from alembic import context
 from sqlalchemy import pool
 from sqlalchemy.engine import Connection
 from sqlalchemy.ext.asyncio import async_engine_from_config
 
+from alembic import context  # type: ignore[attr-defined]
 from src.core.config import settings
 from src.core.database import Base
 from src.models import *  # noqa: F403, F401
@@ -40,7 +40,9 @@ def do_run_migrations(connection: Connection) -> None:
 
 async def run_async_migrations() -> None:
     configuration = config.get_section(config.config_ini_section)
-    configuration["sqlalchemy.url"] = str(settings.database_url)  # type: ignore
+    if configuration is None:
+        configuration = {}
+    configuration["sqlalchemy.url"] = str(settings.database_url)
     connectable = async_engine_from_config(
         configuration,
         prefix="sqlalchemy.",
