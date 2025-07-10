@@ -29,7 +29,6 @@ from typing import Optional
 class UserCreate(BaseModel):
     email: EmailStr
     password: str
-    discogs_username: Optional[str] = None
 
     @validator('password')
     def validate_password(cls, v):
@@ -39,12 +38,6 @@ class UserCreate(BaseModel):
             raise ValueError('Password must contain uppercase letter')
         if not any(c.isdigit() for c in v):
             raise ValueError('Password must contain digit')
-        return v
-
-    @validator('discogs_username')
-    def validate_username(cls, v):
-        if v and not v.replace('_', '').replace('-', '').isalnum():
-            raise ValueError('Username can only contain letters, numbers, - and _')
         return v
 ```
 
@@ -195,7 +188,9 @@ async def delete_user(user_id: str, current_user: User = Depends(get_current_use
 
 ## Data Protection
 
-### API Key Encryption
+### OAuth Credentials Security
+
+VinylDigger uses OAuth for external service authentication with secure credential storage:
 
 ```python
 from cryptography.fernet import Fernet
@@ -210,23 +205,40 @@ class EncryptionService:
     def decrypt(self, ciphertext: str) -> str:
         return self.cipher.decrypt(ciphertext.encode()).decode()
 
-# Generate encryption key
-def generate_encryption_key():
-    return Fernet.generate_key().decode()
+# Store OAuth application credentials (admin only)
+async def store_app_config(provider: str, consumer_key: str, consumer_secret: str):
+    encrypted_secret = encryption_service.encrypt(consumer_secret)
 
-# Store encrypted API keys
-async def store_api_key(user_id: str, service: str, api_key: str):
-    encrypted_key = encryption_service.encrypt(api_key)
-
-    db_api_key = APIKey(
-        user_id=user_id,
-        service=service,
-        encrypted_key=encrypted_key,
-        key_hash=hashlib.sha256(api_key.encode()).hexdigest()[:16]
+    app_config = AppConfig(
+        provider=provider,
+        consumer_key=encryption_service.encrypt(consumer_key),
+        consumer_secret=encrypted_secret
     )
-    db.add(db_api_key)
+    db.add(app_config)
+    await db.commit()
+
+# Store user OAuth tokens
+async def store_oauth_token(user_id: str, provider: str, token: str, token_secret: str):
+    encrypted_token = encryption_service.encrypt(token)
+    encrypted_secret = encryption_service.encrypt(token_secret)
+
+    oauth_token = OAuthToken(
+        user_id=user_id,
+        provider=provider,
+        access_token=encrypted_token,
+        access_token_secret=encrypted_secret
+    )
+    db.add(oauth_token)
     await db.commit()
 ```
+
+### OAuth Security Best Practices
+
+1. **Application Credentials**: Only admins can configure OAuth app credentials
+2. **Token Storage**: All OAuth tokens are encrypted at rest
+3. **Session Security**: OAuth flow state stored securely (use Redis in production)
+4. **HTTPS Required**: OAuth callbacks must use HTTPS in production
+5. **Token Scope**: Request minimal necessary permissions
 
 ### Sensitive Data Handling
 

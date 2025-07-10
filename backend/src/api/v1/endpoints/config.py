@@ -1,41 +1,14 @@
-from datetime import datetime
 from typing import Annotated
-from uuid import UUID
 
-from fastapi import APIRouter, Depends, HTTPException, status
-from pydantic import BaseModel, ConfigDict, field_serializer
-from sqlalchemy import select
+from fastapi import APIRouter, Depends
+from pydantic import BaseModel
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.api.v1.endpoints.auth import get_current_user
 from src.core.database import get_db
-from src.core.security import api_key_encryption
-from src.models.api_key import APIKey, APIService
 from src.models.user import User
 
 router = APIRouter()
-
-
-class APIKeyCreate(BaseModel):
-    service: APIService
-    key: str
-    secret: str | None = None
-
-
-class APIKeyResponse(BaseModel):
-    model_config = ConfigDict(from_attributes=True)
-
-    id: UUID
-    service: APIService
-    created_at: datetime
-
-    @field_serializer("id")
-    def serialize_id(self, value: UUID) -> str:
-        return str(value)
-
-    @field_serializer("created_at")
-    def serialize_created_at(self, value: datetime) -> str:
-        return value.isoformat()
 
 
 class PreferencesUpdate(BaseModel):
@@ -50,76 +23,6 @@ class PreferencesResponse(BaseModel):
     min_sleeve_condition: str
     seller_location_preference: str
     check_interval_hours: int
-
-
-@router.put("/api-keys", response_model=APIKeyResponse)
-async def update_api_key(
-    api_key_data: APIKeyCreate,
-    current_user: Annotated[User, Depends(get_current_user)],
-    db: AsyncSession = Depends(get_db),
-) -> APIKey:
-    # Check if API key already exists for this service
-    result = await db.execute(
-        select(APIKey).where(
-            APIKey.user_id == current_user.id,
-            APIKey.service == api_key_data.service,
-        )
-    )
-    existing_key = result.scalar_one_or_none()
-
-    if existing_key:
-        # Update existing key
-        existing_key.encrypted_key = api_key_encryption.encrypt_key(api_key_data.key)
-        if api_key_data.secret:
-            existing_key.encrypted_secret = api_key_encryption.encrypt_key(api_key_data.secret)
-        api_key = existing_key
-    else:
-        # Create new key
-        api_key = APIKey(
-            user_id=current_user.id,
-            service=api_key_data.service,
-            encrypted_key=api_key_encryption.encrypt_key(api_key_data.key),
-            encrypted_secret=(api_key_encryption.encrypt_key(api_key_data.secret) if api_key_data.secret else None),
-        )
-        db.add(api_key)
-
-    await db.commit()
-    await db.refresh(api_key)
-    return api_key
-
-
-@router.get("/api-keys", response_model=list[APIKeyResponse])
-async def get_api_keys(
-    current_user: Annotated[User, Depends(get_current_user)],
-    db: AsyncSession = Depends(get_db),
-) -> list[APIKey]:
-    result = await db.execute(select(APIKey).where(APIKey.user_id == current_user.id))
-    return list(result.scalars().all())
-
-
-@router.delete("/api-keys/{service}")
-async def delete_api_key(
-    service: APIService,
-    current_user: Annotated[User, Depends(get_current_user)],
-    db: AsyncSession = Depends(get_db),
-) -> dict[str, str]:
-    result = await db.execute(
-        select(APIKey).where(
-            APIKey.user_id == current_user.id,
-            APIKey.service == service,
-        )
-    )
-    api_key = result.scalar_one_or_none()
-
-    if not api_key:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="API key not found",
-        )
-
-    await db.delete(api_key)
-    await db.commit()
-    return {"message": "API key deleted successfully"}
 
 
 @router.get("/preferences", response_model=PreferencesResponse)

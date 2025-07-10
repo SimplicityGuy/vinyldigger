@@ -19,7 +19,6 @@ async function setupAuthentication(page: Page) {
       body: JSON.stringify({
         id: '123',
         email: 'test@example.com',
-        discogs_username: 'testuser',
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
       }),

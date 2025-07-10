@@ -104,18 +104,25 @@ just typecheck
 just update-pre-commit
 ```
 
-### Database Migrations
+### Database Development Workflow
+During development, we use a simplified approach:
+- **Single initial migration** contains all current models
+- **Drop and recreate** database when models change
+- **Alembic remains configured** for future production use
+
 ```bash
-# Create new migration
+# Development: Drop and recreate database
+just down
+docker volume rm vinyldigger_postgres_data
+just up
+
+# Production (future): Create migrations
 cd backend
 uv run alembic revision --autogenerate -m "Description"
-
-# Apply migrations
 uv run alembic upgrade head
-
-# Or use just command
-just migrate
 ```
+
+See `backend/docs/development_db_workflow.md` for detailed instructions.
 
 ### API Development
 - All endpoints require authentication except health/auth routes
@@ -178,11 +185,18 @@ just migrate
 4. Add monitoring/logging
 
 ### Modifying Database Schema
+**Development Workflow:**
+1. Update SQLAlchemy model
+2. Drop and recreate database: `just clean && just up`
+3. Test with fresh database
+4. Update related code
+
+**Production Workflow (Future):**
 1. Update SQLAlchemy model
 2. Create migration: `cd backend && uv run alembic revision --autogenerate -m "Description"`
 3. Review migration file
 4. Test migration up/down
-5. Update related code
+5. Deploy with migration
 
 ## Security Best Practices
 - Never commit secrets or API keys
@@ -204,7 +218,7 @@ just migrate
 
 ### Common Issues
 1. **Import Errors**: Check for circular imports, use TYPE_CHECKING
-2. **Migration Conflicts**: Reset migrations in development
+2. **Database Changes**: Drop and recreate with `just clean && just up`
 3. **Docker Issues**: Clean volumes with `just clean`
 4. **Type Errors**: Update type stubs, check mypy config
 

@@ -1,214 +1,266 @@
-import { useState, memo } from 'react'
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { Key, Save } from 'lucide-react'
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
+import { useState } from 'react'
+import { useQuery, useMutation } from '@tanstack/react-query'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { configApi } from '@/lib/api'
-import { useToast } from '@/hooks/useToast'
-import type { ApiKey } from '@/types/api'
+import { Button } from '@/components/ui/button'
+import { Label } from '@/components/ui/label'
+import { Input } from '@/components/ui/input'
+import { Select } from '@/components/ui/select'
+import { Key, Settings2, User, AlertCircle, CheckCircle, ExternalLink } from 'lucide-react'
+import api from '@/lib/api'
 
-function SettingsPageComponent() {
-  const { toast } = useToast()
-  const queryClient = useQueryClient()
-  const [apiKeys, setApiKeys] = useState({
-    discogs: { key: '', secret: '' },
-    ebay: { key: '', secret: '' },
+function SettingsPage() {
+  const [preferences, setPreferences] = useState({
+    min_record_condition: 'VG+',
+    min_sleeve_condition: 'VG+',
+    seller_location_preference: 'US',
+    check_interval_hours: 24,
+    email_notifications: true,
   })
 
-  const { data: existingKeys = [] } = useQuery({
-    queryKey: ['api-keys'],
-    queryFn: configApi.getApiKeys,
+  // Query OAuth status
+  const { data: discogsOAuthStatus, refetch: refetchDiscogsStatus } = useQuery({
+    queryKey: ['oauth-status', 'discogs'],
+    queryFn: () => api.getOAuthStatus('discogs'),
   })
 
-  const { data: preferences } = useQuery({
-    queryKey: ['preferences'],
-    queryFn: configApi.getPreferences,
-  })
+  // eBay OAuth will be added later
+  // const { data: ebayOAuthStatus, refetch: refetchEbayStatus } = useQuery({
+  //   queryKey: ['oauth-status', 'ebay'],
+  //   queryFn: () => api.getOAuthStatus('ebay'),
+  // })
 
-  const updateApiKeyMutation = useMutation({
-    mutationFn: ({ service, key, secret }: { service: string; key: string; secret?: string }) =>
-      configApi.updateApiKey(service, key, secret),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['api-keys'] })
-      toast({
-        title: 'API key saved',
-        description: 'Your API key has been securely stored.',
-      })
+  // OAuth authorization mutations
+  const authorizeDiscogsMutation = useMutation({
+    mutationFn: () => api.initiateOAuth('discogs'),
+    onSuccess: (data) => {
+      // Open authorization URL in new window
+      window.open(data.authorization_url, '_blank', 'width=600,height=800')
+      // Store state for later verification if needed
+      localStorage.setItem('discogs_oauth_state', data.state)
     },
   })
 
-  const handleSaveApiKey = (service: 'discogs' | 'ebay') => {
-    const { key, secret } = apiKeys[service]
-    if (!key) {
-      toast({
-        title: 'Error',
-        description: 'API key is required',
-        variant: 'destructive',
-      })
-      return
-    }
+  const revokeDiscogsMutation = useMutation({
+    mutationFn: () => api.revokeOAuth('discogs'),
+    onSuccess: () => {
+      refetchDiscogsStatus()
+    },
+  })
 
-    updateApiKeyMutation.mutate({ service, key, secret })
-    setApiKeys((prev) => ({
-      ...prev,
-      [service]: { key: '', secret: '' },
-    }))
+  const updatePreferencesMutation = useMutation({
+    mutationFn: (prefs: typeof preferences) => api.updatePreferences(prefs),
+  })
+
+  const handleAuthorizeDiscogs = () => {
+    authorizeDiscogsMutation.mutate()
   }
 
-  const hasApiKey = (service: string) => {
-    return existingKeys.some((key: ApiKey) => key.service === service)
+  const handleRevokeDiscogs = () => {
+    if (confirm('Are you sure you want to revoke Discogs access?')) {
+      revokeDiscogsMutation.mutate()
+    }
+  }
+
+  const handleSavePreferences = () => {
+    updatePreferencesMutation.mutate(preferences)
   }
 
   return (
     <div className="space-y-6">
-      <div>
-        <h2 className="text-3xl font-bold tracking-tight">Settings</h2>
-        <p className="text-muted-foreground">Configure your API keys and preferences</p>
+      <div className="flex items-center gap-2">
+        <Settings2 className="h-6 w-6" />
+        <h1 className="text-2xl font-bold">Settings</h1>
       </div>
 
-      {/* API Keys */}
+      {/* OAuth Authorizations */}
       <Card>
         <CardHeader>
-          <CardTitle>API Keys</CardTitle>
+          <CardTitle>Platform Authorizations</CardTitle>
           <CardDescription>
-            Add your API credentials to connect with external services
+            Authorize VinylDigger to access your accounts on different platforms
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
-          {/* Discogs API */}
-          <div className="space-y-4">
-            <div className="flex items-center gap-2">
-              <Key className="h-4 w-4" />
-              <h3 className="font-medium">Discogs API</h3>
-              {hasApiKey('discogs') && <span className="text-sm text-green-600">✓ Configured</span>}
-            </div>
-            <div className="grid gap-4 md:grid-cols-2">
-              <div className="space-y-2">
-                <Label htmlFor="discogs-key">Consumer Key</Label>
-                <Input
-                  id="discogs-key"
-                  type="password"
-                  value={apiKeys.discogs.key}
-                  onChange={(e) =>
-                    setApiKeys((prev) => ({
-                      ...prev,
-                      discogs: { ...prev.discogs, key: e.target.value },
-                    }))
-                  }
-                  placeholder={hasApiKey('discogs') ? '••••••••' : 'Enter key'}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="discogs-secret">Consumer Secret</Label>
-                <Input
-                  id="discogs-secret"
-                  type="password"
-                  value={apiKeys.discogs.secret}
-                  onChange={(e) =>
-                    setApiKeys((prev) => ({
-                      ...prev,
-                      discogs: { ...prev.discogs, secret: e.target.value },
-                    }))
-                  }
-                  placeholder={hasApiKey('discogs') ? '••••••••' : 'Enter secret'}
-                />
+          {/* Discogs OAuth */}
+          <div className="space-y-2">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Key className="h-4 w-4" />
+                <h3 className="font-medium">Discogs</h3>
+                {discogsOAuthStatus?.is_authorized && (
+                  <span className="flex items-center gap-1 text-sm text-green-600">
+                    <CheckCircle className="h-4 w-4" />
+                    Connected as {discogsOAuthStatus.username}
+                  </span>
+                )}
               </div>
             </div>
-            <Button
-              onClick={() => handleSaveApiKey('discogs')}
-              disabled={updateApiKeyMutation.isPending}
-              className="gap-2"
-            >
-              <Save className="h-4 w-4" />
-              Save Discogs Keys
-            </Button>
+
+            {discogsOAuthStatus?.is_authorized ? (
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleRevokeDiscogs}
+                  disabled={revokeDiscogsMutation.isPending}
+                >
+                  Revoke Access
+                </Button>
+              </div>
+            ) : (
+              <div className="space-y-2">
+                <p className="text-sm text-muted-foreground">
+                  Connect your Discogs account to search their marketplace and sync your collection.
+                </p>
+                <Button
+                  onClick={handleAuthorizeDiscogs}
+                  disabled={authorizeDiscogsMutation.isPending}
+                  className="gap-2"
+                >
+                  <ExternalLink className="h-4 w-4" />
+                  Connect Discogs Account
+                </Button>
+                {authorizeDiscogsMutation.isError && (
+                  <p className="text-sm text-red-600 flex items-center gap-1">
+                    <AlertCircle className="h-4 w-4" />
+                    Failed to start authorization. Please try again.
+                  </p>
+                )}
+              </div>
+            )}
           </div>
 
-          {/* eBay API */}
-          <div className="space-y-4">
-            <div className="flex items-center gap-2">
-              <Key className="h-4 w-4" />
-              <h3 className="font-medium">eBay API</h3>
-              {hasApiKey('ebay') && <span className="text-sm text-green-600">✓ Configured</span>}
-            </div>
-            <div className="grid gap-4 md:grid-cols-2">
-              <div className="space-y-2">
-                <Label htmlFor="ebay-key">Client ID</Label>
-                <Input
-                  id="ebay-key"
-                  type="password"
-                  value={apiKeys.ebay.key}
-                  onChange={(e) =>
-                    setApiKeys((prev) => ({
-                      ...prev,
-                      ebay: { ...prev.ebay, key: e.target.value },
-                    }))
-                  }
-                  placeholder={hasApiKey('ebay') ? '••••••••' : 'Enter client ID'}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="ebay-secret">Client Secret</Label>
-                <Input
-                  id="ebay-secret"
-                  type="password"
-                  value={apiKeys.ebay.secret}
-                  onChange={(e) =>
-                    setApiKeys((prev) => ({
-                      ...prev,
-                      ebay: { ...prev.ebay, secret: e.target.value },
-                    }))
-                  }
-                  placeholder={hasApiKey('ebay') ? '••••••••' : 'Enter secret'}
-                />
+          {/* eBay OAuth - Coming Soon */}
+          <div className="space-y-2 opacity-50">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Key className="h-4 w-4" />
+                <h3 className="font-medium">eBay</h3>
+                <span className="text-sm text-muted-foreground">(Coming Soon)</span>
               </div>
             </div>
-            <Button
-              onClick={() => handleSaveApiKey('ebay')}
-              disabled={updateApiKeyMutation.isPending}
-              className="gap-2"
-            >
-              <Save className="h-4 w-4" />
-              Save eBay Keys
-            </Button>
+            <p className="text-sm text-muted-foreground">
+              eBay integration will be available soon.
+            </p>
           </div>
         </CardContent>
       </Card>
 
-      {/* Preferences */}
+      {/* Search Preferences */}
       <Card>
         <CardHeader>
           <CardTitle>Search Preferences</CardTitle>
-          <CardDescription>Default settings for your searches</CardDescription>
+          <CardDescription>Configure your default search settings</CardDescription>
         </CardHeader>
-        <CardContent>
+        <CardContent className="space-y-4">
           <div className="grid gap-4 md:grid-cols-2">
             <div className="space-y-2">
-              <Label>Minimum Record Condition</Label>
-              <p className="text-sm text-muted-foreground">
-                {preferences?.min_record_condition || 'VG+'}
-              </p>
+              <Label htmlFor="min-record">Minimum Record Condition</Label>
+              <Select
+                id="min-record"
+                value={preferences.min_record_condition}
+                onChange={(e) =>
+                  setPreferences((prev) => ({ ...prev, min_record_condition: e.target.value }))
+                }
+              >
+                <option value="M">Mint (M)</option>
+                <option value="NM">Near Mint (NM)</option>
+                <option value="VG+">Very Good Plus (VG+)</option>
+                <option value="VG">Very Good (VG)</option>
+                <option value="G+">Good Plus (G+)</option>
+              </Select>
             </div>
             <div className="space-y-2">
-              <Label>Minimum Sleeve Condition</Label>
+              <Label htmlFor="min-sleeve">Minimum Sleeve Condition</Label>
+              <Select
+                id="min-sleeve"
+                value={preferences.min_sleeve_condition}
+                onChange={(e) =>
+                  setPreferences((prev) => ({ ...prev, min_sleeve_condition: e.target.value }))
+                }
+              >
+                <option value="M">Mint (M)</option>
+                <option value="NM">Near Mint (NM)</option>
+                <option value="VG+">Very Good Plus (VG+)</option>
+                <option value="VG">Very Good (VG)</option>
+                <option value="G+">Good Plus (G+)</option>
+              </Select>
+            </div>
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="location">Preferred Seller Location</Label>
+            <Select
+              id="location"
+              value={preferences.seller_location_preference}
+              onChange={(e) =>
+                setPreferences((prev) => ({ ...prev, seller_location_preference: e.target.value }))
+              }
+            >
+              <option value="US">United States</option>
+              <option value="EU">Europe</option>
+              <option value="UK">United Kingdom</option>
+              <option value="ANY">Any Location</option>
+            </Select>
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="check-interval">Check Interval (hours)</Label>
+            <Input
+              id="check-interval"
+              type="number"
+              min={1}
+              max={168}
+              value={preferences.check_interval_hours}
+              onChange={(e) =>
+                setPreferences((prev) => ({
+                  ...prev,
+                  check_interval_hours: parseInt(e.target.value) || 24,
+                }))
+              }
+            />
+          </div>
+          <Button onClick={handleSavePreferences} disabled={updatePreferencesMutation.isPending}>
+            Save Preferences
+          </Button>
+        </CardContent>
+      </Card>
+
+      {/* Notifications */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Notifications</CardTitle>
+          <CardDescription>Configure how you want to be notified</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="flex items-center justify-between">
+            <div className="space-y-1">
+              <Label htmlFor="notifications">Email Notifications</Label>
               <p className="text-sm text-muted-foreground">
-                {preferences?.min_sleeve_condition || 'VG+'}
+                Receive email alerts when new matches are found
               </p>
             </div>
-            <div className="space-y-2">
-              <Label>Seller Location</Label>
-              <p className="text-sm text-muted-foreground">
-                {preferences?.seller_location_preference || 'US'}
-              </p>
-            </div>
-            <div className="space-y-2">
-              <Label>Check Interval</Label>
-              <p className="text-sm text-muted-foreground">
-                Every {preferences?.check_interval_hours || 24} hours
-              </p>
-            </div>
+            <input
+              type="checkbox"
+              id="notifications"
+              checked={preferences.email_notifications}
+              onChange={(e) =>
+                setPreferences((prev) => ({ ...prev, email_notifications: e.target.checked }))
+              }
+              className="h-4 w-4 rounded border-gray-300"
+            />
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Account Info */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Account Information</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-2">
+          <div className="flex items-center gap-2 text-sm">
+            <User className="h-4 w-4" />
+            <span className="text-muted-foreground">Email:</span>
+            <span className="font-medium">{/* User email will go here */}</span>
           </div>
         </CardContent>
       </Card>
@@ -216,4 +268,4 @@ function SettingsPageComponent() {
   )
 }
 
-export const SettingsPage = memo(SettingsPageComponent)
+export default SettingsPage

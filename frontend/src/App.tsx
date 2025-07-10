@@ -5,7 +5,9 @@ import { LoginPage } from '@/pages/LoginPage'
 import { RegisterPage } from '@/pages/RegisterPage'
 import { DashboardPage } from '@/pages/DashboardPage'
 import { SearchesPage } from '@/pages/SearchesPage'
-import { SettingsPage } from '@/pages/SettingsPage'
+import SettingsPage from '@/pages/SettingsPage'
+import OAuthCallbackPage from '@/pages/OAuthCallbackPage'
+import AdminPage from '@/pages/AdminPage'
 import { Toaster } from '@/components/ui/toaster'
 import { ErrorBoundary } from '@/components/ErrorBoundary'
 import { Loader2 } from 'lucide-react'
@@ -37,12 +39,16 @@ function App() {
           element={isAuthenticated ? <Navigate to="/dashboard" /> : <RegisterPage />}
         />
 
+        {/* OAuth callback route (public) */}
+        <Route path="/oauth/callback" element={<OAuthCallbackPage />} />
+
         {/* Protected routes */}
         {isAuthenticated ? (
           <Route element={<Layout />}>
             <Route path="/dashboard" element={<DashboardPage />} />
             <Route path="/searches" element={<SearchesPage />} />
             <Route path="/settings" element={<SettingsPage />} />
+            <Route path="/admin" element={<AdminPage />} />
             <Route path="/" element={<Navigate to="/dashboard" />} />
           </Route>
         ) : (

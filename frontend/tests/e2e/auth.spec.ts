@@ -5,7 +5,6 @@ import { randomBytes } from 'crypto'
 const generateTestUser = () => ({
   email: `test-${randomBytes(8).toString('hex')}@example.com`,
   password: 'TestPassword123!',
-  discogsUsername: `testuser${randomBytes(4).toString('hex')}`,
 })
 
 // Helper to fill login form
@@ -18,14 +17,10 @@ async function fillLoginForm(page: Page, email: string, password: string) {
 async function fillRegistrationForm(
   page: Page,
   email: string,
-  password: string,
-  discogsUsername?: string
+  password: string
 ) {
   await page.getByLabel('Email').fill(email)
   await page.getByLabel('Password').fill(password)
-  if (discogsUsername) {
-    await page.getByLabel('Discogs Username (optional)').fill(discogsUsername)
-  }
 }
 
 test.describe('Authentication Flow', () => {
@@ -114,7 +109,6 @@ test.describe('Authentication Flow', () => {
       // Check form elements
       await expect(page.getByLabel('Email')).toBeVisible()
       await expect(page.getByLabel('Password')).toBeVisible()
-      await expect(page.getByLabel('Discogs Username (optional)')).toBeVisible()
       await expect(page.getByRole('button', { name: 'Create account' })).toBeVisible()
 
       // Check login link
@@ -137,7 +131,7 @@ test.describe('Authentication Flow', () => {
       await page.goto('/register')
 
       const testUser = generateTestUser()
-      await fillRegistrationForm(page, testUser.email, testUser.password, testUser.discogsUsername)
+      await fillRegistrationForm(page, testUser.email, testUser.password)
 
       // Mock successful registration
       await page.route('/api/v1/auth/register', async (route) => {
@@ -147,7 +141,6 @@ test.describe('Authentication Flow', () => {
           body: JSON.stringify({
             id: '123',
             email: testUser.email,
-            discogs_username: testUser.discogsUsername,
           }),
         })
       })

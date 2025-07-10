@@ -89,12 +89,7 @@ class RunSearchTask(AsyncTask):
 
         try:
             async with DiscogsService() as service:
-                credentials = await service.get_api_credentials(db, UUID(user_id))
-                if not credentials:
-                    logger.warning(f"No Discogs credentials for user {user_id}")
-                    return 0
-
-                items = await service.search(search.query, search.filters, credentials)
+                items = await service.search(search.query, search.filters, db, user_id)
 
                 for item in items:
                     # Check if we already have this result
@@ -203,13 +198,8 @@ class SyncCollectionTask(AsyncTask):
         async with AsyncSessionLocal() as db:
             try:
                 async with DiscogsService() as service:
-                    credentials = await service.get_api_credentials(db, UUID(user_id))
-                    if not credentials:
-                        logger.warning(f"No Discogs credentials for user {user_id}")
-                        return
-
                     # Sync collection
-                    collection_items = await service.sync_collection(credentials)
+                    collection_items = await service.sync_collection(db, user_id)
                     collection_added = 0
                     collection_updated = 0
 
@@ -253,7 +243,7 @@ class SyncCollectionTask(AsyncTask):
                             collection_added += 1
 
                     # Sync wantlist
-                    wantlist_items = await service.sync_wantlist(credentials)
+                    wantlist_items = await service.sync_wantlist(db, user_id)
                     wantlist_added = 0
                     wantlist_updated = 0
 

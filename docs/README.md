@@ -22,8 +22,8 @@ Welcome to the VinylDigger documentation! This index provides quick access to al
 
 ### Specialized Guides
 - **[E2E Testing Guide](../frontend/tests/e2e/README.md)** - End-to-end testing with Playwright
-- **[CI/CD Troubleshooting](ci-troubleshooting-fixes.md)** - GitHub Actions fixes and solutions
-- **[CI/CD Intermittent Failure Fixes](ci-fixes-summary.md)** - Comprehensive fixes for flaky CI issues
+- **[Database Development Workflow](../backend/docs/development_db_workflow.md)** - Database management during development
+- **[Discogs OAuth Authentication](../backend/docs/discogs_auth.md)** - Setting up and using Discogs OAuth
 - **[Docker OCI Labels](docker-oci-labels.md)** - Container labeling standards and best practices
 
 ## 🗺️ Quick Navigation
@@ -42,7 +42,7 @@ Welcome to the VinylDigger documentation! This index provides quick access to al
 ### For DevOps
 1. Follow the [Deployment Guide](deployment.md)
 2. Review [Docker OCI Labels](docker-oci-labels.md)
-3. Check [CI/CD Troubleshooting](ci-troubleshooting-fixes.md)
+3. Understand the [Database Development Workflow](../backend/docs/development_db_workflow.md)
 
 ## 📋 Documentation Standards
 
@@ -65,10 +65,11 @@ docs/
 ├── security.md           # Security best practices
 ├── monitoring.md         # Monitoring and observability guide
 ├── troubleshooting.md    # Common issues and solutions
-├── ci-troubleshooting-fixes.md  # CI/CD specific issues
-├── ci-fixes-summary.md   # Comprehensive CI fixes
-├── ci-just-fix.md       # Just command CI fixes
 └── docker-oci-labels.md  # Docker standards documentation
+
+backend/docs/
+├── development_db_workflow.md  # Database development workflow
+└── discogs_auth.md            # Discogs OAuth authentication guide
 ```
 
 ### Updating Documentation

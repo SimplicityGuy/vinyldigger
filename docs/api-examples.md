@@ -79,12 +79,11 @@ class VinylDiggerClient:
 
     # Authentication Methods
 
-    def register(self, email: str, password: str, discogs_username: Optional[str] = None) -> Dict[str, Any]:
+    def register(self, email: str, password: str) -> Dict[str, Any]:
         """Register new user"""
         data = {
             "email": email,
-            "password": password,
-            "discogs_username": discogs_username
+            "password": password
         }
         return self._request("POST", "/auth/register", json=data)
 
@@ -121,24 +120,20 @@ class VinylDiggerClient:
         """Get current user information"""
         return self._request("GET", "/auth/me")
 
-    # API Key Management
+    # OAuth Management
 
-    def set_api_key(self, service: str, key: str, secret: Optional[str] = None) -> Dict[str, Any]:
-        """Store API key for external service"""
-        data = {
-            "service": service,
-            "api_key": key,
-            "api_secret": secret
-        }
-        return self._request("PUT", f"/config/api-keys/{service}", json=data)
+    def get_oauth_status(self, provider: str) -> Dict[str, Any]:
+        """Check OAuth authorization status for a provider"""
+        return self._request("GET", f"/oauth/status/{provider}")
 
-    def get_api_key(self, service: str) -> Dict[str, Any]:
-        """Get API key info (not the actual key)"""
-        return self._request("GET", f"/config/api-keys/{service}")
+    def initiate_oauth(self, provider: str) -> str:
+        """Get OAuth authorization URL"""
+        response = self._request("GET", f"/oauth/authorize/{provider}", allow_redirects=False)
+        return response.headers.get("Location")
 
-    def delete_api_key(self, service: str) -> None:
-        """Delete API key"""
-        self._request("DELETE", f"/config/api-keys/{service}")
+    def revoke_oauth(self, provider: str) -> None:
+        """Revoke OAuth access for a provider"""
+        self._request("DELETE", f"/oauth/revoke/{provider}")
 
     # Search Management
 
@@ -210,7 +205,7 @@ if __name__ == "__main__":
 
     # Register new user
     try:
-        user = client.register("collector@example.com", "SecurePass123!", "my_discogs_name")
+        user = client.register("collector@example.com", "SecurePass123!")
         print(f"Registered user: {user['email']}")
     except requests.HTTPError as e:
         if e.response.status_code == 400:
@@ -220,9 +215,14 @@ if __name__ == "__main__":
     client.login("collector@example.com", "SecurePass123!")
     print("Logged in successfully")
 
-    # Set API keys
-    client.set_api_key("discogs", "my_consumer_key", "my_consumer_secret")
-    client.set_api_key("ebay", "my_client_id", "my_client_secret")
+    # Check OAuth status
+    discogs_status = client.get_oauth_status("discogs")
+    print(f"Discogs authorized: {discogs_status['is_authorized']}")
+
+    # Initiate OAuth if not authorized
+    if not discogs_status['is_authorized']:
+        auth_url = client.initiate_oauth("discogs")
+        print(f"Please authorize at: {auth_url}")
 
     # Create a search
     search = client.create_search(
@@ -275,7 +275,6 @@ interface AuthTokens {
 interface User {
   id: string;
   email: string;
-  discogs_username?: string;
 }
 
 interface SavedSearch {
@@ -354,11 +353,10 @@ class VinylDiggerClient {
 
   // Authentication methods
 
-  async register(email: string, password: string, discogsUsername?: string): Promise<User> {
+  async register(email: string, password: string): Promise<User> {
     const response = await this.api.post<User>('/auth/register', {
       email,
       password,
-      discogs_username: discogsUsername,
     });
     return response.data;
   }
@@ -400,14 +398,34 @@ class VinylDiggerClient {
     return response.data;
   }
 
-  // API Key management
+  // OAuth management
 
-  async setApiKey(service: 'discogs' | 'ebay', apiKey: string, apiSecret?: string): Promise<void> {
-    await this.api.put(`/config/api-keys/${service}`, {
-      service,
-      api_key: apiKey,
-      api_secret: apiSecret,
-    });
+  async getOAuthStatus(provider: 'discogs' | 'ebay'): Promise<{
+    provider: string;
+    is_configured: boolean;
+    is_authorized: boolean;
+    username?: string;
+  }> {
+    const response = await this.api.get(`/oauth/status/${provider}`);
+    return response.data;
+  }
+
+  async initiateOAuth(provider: 'discogs' | 'ebay'): Promise<string> {
+    try {
+      await this.api.get(`/oauth/authorize/${provider}`, {
+        maxRedirects: 0,
+      });
+    } catch (error: any) {
+      if (error.response?.status === 302) {
+        return error.response.headers.location;
+      }
+      throw error;
+    }
+    return '';
+  }
+
+  async revokeOAuth(provider: 'discogs' | 'ebay'): Promise<void> {
+    await this.api.delete(`/oauth/revoke/${provider}`);
   }
 
   // Search management
@@ -467,7 +485,7 @@ async function main() {
   try {
     // Register or login
     try {
-      await client.register('collector@example.com', 'SecurePass123!', 'my_discogs');
+      await client.register('collector@example.com', 'SecurePass123!');
       console.log('User registered');
     } catch (error) {
       console.log('User exists, logging in...');
@@ -476,9 +494,14 @@ async function main() {
     await client.login('collector@example.com', 'SecurePass123!');
     console.log('Logged in successfully');
 
-    // Set API keys
-    await client.setApiKey('discogs', 'consumer_key', 'consumer_secret');
-    await client.setApiKey('ebay', 'client_id', 'client_secret');
+    // Check OAuth status and authorize if needed
+    const discogsStatus = await client.getOAuthStatus('discogs');
+    console.log('Discogs authorized:', discogsStatus.is_authorized);
+
+    if (!discogsStatus.is_authorized) {
+      const authUrl = await client.initiateOAuth('discogs');
+      console.log('Please authorize at:', authUrl);
+    }
 
     // Create a search
     const search = await client.createSearch({
@@ -553,9 +576,8 @@ type AuthTokens struct {
 }
 
 type User struct {
-    ID              string  `json:"id"`
-    Email           string  `json:"email"`
-    DiscogsUsername *string `json:"discogs_username,omitempty"`
+    ID    string `json:"id"`
+    Email string `json:"email"`
 }
 
 type SavedSearch struct {
@@ -612,15 +634,12 @@ func (c *Client) setAuthHeader(r *resty.Request) *resty.Request {
 }
 
 // Register creates a new user account
-func (c *Client) Register(email, password string, discogsUsername *string) (*User, error) {
+func (c *Client) Register(email, password string) (*User, error) {
     var user User
 
     body := map[string]interface{}{
         "email":    email,
         "password": password,
-    }
-    if discogsUsername != nil {
-        body["discogs_username"] = *discogsUsername
     }
 
     resp, err := c.client.R().
@@ -711,28 +730,48 @@ func (c *Client) GetCurrentUser() (*User, error) {
     return &user, nil
 }
 
-// SetAPIKey stores API key for external service
-func (c *Client) SetAPIKey(service, apiKey string, apiSecret *string) error {
-    body := map[string]interface{}{
-        "service": service,
-        "api_key": apiKey,
-    }
-    if apiSecret != nil {
-        body["api_secret"] = *apiSecret
-    }
+// OAuthStatus represents OAuth authorization status
+type OAuthStatus struct {
+    Provider      string  `json:"provider"`
+    IsConfigured  bool    `json:"is_configured"`
+    IsAuthorized  bool    `json:"is_authorized"`
+    Username      *string `json:"username,omitempty"`
+}
+
+// GetOAuthStatus checks OAuth authorization status
+func (c *Client) GetOAuthStatus(provider string) (*OAuthStatus, error) {
+    var status OAuthStatus
 
     resp, err := c.setAuthHeader(c.client.R()).
-        SetBody(body).
-        Put(c.baseURL + "/config/api-keys/" + service)
+        SetResult(&status).
+        Get(c.baseURL + "/oauth/status/" + provider)
 
     if err != nil {
-        return err
+        return nil, err
     }
     if resp.IsError() {
-        return fmt.Errorf("failed to set API key: %s", resp.Status())
+        return nil, fmt.Errorf("failed to get OAuth status: %s", resp.Status())
     }
 
-    return nil
+    return &status, nil
+}
+
+// InitiateOAuth starts OAuth authorization flow
+func (c *Client) InitiateOAuth(provider string) (string, error) {
+    resp, err := c.setAuthHeader(c.client.R()).
+        SetDoNotParseResponse(true).
+        Get(c.baseURL + "/oauth/authorize/" + provider)
+
+    if err != nil {
+        return "", err
+    }
+
+    location := resp.Header().Get("Location")
+    if location == "" {
+        return "", fmt.Errorf("no redirect URL returned")
+    }
+
+    return location, nil
 }
 
 // CreateSearch creates a new saved search
@@ -794,8 +833,7 @@ func Example() {
     client := NewClient("http://localhost:8000")
 
     // Register or login
-    discogsUsername := "my_discogs"
-    _, err := client.Register("collector@example.com", "SecurePass123!", &discogsUsername)
+    _, err := client.Register("collector@example.com", "SecurePass123!")
     if err != nil {
         fmt.Println("User exists, logging in...")
     }
@@ -806,11 +844,20 @@ func Example() {
     }
     fmt.Println("Logged in successfully")
 
-    // Set API keys
-    secret := "consumer_secret"
-    err = client.SetAPIKey("discogs", "consumer_key", &secret)
+    // Check OAuth status
+    status, err := client.GetOAuthStatus("discogs")
     if err != nil {
         panic(err)
+    }
+
+    if !status.IsAuthorized {
+        authURL, err := client.InitiateOAuth("discogs")
+        if err != nil {
+            panic(err)
+        }
+        fmt.Printf("Please authorize at: %s\n", authURL)
+    } else {
+        fmt.Printf("Already authorized as: %s\n", *status.Username)
     }
 
     // Create search
@@ -851,8 +898,7 @@ curl -X POST "$BASE_URL/auth/register" \
   -H "Content-Type: application/json" \
   -d '{
     "email": "'"$EMAIL"'",
-    "password": "'"$PASSWORD"'",
-    "discogs_username": "my_discogs"
+    "password": "'"$PASSWORD"'"
   }'
 
 # Login and save tokens
@@ -867,15 +913,19 @@ REFRESH_TOKEN=$(echo $RESPONSE | jq -r '.refresh_token')
 curl -X GET "$BASE_URL/auth/me" \
   -H "Authorization: Bearer $ACCESS_TOKEN" | jq
 
-# Set Discogs API key
-curl -X PUT "$BASE_URL/config/api-keys/discogs" \
+# Check OAuth status
+curl -X GET "$BASE_URL/oauth/status/discogs" \
+  -H "Authorization: Bearer $ACCESS_TOKEN" | jq
+
+# Initiate OAuth authorization (returns redirect URL)
+curl -X GET "$BASE_URL/oauth/authorize/discogs" \
   -H "Authorization: Bearer $ACCESS_TOKEN" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "service": "discogs",
-    "api_key": "your_consumer_key",
-    "api_secret": "your_consumer_secret"
-  }'
+  -w "%{redirect_url}\n" \
+  --max-redirs 0
+
+# Revoke OAuth access
+curl -X DELETE "$BASE_URL/oauth/revoke/discogs" \
+  -H "Authorization: Bearer $ACCESS_TOKEN"
 
 # Create a search
 SEARCH_RESPONSE=$(curl -s -X POST "$BASE_URL/searches" \
@@ -1063,7 +1113,7 @@ esac
             "header": [],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"email\": \"collector@example.com\",\n  \"password\": \"SecurePass123!\",\n  \"discogs_username\": \"my_discogs\"\n}",
+              "raw": "{\n  \"email\": \"collector@example.com\",\n  \"password\": \"SecurePass123!\"\n}",
               "options": {
                 "raw": {
                   "language": "json"

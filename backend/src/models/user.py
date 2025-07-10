@@ -13,6 +13,7 @@ from src.core.database import Base
 if TYPE_CHECKING:
     from src.models.api_key import APIKey
     from src.models.collection import Collection, WantList
+    from src.models.oauth_token import OAuthToken
     from src.models.search import SavedSearch
 
 
@@ -22,7 +23,6 @@ class User(Base):
     id: Mapped[UUID] = mapped_column(PGUUID(as_uuid=True), primary_key=True, default=uuid4)
     email: Mapped[str] = mapped_column(String(255), unique=True, nullable=False, index=True)
     hashed_password: Mapped[str] = mapped_column(String(255), nullable=False)
-    discogs_username: Mapped[str | None] = mapped_column(String(255), nullable=True)
     is_active: Mapped[bool] = mapped_column(default=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
     updated_at: Mapped[datetime] = mapped_column(
@@ -31,6 +31,9 @@ class User(Base):
 
     # Relationships
     api_keys: Mapped[list[APIKey]] = relationship("APIKey", back_populates="user", cascade="all, delete-orphan")
+    oauth_tokens: Mapped[list[OAuthToken]] = relationship(
+        "OAuthToken", back_populates="user", cascade="all, delete-orphan"
+    )
     saved_searches: Mapped[list[SavedSearch]] = relationship(
         "SavedSearch", back_populates="user", cascade="all, delete-orphan"
     )

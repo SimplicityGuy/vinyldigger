@@ -2,7 +2,6 @@ import { z } from 'zod'
 import { tokenService } from './token-service'
 import type {
   User,
-  ApiKey,
   SavedSearch,
   SearchResult,
   UserPreferences,
@@ -113,9 +112,7 @@ export const loginSchema = z.object({
   password: z.string().min(8),
 })
 
-export const registerSchema = loginSchema.extend({
-  discogs_username: z.string().optional(),
-})
+export const registerSchema = loginSchema
 
 export const tokenSchema = z.object({
   access_token: z.string(),
@@ -167,18 +164,6 @@ export const authApi = {
 }
 
 export const configApi = {
-  async updateApiKey(service: string, key: string, secret?: string) {
-    const response = await fetchApi('/config/api-keys', {
-      method: 'PUT',
-      body: JSON.stringify({ service, key, secret }),
-    })
-    return response.json()
-  },
-
-  async getApiKeys(): Promise<ApiKey[]> {
-    const response = await fetchApi('/config/api-keys')
-    return response.json()
-  },
 
   async getPreferences(): Promise<UserPreferences> {
     const response = await fetchApi('/config/preferences')
@@ -246,3 +231,35 @@ export const collectionApi = {
     return response.json()
   },
 }
+
+export const oauthApi = {
+  async getOAuthStatus(provider: string) {
+    const response = await fetchApi(`/oauth/status/${provider}`)
+    return response.json()
+  },
+
+  async initiateOAuth(provider: string) {
+    const response = await fetchApi(`/oauth/authorize/${provider}`, {
+      method: 'POST',
+    })
+    return response.json()
+  },
+
+  async revokeOAuth(provider: string) {
+    const response = await fetchApi(`/oauth/revoke/${provider}`, {
+      method: 'DELETE',
+    })
+    return response.json()
+  },
+}
+
+// Default export for convenience
+const api = {
+  ...authApi,
+  ...configApi,
+  ...searchApi,
+  ...collectionApi,
+  ...oauthApi,
+}
+
+export default api

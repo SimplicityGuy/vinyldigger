@@ -54,18 +54,6 @@ function RegisterPageComponent() {
                 <p className="text-sm text-destructive">{errors.password.message}</p>
               )}
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="discogs_username">Discogs Username (optional)</Label>
-              <Input
-                id="discogs_username"
-                type="text"
-                placeholder="your_discogs_username"
-                {...register('discogs_username')}
-              />
-              {errors.discogs_username && (
-                <p className="text-sm text-destructive">{errors.discogs_username.message}</p>
-              )}
-            </div>
           </CardContent>
           <CardFooter className="flex flex-col space-y-4">
             <Button type="submit" className="w-full" disabled={isRegisterLoading}>

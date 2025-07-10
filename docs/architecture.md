@@ -164,8 +164,8 @@ frontend/src/
 PostgreSQL database with the following main tables:
 
 1. **users**: User accounts and authentication
-2. **api_keys**: Encrypted external API credentials
-3. **user_preferences**: User-specific settings
+2. **app_config**: OAuth application credentials (admin-configured)
+3. **oauth_tokens**: User OAuth access tokens
 4. **saved_searches**: User's search configurations
 5. **search_results**: Cached search results
 6. **collections**: User's vinyl collections
@@ -220,22 +220,27 @@ Redis is used for:
    - Configurable hash rounds
    - No password requirements (user's choice)
 
-### API Key Encryption
+### OAuth Implementation
 
-External API keys are encrypted using Fernet symmetric encryption:
+VinylDigger uses OAuth 1.0a for Discogs authentication:
 
 ```mermaid
 graph TD
-    subgraph "Encryption Flow"
-        A1[Plaintext API Key] --> B1[Fernet.encrypt]
-        B1 --> C1[Encrypted Key stored in DB]
-    end
-
-    subgraph "Decryption Flow"
-        C2[Encrypted Key from DB] --> B2[Fernet.decrypt]
-        B2 --> A2[Plaintext Key for API calls]
+    subgraph "OAuth Flow"
+        A1[User initiates authorization] --> B1[Request temporary token]
+        B1 --> C1[Redirect to Discogs]
+        C1 --> D1[User authorizes]
+        D1 --> E1[Callback with verifier]
+        E1 --> F1[Exchange for access token]
+        F1 --> G1[Store encrypted token]
     end
 ```
+
+**Key Components**:
+- Application credentials stored in app_config (admin-managed)
+- User tokens stored encrypted in oauth_tokens
+- Fernet encryption for sensitive data
+- Session management for OAuth flow state
 
 ### Security Headers
 

@@ -183,9 +183,8 @@ See the [Testing Guide](docs/testing.md) for detailed testing instructions.
 
 ### Additional Documentation
 - [Troubleshooting Guide](docs/troubleshooting.md) - Common issues and solutions
-- [CI/CD Troubleshooting](docs/ci-troubleshooting-fixes.md) - GitHub Actions fixes and solutions
-- [CI/CD Fixes Summary](docs/ci-fixes-summary.md) - Comprehensive fixes for flaky CI issues
-- [CI Just Command Fix](docs/ci-just-fix.md) - Just command runner CI fixes
+- [Database Development Workflow](backend/docs/development_db_workflow.md) - Database management during development
+- [Discogs OAuth Authentication](backend/docs/discogs_auth.md) - How to set up Discogs OAuth
 - [Docker OCI Labels](docs/docker-oci-labels.md) - Container labeling standards
 - [Project Context](CLAUDE.md) - AI assistant configuration and project guidelines
 
@@ -234,16 +233,18 @@ just shell-db
 
 ## 🔐 Configuration
 
-### Required API Keys
-After registering and logging in, add your API keys in the Settings page:
+### Platform Authorization
+After registering and logging in, authorize VinylDigger to access your accounts:
 
-1. **Discogs API**
-   - Get your keys at: https://www.discogs.com/settings/developers
-   - Required: Consumer Key and Consumer Secret
+1. **Discogs Authorization**
+   - Go to Settings > Platform Authorizations
+   - Click "Connect Discogs Account"
+   - Authorize VinylDigger to access your Discogs data
+   - See [Discogs OAuth Guide](backend/docs/discogs_auth.md) for details
 
-2. **eBay API**
-   - Register at: https://developer.ebay.com/
-   - Required: Client ID and Client Secret
+2. **eBay Authorization** (Coming Soon)
+   - OAuth integration for eBay is in development
+   - Will follow similar authorization flow as Discogs
 
 ### Environment Variables
 Key environment variables in `.env`:
@@ -308,16 +309,15 @@ vinyldigger/
 
 #### Database Issues
 - **Missing tables error**: Run `just migrate` to apply migrations
-- **Migration conflicts**: Reset with `cd backend && uv run alembic downgrade base && uv run alembic upgrade head`
+- **Development changes**: See [Database Development Workflow](backend/docs/development_db_workflow.md)
 - **Connection errors**: Check DATABASE_URL in backend/.env matches docker-compose
-- **Empty migrations folder**: Generate initial migration with `docker-compose exec backend alembic revision --autogenerate -m "Initial migration"`
+- **Clean slate**: Use `just clean` to remove all containers and volumes
 
 #### API Issues
 - **401 Unauthorized**: Token may be expired, try logging in again
 - **500 Internal Server Error**: Check backend logs with `just logs backend`
 - **CORS errors**: Check FRONTEND_URL in backend .env
 
-See [CI/CD Troubleshooting](docs/ci-troubleshooting-fixes.md) for GitHub Actions issues.
 
 ## 🤝 Contributing
 

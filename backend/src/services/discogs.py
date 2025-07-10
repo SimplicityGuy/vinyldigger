@@ -1,19 +1,54 @@
 import asyncio
 from typing import Any
+from uuid import UUID
 
 import httpx
 from httpx import AsyncClient
+from oauthlib.oauth1 import Client as OAuth1Client
+from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
 
+from src.core.logging import get_logger
+from src.models import AppConfig, OAuthProvider, OAuthToken
 from src.models.api_key import APIService
-from src.services.base import BaseAPIService
 
 
-class DiscogsService(BaseAPIService):
+class DiscogsOAuth1Auth(httpx.Auth):
+    """Custom OAuth1 authentication for httpx."""
+
+    def __init__(self, consumer_key: str, consumer_secret: str, token: str, token_secret: str):
+        self.oauth_client = OAuth1Client(
+            client_key=consumer_key,
+            client_secret=consumer_secret,
+            resource_owner_key=token,
+            resource_owner_secret=token_secret,
+            signature_method="HMAC-SHA1",
+            signature_type="AUTH_HEADER",
+        )
+
+    def auth_flow(self, request: httpx.Request):
+        """Apply OAuth1 signature to the request."""
+        # Convert httpx request to a format oauthlib can work with
+        uri = str(request.url)
+        method = request.method
+        body = request.content.decode() if request.content else None
+        headers = dict(request.headers)
+
+        # Generate OAuth signature
+        uri, headers, body = self.oauth_client.sign(uri, http_method=method, body=body, headers=headers)
+
+        # Update the request with OAuth headers
+        request.headers.update(headers)
+        yield request
+
+
+class DiscogsService:
     BASE_URL = "https://api.discogs.com"
 
     def __init__(self) -> None:
-        super().__init__(APIService.DISCOGS)
+        self.service = APIService.DISCOGS
         self.client: AsyncClient | None = None
+        self.logger = get_logger(__name__)
 
     async def __aenter__(self) -> "DiscogsService":
         self.client = AsyncClient(
@@ -30,12 +65,48 @@ class DiscogsService(BaseAPIService):
         if self.client:
             await self.client.aclose()
 
-    async def search(self, query: str, filters: dict[str, Any], credentials: dict[str, str]) -> list[dict[str, Any]]:
+    async def get_oauth_auth(self, db: AsyncSession, user_id: str) -> DiscogsOAuth1Auth | None:
+        """Get OAuth1 authentication for the user."""
+        # Get app configuration
+        app_config_result = await db.execute(select(AppConfig).where(AppConfig.provider == OAuthProvider.DISCOGS))
+        app_config = app_config_result.scalar_one_or_none()
+
+        if not app_config:
+            self.logger.error("Discogs OAuth is not configured in app settings")
+            return None
+
+        # Get user's OAuth token
+        token_result = await db.execute(
+            select(OAuthToken).where(
+                OAuthToken.user_id == UUID(user_id),
+                OAuthToken.provider == OAuthProvider.DISCOGS,
+            )
+        )
+        oauth_token = token_result.scalar_one_or_none()
+
+        if not oauth_token:
+            self.logger.error(f"User {user_id} has not authorized Discogs access")
+            return None
+
+        if not oauth_token.access_token_secret:
+            self.logger.warning(f"No access token secret for user {user_id}")
+            return None
+
+        return DiscogsOAuth1Auth(
+            consumer_key=app_config.consumer_key,
+            consumer_secret=app_config.consumer_secret,
+            token=oauth_token.access_token,
+            token_secret=oauth_token.access_token_secret,
+        )
+
+    async def search(self, query: str, filters: dict[str, Any], db: AsyncSession, user_id: str) -> list[dict[str, Any]]:
         if not self.client:
             raise RuntimeError("Service not initialized. Use async with context.")
 
-        # Prepare authentication headers
-        headers = self._get_auth_headers(credentials)
+        # Get OAuth auth
+        auth = await self.get_oauth_auth(db, user_id)
+        if not auth:
+            return []
 
         params = {
             "q": query,
@@ -60,11 +131,7 @@ class DiscogsService(BaseAPIService):
             params["year"] = f"-{filters['year_to']}"
 
         try:
-            # Add token to params only if not using Authorization header
-            if not headers:
-                params["token"] = credentials["key"]
-
-            response = await self.client.get("/database/search", params=params, headers=headers)
+            response = await self.client.get("/database/search", params=params, auth=auth)
             response.raise_for_status()
 
             data = response.json()
@@ -81,7 +148,7 @@ class DiscogsService(BaseAPIService):
 
         except httpx.HTTPStatusError as e:
             if e.response.status_code == 401:
-                self.logger.error(f"Discogs authentication failed. Please check your API token. Error: {str(e)}")
+                self.logger.error(f"Discogs authentication failed. User may need to reauthorize. Error: {str(e)}")
             else:
                 self.logger.error(f"Discogs API error: {str(e)}")
             return []
@@ -89,19 +156,18 @@ class DiscogsService(BaseAPIService):
             self.logger.error(f"Discogs API error: {str(e)}")
             return []
 
-    async def get_item_details(self, item_id: str, credentials: dict[str, str]) -> dict[str, Any] | None:
+    async def get_item_details(self, item_id: str, db: AsyncSession, user_id: str) -> dict[str, Any] | None:
         if not self.client:
             raise RuntimeError("Service not initialized. Use async with context.")
 
-        # Prepare authentication headers
-        headers = self._get_auth_headers(credentials)
-        params = {}
-        if not headers:
-            params["token"] = credentials["key"]
+        # Get OAuth auth
+        auth = await self.get_oauth_auth(db, user_id)
+        if not auth:
+            return None
 
         try:
             # Get release details
-            response = await self.client.get(f"/releases/{item_id}", params=params, headers=headers)
+            response = await self.client.get(f"/releases/{item_id}", auth=auth)
             response.raise_for_status()
 
             release_data = response.json()
@@ -111,10 +177,8 @@ class DiscogsService(BaseAPIService):
                 "release_id": item_id,
                 "status": "For Sale",
             }
-            if not headers:
-                list_params["token"] = credentials["key"]
 
-            listings_response = await self.client.get("/marketplace/listings", params=list_params, headers=headers)
+            listings_response = await self.client.get("/marketplace/listings", params=list_params, auth=auth)
             listings_response.raise_for_status()
 
             listings_data = listings_response.json()
@@ -126,7 +190,7 @@ class DiscogsService(BaseAPIService):
 
         except httpx.HTTPStatusError as e:
             if e.response.status_code == 401:
-                self.logger.error(f"Discogs authentication failed. Please check your API token. Error: {str(e)}")
+                self.logger.error(f"Discogs authentication failed. User may need to reauthorize. Error: {str(e)}")
             else:
                 self.logger.error(f"Discogs API error getting item {item_id}: {str(e)}")
             return None
@@ -134,23 +198,30 @@ class DiscogsService(BaseAPIService):
             self.logger.error(f"Discogs API error getting item {item_id}: {str(e)}")
             return None
 
-    async def sync_collection(self, credentials: dict[str, str]) -> list[dict[str, Any]]:
+    async def sync_collection(self, db: AsyncSession, user_id: str) -> list[dict[str, Any]]:
         if not self.client:
             raise RuntimeError("Service not initialized. Use async with context.")
 
-        # Prepare authentication headers
-        headers = self._get_auth_headers(credentials)
+        # Get OAuth auth
+        auth = await self.get_oauth_auth(db, user_id)
+        if not auth:
+            return []
 
         try:
-            # Get user info first
-            identity_params = {}
-            if not headers:
-                identity_params["token"] = credentials["key"]
+            # Get user's OAuth token to retrieve username
+            token_result = await db.execute(
+                select(OAuthToken).where(
+                    OAuthToken.user_id == UUID(user_id),
+                    OAuthToken.provider == OAuthProvider.DISCOGS,
+                )
+            )
+            oauth_token = token_result.scalar_one_or_none()
 
-            user_response = await self.client.get("/oauth/identity", params=identity_params, headers=headers)
-            user_response.raise_for_status()
-            user_data = user_response.json()
-            username = user_data["username"]
+            if not oauth_token or not oauth_token.provider_username:
+                self.logger.error("Missing Discogs username for user")
+                return []
+
+            username = oauth_token.provider_username
 
             # Get collection
             collection = []
@@ -158,11 +229,9 @@ class DiscogsService(BaseAPIService):
 
             while True:
                 coll_params: dict[str, Any] = {"page": page, "per_page": 100}
-                if not headers:
-                    coll_params["token"] = credentials["key"]
 
                 response = await self.client.get(
-                    f"/users/{username}/collection/folders/0/releases", params=coll_params, headers=headers
+                    f"/users/{username}/collection/folders/0/releases", params=coll_params, auth=auth
                 )
                 response.raise_for_status()
 
@@ -193,7 +262,7 @@ class DiscogsService(BaseAPIService):
 
         except httpx.HTTPStatusError as e:
             if e.response.status_code == 401:
-                self.logger.error(f"Discogs authentication failed. Please check your API token. Error: {str(e)}")
+                self.logger.error(f"Discogs authentication failed. User may need to reauthorize. Error: {str(e)}")
             else:
                 self.logger.error(f"Discogs API error syncing collection: {str(e)}")
             return []
@@ -201,23 +270,30 @@ class DiscogsService(BaseAPIService):
             self.logger.error(f"Discogs API error syncing collection: {str(e)}")
             return []
 
-    async def sync_wantlist(self, credentials: dict[str, str]) -> list[dict[str, Any]]:
+    async def sync_wantlist(self, db: AsyncSession, user_id: str) -> list[dict[str, Any]]:
         if not self.client:
             raise RuntimeError("Service not initialized. Use async with context.")
 
-        # Prepare authentication headers
-        headers = self._get_auth_headers(credentials)
+        # Get OAuth auth
+        auth = await self.get_oauth_auth(db, user_id)
+        if not auth:
+            return []
 
         try:
-            # Get user info first
-            identity_params = {}
-            if not headers:
-                identity_params["token"] = credentials["key"]
+            # Get user's OAuth token to retrieve username
+            token_result = await db.execute(
+                select(OAuthToken).where(
+                    OAuthToken.user_id == UUID(user_id),
+                    OAuthToken.provider == OAuthProvider.DISCOGS,
+                )
+            )
+            oauth_token = token_result.scalar_one_or_none()
 
-            user_response = await self.client.get("/oauth/identity", params=identity_params, headers=headers)
-            user_response.raise_for_status()
-            user_data = user_response.json()
-            username = user_data["username"]
+            if not oauth_token or not oauth_token.provider_username:
+                self.logger.error("Missing Discogs username for user")
+                return []
+
+            username = oauth_token.provider_username
 
             # Get wantlist
             wantlist = []
@@ -225,10 +301,8 @@ class DiscogsService(BaseAPIService):
 
             while True:
                 want_params: dict[str, Any] = {"page": page, "per_page": 100}
-                if not headers:
-                    want_params["token"] = credentials["key"]
 
-                response = await self.client.get(f"/users/{username}/wants", params=want_params, headers=headers)
+                response = await self.client.get(f"/users/{username}/wants", params=want_params, auth=auth)
                 response.raise_for_status()
 
                 data = response.json()
@@ -258,28 +332,13 @@ class DiscogsService(BaseAPIService):
 
         except httpx.HTTPStatusError as e:
             if e.response.status_code == 401:
-                self.logger.error(f"Discogs authentication failed. Please check your API token. Error: {str(e)}")
+                self.logger.error(f"Discogs authentication failed. User may need to reauthorize. Error: {str(e)}")
             else:
                 self.logger.error(f"Discogs API error syncing wantlist: {str(e)}")
             return []
         except httpx.HTTPError as e:
             self.logger.error(f"Discogs API error syncing wantlist: {str(e)}")
             return []
-
-    def _get_auth_headers(self, credentials: dict[str, str]) -> dict[str, str]:
-        """Get authentication headers for Discogs API.
-
-        Supports both Personal Access Tokens and OAuth tokens.
-        """
-        token = credentials.get("key", "")
-
-        # Check if it's a personal access token (usually longer and contains specific patterns)
-        if len(token) > 32 or "-" in token:
-            # Personal Access Token - use Authorization header
-            return {"Authorization": f"Discogs token={token}"}
-        else:
-            # OAuth token - use token parameter (will be added to URL params)
-            return {}
 
     def _format_discogs_item(self, item: dict[str, Any]) -> dict[str, Any] | None:
         try:

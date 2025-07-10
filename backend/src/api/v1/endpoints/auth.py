@@ -26,13 +26,11 @@ oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/v1/auth/login")
 class UserCreate(BaseModel):
     email: EmailStr
     password: str
-    discogs_username: str | None = None
 
 
 class UserResponse(BaseModel):
     id: str
     email: str
-    discogs_username: str | None
 
     @field_validator("id", mode="before")
     @classmethod
@@ -101,7 +99,6 @@ async def register(
     user = User(
         email=user_data.email,
         hashed_password=get_password_hash(user_data.password),
-        discogs_username=user_data.discogs_username,
     )
     db.add(user)
     await db.commit()

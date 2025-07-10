@@ -51,8 +51,9 @@ CREATE INDEX idx_results_search_id ON search_results(search_id);
 CREATE INDEX idx_results_created_at ON search_results(created_at);
 CREATE INDEX idx_results_price ON search_results(price);
 
--- API keys lookup
-CREATE INDEX idx_api_keys_user_service ON api_keys(user_id, service);
+-- OAuth tokens lookup
+CREATE INDEX idx_oauth_tokens_user_provider ON oauth_tokens(user_id, provider);
+CREATE INDEX idx_app_config_provider ON app_config(provider);
 
 -- Price history analysis
 CREATE INDEX idx_price_history_item_date ON price_history(item_id, date);

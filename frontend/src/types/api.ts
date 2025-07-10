@@ -3,7 +3,6 @@
 export interface User {
   id: string
   email: string
-  discogs_username?: string
   created_at: string
   updated_at: string
 }
@@ -86,6 +85,10 @@ export interface UpdatePreferencesData {
   notification_frequency?: 'immediate' | 'daily' | 'weekly'
   currency?: string
   default_search_platform?: 'ebay' | 'discogs' | 'both'
+  min_record_condition?: string
+  min_sleeve_condition?: string
+  seller_location_preference?: string
+  check_interval_hours?: number
 }
 
 // Export alias for backward compatibility

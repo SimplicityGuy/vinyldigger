@@ -31,8 +31,7 @@ Content-Type: application/json
 
 {
   "email": "user@example.com",
-  "password": "securepassword123",
-  "discogs_username": "optional_username"
+  "password": "securepassword123"
 }
 ```
 
@@ -40,8 +39,7 @@ Content-Type: application/json
 ```json
 {
   "id": "550e8400-e29b-41d4-a716-446655440000",
-  "email": "user@example.com",
-  "discogs_username": "optional_username"
+  "email": "user@example.com"
 }
 ```
 
@@ -90,80 +88,152 @@ Authorization: Bearer <access_token>
 ```json
 {
   "id": "550e8400-e29b-41d4-a716-446655440000",
-  "email": "user@example.com",
-  "discogs_username": "optional_username"
+  "email": "user@example.com"
 }
 ```
 
-## Configuration Endpoints
+## OAuth Endpoints
 
-### Update/Create API Key
-Stores encrypted API credentials for external services.
+### Check OAuth Status
+Check if the user has authorized the application for a specific provider.
 
 ```http
-PUT /api/v1/config/api-keys
+GET /api/v1/oauth/status/{provider}
 Authorization: Bearer <access_token>
-Content-Type: application/json
-
-{
-  "service": "discogs",
-  "key": "your_consumer_key",
-  "secret": "your_consumer_secret"
-}
 ```
 
-**Supported Services**: `discogs`, `ebay`
+**Path Parameters**:
+- `provider`: `discogs` or `ebay`
 
 **Response**:
 ```json
 {
-  "id": "550e8400-e29b-41d4-a716-446655440000",
-  "service": "discogs",
-  "created_at": "2024-01-20T10:30:00Z"
+  "provider": "discogs",
+  "is_configured": true,
+  "is_authorized": true,
+  "username": "vinylcollector123"
 }
 ```
 
-### Get All API Keys
-Lists all configured API keys (without exposing the actual keys).
+### Initiate OAuth Authorization
+Start the OAuth flow to authorize access to a provider.
 
 ```http
-GET /api/v1/config/api-keys
+GET /api/v1/oauth/authorize/{provider}
 Authorization: Bearer <access_token>
+```
+
+**Path Parameters**:
+- `provider`: `discogs` or `ebay`
+
+**Response**: Redirects to the provider's authorization page
+
+### OAuth Callback
+Handles the OAuth callback after user authorizes access.
+
+```http
+GET /api/v1/oauth/callback/{provider}?oauth_token=...&oauth_verifier=...
+Authorization: Bearer <access_token>
+```
+
+**Query Parameters**:
+- `oauth_token`: Token from provider
+- `oauth_verifier`: Verifier from provider
+
+**Response**:
+```json
+{
+  "message": "Discogs authorization successful",
+  "username": "vinylcollector123"
+}
+```
+
+### Revoke OAuth Access
+Revoke access tokens for a specific provider.
+
+```http
+DELETE /api/v1/oauth/revoke/{provider}
+Authorization: Bearer <access_token>
+```
+
+**Path Parameters**:
+- `provider`: `discogs` or `ebay`
+
+**Response**:
+```json
+{
+  "message": "Discogs access revoked successfully"
+}
+```
+
+## Admin Endpoints
+
+Admin endpoints require admin privileges (email ending in @admin.com or @vinyldigger.com).
+
+### Get OAuth App Configuration
+List all configured OAuth applications.
+
+```http
+GET /api/v1/admin/app-config
+Authorization: Bearer <admin_access_token>
 ```
 
 **Response**:
 ```json
 [
   {
-    "id": "550e8400-e29b-41d4-a716-446655440000",
-    "service": "discogs",
-    "created_at": "2024-01-20T10:30:00Z"
-  },
-  {
-    "id": "660e8400-e29b-41d4-a716-446655440001",
-    "service": "ebay",
-    "created_at": "2024-01-20T11:00:00Z"
+    "provider": "DISCOGS",
+    "consumer_key": "abc123...",
+    "callback_url": "https://yourdomain.com/oauth/callback/discogs",
+    "is_configured": true
   }
 ]
 ```
 
-### Delete API Key
-Removes stored API credentials for a service.
+### Create/Update OAuth App Configuration
+Configure OAuth application credentials.
 
 ```http
-DELETE /api/v1/config/api-keys/{service}
-Authorization: Bearer <access_token>
-```
+POST /api/v1/admin/app-config
+Authorization: Bearer <admin_access_token>
+Content-Type: application/json
 
-**Path Parameters**:
-- `service`: `discogs` or `ebay`
+{
+  "provider": "DISCOGS",
+  "consumer_key": "your_consumer_key",
+  "consumer_secret": "your_consumer_secret",
+  "callback_url": "https://yourdomain.com/oauth/callback/discogs"
+}
+```
 
 **Response**:
 ```json
 {
-  "message": "API key deleted successfully"
+  "provider": "DISCOGS",
+  "consumer_key": "your_consumer_key",
+  "is_configured": true
 }
 ```
+
+### Delete OAuth App Configuration
+Remove OAuth application configuration.
+
+```http
+DELETE /api/v1/admin/app-config/{provider}
+Authorization: Bearer <admin_access_token>
+```
+
+**Path Parameters**:
+- `provider`: `DISCOGS` or `EBAY`
+
+**Response**:
+```json
+{
+  "message": "App configuration deleted successfully"
+}
+```
+
+## Configuration Endpoints
 
 ### Get User Preferences
 Retrieves user's search and notification preferences.
@@ -470,8 +540,7 @@ BASE_URL = "http://localhost:8000"
 # 1. Register
 response = requests.post(f"{BASE_URL}/api/v1/auth/register", json={
     "email": "collector@example.com",
-    "password": "secure123",
-    "discogs_username": "vinyl_lover"
+    "password": "secure123"
 })
 user = response.json()
 
