@@ -310,5 +310,5 @@ class SyncCollectionTask(AsyncTask):
                 raise
 
 
-run_search_task = RunSearchTask()
-sync_collection_task = SyncCollectionTask()
+run_search_task = RunSearchTask
+sync_collection_task = SyncCollectionTask
