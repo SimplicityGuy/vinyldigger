@@ -230,6 +230,8 @@ just migrate
 3. **Run pre-commit checks** before committing: `just lint` or `pre-commit run --all-files`
 4. **Keep pre-commit hooks frozen**: `just update-pre-commit` or `pre-commit autoupdate --freeze`
 5. **GitHub Actions security**: Always pin non-GitHub/Docker actions to their SHA
+6. **Docker networking**: Services must use container names (e.g., `backend:8000`) not localhost for inter-container communication
+7. **Database migrations**: Always run migrations after model changes - backend startup runs them automatically if alembic/versions/ contains migration files
 
 ### Quick Command Reference
 ```bash
@@ -268,3 +270,11 @@ just clean            # Clean up everything
 2. **Type errors**: Check both `mypy` (backend) and `tsc` (frontend) output
 3. **Docker issues**: Use `just clean` to reset everything
 4. **Dependency conflicts**: Delete lock files and regenerate with `just install`
+5. **Missing database tables**: Ensure migrations exist in alembic/versions/ and run `just migrate`
+6. **Frontend proxy errors**: Verify VITE_API_URL uses container names in Docker
+
+# important-instruction-reminders
+Do what has been asked; nothing more, nothing less.
+NEVER create files unless they're absolutely necessary for achieving your goal.
+ALWAYS prefer editing an existing file to creating a new one.
+NEVER proactively create documentation files (*.md) or README files. Only create documentation files if explicitly requested by the User.
