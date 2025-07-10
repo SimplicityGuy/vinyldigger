@@ -85,7 +85,6 @@ jobs:
       - name: Start services
         run: |
           just test-services-up
-          just test-wait
 
       - name: Run E2E tests
         run: |

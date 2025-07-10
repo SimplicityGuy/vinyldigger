@@ -54,6 +54,21 @@ test-e2e-ui:
 # Start test services for manual testing
 test-services-up:
     {{docker_compose}} -f docker-compose.test.yml up -d
+    @echo "Waiting for PostgreSQL..."
+    @timeout 120 bash -c 'until {{docker_compose}} -f docker-compose.test.yml exec -T postgres pg_isready -U postgres; do echo "PostgreSQL not ready, waiting..."; sleep 2; done'
+    @echo "✓ PostgreSQL is ready"
+    @echo "Waiting for Redis..."
+    @timeout 120 bash -c 'until {{docker_compose}} -f docker-compose.test.yml exec -T redis redis-cli ping; do echo "Redis not ready, waiting..."; sleep 2; done'
+    @echo "✓ Redis is ready"
+    @echo "Waiting for backend API..."
+    @timeout 180 bash -c 'until curl -f http://localhost:8000/health 2>/dev/null; do echo "Backend not ready, waiting..."; sleep 2; done'
+    @echo "✓ Backend API is ready"
+    @echo "Waiting for frontend..."
+    @timeout 180 bash -c 'until curl -f http://localhost:3000 2>/dev/null; do echo "Frontend not ready, waiting..."; sleep 2; done'
+    @echo "✓ Frontend is ready"
+    @echo "All services are healthy!"
+    @sleep 5
+    {{docker_compose}} -f docker-compose.test.yml ps
 
 # Run tests in CI environment
 test-ci:
@@ -82,24 +97,6 @@ test-ci:
 # Stop test services
 test-down:
     {{docker_compose}} -f docker-compose.test.yml down -v
-
-# Wait for test services to be ready (for CI)
-test-wait:
-    @echo "Waiting for PostgreSQL..."
-    @timeout 120 bash -c 'until {{docker_compose}} -f docker-compose.test.yml exec -T postgres pg_isready -U postgres; do echo "PostgreSQL not ready, waiting..."; sleep 2; done'
-    @echo "✓ PostgreSQL is ready"
-    @echo "Waiting for Redis..."
-    @timeout 120 bash -c 'until {{docker_compose}} -f docker-compose.test.yml exec -T redis redis-cli ping; do echo "Redis not ready, waiting..."; sleep 2; done'
-    @echo "✓ Redis is ready"
-    @echo "Waiting for backend API..."
-    @timeout 180 bash -c 'until curl -f http://localhost:8000/health 2>/dev/null; do echo "Backend not ready, waiting..."; sleep 2; done'
-    @echo "✓ Backend API is ready"
-    @echo "Waiting for frontend..."
-    @timeout 180 bash -c 'until curl -f http://localhost:3000 2>/dev/null; do echo "Frontend not ready, waiting..."; sleep 2; done'
-    @echo "✓ Frontend is ready"
-    @echo "All services are healthy!"
-    @sleep 5
-    {{docker_compose}} -f docker-compose.test.yml ps
 
 # Clean up all temporary build artifacts and caches
 clean: clean-docker clean-python clean-frontend clean-misc
