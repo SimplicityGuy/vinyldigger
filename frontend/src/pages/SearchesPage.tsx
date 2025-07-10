@@ -1,16 +1,34 @@
 import { useState, memo } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { Plus, Play, Trash2 } from 'lucide-react'
+import { useForm } from 'react-hook-form'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogClose } from '@/components/ui/dialog'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+import { Select } from '@/components/ui/select'
 import { searchApi } from '@/lib/api'
 import { useToast } from '@/hooks/useToast'
 import type { Search } from '@/types/api'
 
+interface SearchFormData {
+  name: string
+  query: string
+  platform: 'ebay' | 'discogs' | 'both'
+  check_interval_hours: number
+}
+
 function SearchesPageComponent() {
   const { toast } = useToast()
   const queryClient = useQueryClient()
-  const [, setIsCreating] = useState(false)
+  const [isCreating, setIsCreating] = useState(false)
+  const { register, handleSubmit, reset, formState: { errors } } = useForm<SearchFormData>({
+    defaultValues: {
+      platform: 'both',
+      check_interval_hours: 24
+    }
+  })
 
   const { data: searches = [], isLoading } = useQuery({
     queryKey: ['searches'],
@@ -38,8 +56,33 @@ function SearchesPageComponent() {
     },
   })
 
+  const createSearchMutation = useMutation({
+    mutationFn: searchApi.createSearch,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['searches'] })
+      toast({
+        title: 'Search created',
+        description: 'Your search has been saved.',
+      })
+      setIsCreating(false)
+      reset()
+    },
+    onError: () => {
+      toast({
+        title: 'Error',
+        description: 'Failed to create search. Please try again.',
+        variant: 'destructive',
+      })
+    },
+  })
+
+  const onSubmit = (data: SearchFormData) => {
+    createSearchMutation.mutate(data)
+  }
+
   return (
-    <div className="space-y-6">
+    <>
+      <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-3xl font-bold tracking-tight">Searches</h2>
@@ -122,7 +165,81 @@ function SearchesPageComponent() {
           ))}
         </div>
       )}
-    </div>
+      </div>
+
+      <Dialog open={isCreating} onOpenChange={setIsCreating}>
+        <DialogContent>
+          <DialogClose onClose={() => setIsCreating(false)} />
+          <DialogHeader>
+            <DialogTitle>Create New Search</DialogTitle>
+            <DialogDescription>
+              Set up a new search to monitor for vinyl records.
+            </DialogDescription>
+          </DialogHeader>
+          <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+            <div>
+              <Label htmlFor="name">Search Name</Label>
+              <Input
+                id="name"
+                {...register('name', { required: 'Name is required' })}
+                placeholder="e.g., Beatles First Pressings"
+              />
+              {errors.name && (
+                <p className="text-sm text-destructive mt-1">{errors.name.message}</p>
+              )}
+            </div>
+            <div>
+              <Label htmlFor="query">Search Query</Label>
+              <Input
+                id="query"
+                {...register('query', { required: 'Query is required' })}
+                placeholder="e.g., Beatles White Album first pressing"
+              />
+              {errors.query && (
+                <p className="text-sm text-destructive mt-1">{errors.query.message}</p>
+              )}
+            </div>
+            <div>
+              <Label htmlFor="platform">Platform</Label>
+              <Select id="platform" {...register('platform')}>
+                <option value="both">Both</option>
+                <option value="discogs">Discogs Only</option>
+                <option value="ebay">eBay Only</option>
+              </Select>
+            </div>
+            <div>
+              <Label htmlFor="check_interval_hours">Check Interval (hours)</Label>
+              <Input
+                id="check_interval_hours"
+                type="number"
+                {...register('check_interval_hours', {
+                  required: 'Interval is required',
+                  min: { value: 1, message: 'Minimum interval is 1 hour' },
+                  max: { value: 168, message: 'Maximum interval is 168 hours (1 week)' },
+                  valueAsNumber: true,
+                })}
+                placeholder="24"
+              />
+              {errors.check_interval_hours && (
+                <p className="text-sm text-destructive mt-1">{errors.check_interval_hours.message}</p>
+              )}
+            </div>
+            <div className="flex justify-end gap-3 pt-4">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setIsCreating(false)}
+              >
+                Cancel
+              </Button>
+              <Button type="submit" disabled={createSearchMutation.isPending}>
+                {createSearchMutation.isPending ? 'Creating...' : 'Create Search'}
+              </Button>
+            </div>
+          </form>
+        </DialogContent>
+      </Dialog>
+    </>
   )
 }
 
