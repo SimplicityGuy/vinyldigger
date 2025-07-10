@@ -16,7 +16,7 @@ Thank you for your interest in contributing to VinylDigger! This document provid
 
 1. **Fork and clone the repository**
    ```bash
-   git clone https://github.com/yourusername/vinyldigger.git
+   git clone https://github.com/SimplicityGuy/vinyldigger.git
    cd vinyldigger
    ```
 

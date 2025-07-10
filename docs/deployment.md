@@ -74,7 +74,7 @@ python -c "from cryptography.fernet import Fernet; print(Fernet.generate_key().d
 
 2. **Clone the repository**:
    ```bash
-   git clone https://github.com/yourusername/vinyldigger.git
+   git clone https://github.com/SimplicityGuy/vinyldigger.git
    cd vinyldigger
    ```
 
