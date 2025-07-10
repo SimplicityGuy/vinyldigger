@@ -43,7 +43,7 @@ async def check_scheduled_searches() -> None:
             logger.error(f"Error checking scheduled searches: {str(e)}")
 
 
-def main() -> None:
+async def async_main() -> None:
     scheduler = AsyncIOScheduler()
 
     # Run every hour
@@ -59,9 +59,15 @@ def main() -> None:
     logger.info("Scheduler started")
 
     try:
-        asyncio.get_event_loop().run_forever()
+        # Keep the event loop running
+        while True:
+            await asyncio.sleep(1)
     except (KeyboardInterrupt, SystemExit):
-        pass
+        scheduler.shutdown()
+
+
+def main() -> None:
+    asyncio.run(async_main())
 
 
 if __name__ == "__main__":

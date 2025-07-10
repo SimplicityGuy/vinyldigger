@@ -1,0 +1,20 @@
+# Development overrides for docker-compose.yml
+# This file is automatically loaded by docker-compose when running commands
+
+services:
+  frontend:
+    build:
+      target: development
+    command: npm run dev
+    environment:
+      - NODE_ENV=development
+      - VITE_API_URL=http://localhost:8000
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
