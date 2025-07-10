@@ -1,3 +1,4 @@
+from datetime import datetime
 from typing import Annotated, Any
 from uuid import UUID
 
@@ -38,6 +39,13 @@ class SavedSearchResponse(BaseModel):
     def convert_uuid_to_str(cls, v: UUID | str) -> str:
         if isinstance(v, UUID):
             return str(v)
+        return v
+
+    @field_validator("last_checked_at", mode="before")
+    @classmethod
+    def convert_datetime_to_str(cls, v: datetime | str | None) -> str | None:
+        if isinstance(v, datetime):
+            return v.isoformat()
         return v
 
     class Config:
