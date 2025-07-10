@@ -101,10 +101,31 @@ test-down:
 # Clean up all temporary build artifacts and caches
 clean: clean-docker clean-python clean-frontend clean-misc
 
-# Clean up Docker containers, volumes, and images
+# Deep clean - removes everything including Docker build cache (use with caution!)
+clean-all: clean
+    # Remove all Docker build cache
+    docker builder prune -af
+    # Remove all unused Docker images (not just dangling)
+    docker image prune -af
+    @echo "Deep clean complete! All Docker caches and images have been removed."
+
+# Clean up Docker containers, volumes, and built images
 clean-docker:
+    @echo "Cleaning Docker resources..."
     {{docker_compose}} down -v
+    {{docker_compose}} -f docker-compose.test.yml down -v 2>/dev/null || true
+    # Remove project-specific images
+    @echo "Removing project images..."
+    @docker images --format "{{{{.Repository}}}}:{{{{.Tag}}}}" | grep -E "(virtualdigger|vinyldigger)" | while read image; do \
+        if [ -n "$$image" ]; then \
+            echo "  - Removing image: $$image"; \
+            docker rmi -f "$$image" 2>/dev/null || true; \
+        fi; \
+    done || true
+    # Remove dangling images and build cache
+    @echo "Cleaning up dangling images and build cache..."
     docker system prune -f
+    @echo "✓ Docker cleanup complete!"
 
 # Clean up Python build artifacts and caches
 clean-python:
