@@ -1,4 +1,5 @@
 import asyncio
+import threading
 from datetime import datetime
 from typing import Any
 from uuid import UUID
@@ -27,7 +28,6 @@ class AsyncTask(Task):  # type: ignore[misc]
         raise NotImplementedError
 
 
-@celery_app.task(bind=True, base=AsyncTask)
 class RunSearchTask(AsyncTask):
     async def async_run(self, search_id: str, user_id: str) -> None:
         logger.info(f"Running search {search_id} for user {user_id}")
@@ -197,7 +197,6 @@ class RunSearchTask(AsyncTask):
         return results_added
 
 
-@celery_app.task(bind=True, base=AsyncTask)
 class SyncCollectionTask(AsyncTask):
     async def async_run(self, user_id: str) -> None:
         logger.info(f"Syncing collection for user {user_id}")
@@ -310,5 +309,32 @@ class SyncCollectionTask(AsyncTask):
                 raise
 
 
-run_search_task = RunSearchTask
-sync_collection_task = SyncCollectionTask
+# Create a thread-local event loop for async tasks
+_thread_local = threading.local()
+
+
+def get_or_create_eventloop():
+    try:
+        return asyncio.get_running_loop()
+    except RuntimeError:
+        if not hasattr(_thread_local, "loop"):
+            _thread_local.loop = asyncio.new_event_loop()
+            asyncio.set_event_loop(_thread_local.loop)
+        return _thread_local.loop
+
+
+# Register tasks with Celery
+@celery_app.task(name="src.workers.tasks.RunSearchTask")
+def run_search_task(search_id: str, user_id: str) -> None:
+    """Run a search task asynchronously."""
+    loop = get_or_create_eventloop()
+    task = RunSearchTask()
+    loop.run_until_complete(task.async_run(search_id, user_id))
+
+
+@celery_app.task(name="src.workers.tasks.SyncCollectionTask")
+def sync_collection_task(user_id: str) -> None:
+    """Sync a user's collection asynchronously."""
+    loop = get_or_create_eventloop()
+    task = SyncCollectionTask()
+    loop.run_until_complete(task.async_run(user_id))
