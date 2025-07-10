@@ -157,7 +157,7 @@ class DiscogsService(BaseAPIService):
             page = 1
 
             while True:
-                coll_params = {"page": page, "per_page": 100}
+                coll_params: dict[str, Any] = {"page": page, "per_page": 100}
                 if not headers:
                     coll_params["token"] = credentials["key"]
 
@@ -224,7 +224,7 @@ class DiscogsService(BaseAPIService):
             page = 1
 
             while True:
-                want_params = {"page": page, "per_page": 100}
+                want_params: dict[str, Any] = {"page": page, "per_page": 100}
                 if not headers:
                     want_params["token"] = credentials["key"]
 

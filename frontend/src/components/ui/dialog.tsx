@@ -36,7 +36,7 @@ export function Dialog({ open, onOpenChange, children }: DialogProps) {
   )
 }
 
-interface DialogContentProps extends React.HTMLAttributes<HTMLDivElement> {}
+type DialogContentProps = React.HTMLAttributes<HTMLDivElement>
 
 export function DialogContent({ className, children, ...props }: DialogContentProps) {
   return (
@@ -46,19 +46,19 @@ export function DialogContent({ className, children, ...props }: DialogContentPr
   )
 }
 
-interface DialogHeaderProps extends React.HTMLAttributes<HTMLDivElement> {}
+type DialogHeaderProps = React.HTMLAttributes<HTMLDivElement>
 
 export function DialogHeader({ className, ...props }: DialogHeaderProps) {
   return <div className={cn('mb-4', className)} {...props} />
 }
 
-interface DialogTitleProps extends React.HTMLAttributes<HTMLHeadingElement> {}
+type DialogTitleProps = React.HTMLAttributes<HTMLHeadingElement>
 
 export function DialogTitle({ className, ...props }: DialogTitleProps) {
   return <h2 className={cn('text-lg font-semibold', className)} {...props} />
 }
 
-interface DialogDescriptionProps extends React.HTMLAttributes<HTMLParagraphElement> {}
+type DialogDescriptionProps = React.HTMLAttributes<HTMLParagraphElement>
 
 export function DialogDescription({ className, ...props }: DialogDescriptionProps) {
   return <p className={cn('text-sm text-muted-foreground', className)} {...props} />
