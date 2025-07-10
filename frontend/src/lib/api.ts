@@ -27,8 +27,12 @@ async function fetchApi(endpoint: string, options: RequestInit = {}): Promise<Re
   const token = tokenService.getAccessToken()
 
   const headers: Record<string, string> = {
-    'Content-Type': 'application/json',
     ...(options.headers as Record<string, string>),
+  }
+
+  // Only set Content-Type if not already set and body is not FormData
+  if (!headers['Content-Type'] && !(options.body instanceof FormData)) {
+    headers['Content-Type'] = 'application/json'
   }
 
   if (token) {
@@ -129,7 +133,6 @@ export const authApi = {
     const response = await fetchApi('/auth/login', {
       method: 'POST',
       body: formData,
-      headers: {},
     })
 
     const result = await response.json()
