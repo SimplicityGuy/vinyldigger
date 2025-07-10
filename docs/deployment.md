@@ -80,8 +80,8 @@ python -c "from cryptography.fernet import Fernet; print(Fernet.generate_key().d
 
 3. **Configure environment**:
    ```bash
-   cp .env.example .env.production
-   # Edit .env.production with your values
+   cp backend/.env.example backend/.env.production
+   # Edit backend/.env.production with your values
    ```
 
 4. **Build and start services**:
@@ -89,8 +89,10 @@ python -c "from cryptography.fernet import Fernet; print(Fernet.generate_key().d
    docker-compose -f docker-compose.prod.yml up -d
    ```
 
-5. **Run database migrations**:
+5. **Database migrations**:
+   Note: The backend container automatically runs migrations on startup if alembic/versions/ contains migration files. If you need to create the initial migration:
    ```bash
+   docker-compose -f docker-compose.prod.yml exec backend alembic revision --autogenerate -m "Initial migration"
    docker-compose -f docker-compose.prod.yml exec backend alembic upgrade head
    ```
 

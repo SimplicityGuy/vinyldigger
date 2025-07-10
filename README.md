@@ -84,8 +84,8 @@ A powerful web application that automates vinyl record discovery and comparison 
 
 2. **Set up environment**
    ```bash
-   cp .env.example .env
-   # Edit .env with your configuration
+   cp backend/.env.example backend/.env
+   # Edit backend/.env with your configuration
    ```
 
 3. **Start the application**
@@ -171,14 +171,21 @@ See the [Testing Guide](docs/testing.md) for detailed testing instructions.
 
 ### Quick Links
 - [API Documentation](docs/api.md) - Complete REST API reference with examples
+- [API Client Examples](docs/api-examples.md) - Example code in multiple languages
 - [Architecture Overview](docs/architecture.md) - System design and technical details
 - [Testing Guide](docs/testing.md) - Running and writing tests
 - [Deployment Guide](docs/deployment.md) - Production deployment instructions
+- [Performance Tuning](docs/performance.md) - Optimization strategies and best practices
+- [Security Guide](docs/security.md) - Security best practices and implementation
+- [Monitoring & Observability](docs/monitoring.md) - Logging, metrics, and alerting
 - [Contributing Guidelines](CONTRIBUTING.md) - How to contribute to the project
 - [E2E Testing Guide](frontend/tests/e2e/README.md) - End-to-end testing documentation
 
 ### Additional Documentation
+- [Troubleshooting Guide](docs/troubleshooting.md) - Common issues and solutions
 - [CI/CD Troubleshooting](docs/ci-troubleshooting-fixes.md) - GitHub Actions fixes and solutions
+- [CI/CD Fixes Summary](docs/ci-fixes-summary.md) - Comprehensive fixes for flaky CI issues
+- [CI Just Command Fix](docs/ci-just-fix.md) - Just command runner CI fixes
 - [Docker OCI Labels](docs/docker-oci-labels.md) - Container labeling standards
 - [Project Context](CLAUDE.md) - AI assistant configuration and project guidelines
 
@@ -292,6 +299,7 @@ vinyldigger/
 - **Containers not starting**: Run `just clean` to reset everything
 - **Port conflicts**: Ensure ports 3000, 8000, 5432, 6379 are free
 - **Volume permissions**: Check Docker has proper file permissions
+- **Inter-container networking**: Use service names (e.g., `backend:8000`) not localhost
 
 #### Development Issues
 - **Import errors**: Check for circular imports, use TYPE_CHECKING
@@ -299,11 +307,14 @@ vinyldigger/
 - **Pre-commit failures**: Run `just lint` to see specific problems
 
 #### Database Issues
+- **Missing tables error**: Run `just migrate` to apply migrations
 - **Migration conflicts**: Reset with `cd backend && uv run alembic downgrade base && uv run alembic upgrade head`
-- **Connection errors**: Check DATABASE_URL in .env matches docker-compose
+- **Connection errors**: Check DATABASE_URL in backend/.env matches docker-compose
+- **Empty migrations folder**: Generate initial migration with `docker-compose exec backend alembic revision --autogenerate -m "Initial migration"`
 
 #### API Issues
 - **401 Unauthorized**: Token may be expired, try logging in again
+- **500 Internal Server Error**: Check backend logs with `just logs backend`
 - **CORS errors**: Check FRONTEND_URL in backend .env
 
 See [CI/CD Troubleshooting](docs/ci-troubleshooting-fixes.md) for GitHub Actions issues.

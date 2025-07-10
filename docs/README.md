@@ -11,9 +11,14 @@ Welcome to the VinylDigger documentation! This index provides quick access to al
 
 ### Technical Documentation
 - **[API Documentation](api.md)** - Complete REST API reference with examples
+- **[API Client Examples](api-examples.md)** - Example code in Python, JavaScript/TypeScript, Go, and cURL
 - **[Architecture Overview](architecture.md)** - System design, components, and technical details
 - **[Testing Guide](testing.md)** - Running and writing tests, CI/CD integration
 - **[Deployment Guide](deployment.md)** - Production deployment instructions and best practices
+- **[Performance Tuning](performance.md)** - Optimization strategies for database, API, and frontend
+- **[Security Guide](security.md)** - Security best practices and implementation guidelines
+- **[Monitoring & Observability](monitoring.md)** - Comprehensive monitoring, logging, and alerting setup
+- **[Troubleshooting Guide](troubleshooting.md)** - Common issues and their solutions
 
 ### Specialized Guides
 - **[E2E Testing Guide](../frontend/tests/e2e/README.md)** - End-to-end testing with Playwright
@@ -52,10 +57,17 @@ Welcome to the VinylDigger documentation! This index provides quick access to al
 docs/
 ├── README.md              # This file - documentation index
 ├── api.md                 # API reference documentation
+├── api-examples.md       # API client examples in multiple languages
 ├── architecture.md        # System architecture and design
 ├── deployment.md          # Deployment and operations guide
 ├── testing.md            # Testing strategies and guides
+├── performance.md        # Performance tuning guide
+├── security.md           # Security best practices
+├── monitoring.md         # Monitoring and observability guide
+├── troubleshooting.md    # Common issues and solutions
 ├── ci-troubleshooting-fixes.md  # CI/CD specific issues
+├── ci-fixes-summary.md   # Comprehensive CI fixes
+├── ci-just-fix.md       # Just command CI fixes
 └── docker-oci-labels.md  # Docker standards documentation
 ```
 
@@ -89,11 +101,11 @@ docs/
 
 ## 📝 Documentation TODO
 
-- [ ] Add performance tuning guide
-- [ ] Create troubleshooting FAQ
-- [ ] Add security best practices guide
-- [ ] Create API client examples in multiple languages
-- [ ] Add monitoring and observability guide
+- [x] Add performance tuning guide
+- [x] Create troubleshooting guide
+- [x] Add security best practices guide
+- [x] Create API client examples in multiple languages
+- [x] Add monitoring and observability guide
 
 ---
 

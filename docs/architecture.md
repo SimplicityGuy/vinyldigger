@@ -92,11 +92,11 @@ The API server handles all HTTP requests and provides RESTful endpoints.
 backend/src/
 ├── api/v1/
 │   ├── endpoints/     # API route handlers
-│   ├── deps.py        # Common dependencies
-│   └── router.py      # Main API router
+│   └── api.py         # Main API router
 ├── core/
 │   ├── config.py      # Configuration management
 │   ├── database.py    # Database connection
+│   ├── logging.py     # Logging configuration
 │   └── security.py    # Security utilities
 ├── models/            # SQLAlchemy models
 ├── services/          # Business logic layer
@@ -176,16 +176,25 @@ PostgreSQL database with the following main tables:
 ### Data Flow
 
 1. **Search Flow**:
-   ```
-   User creates search → API stores in DB → Scheduler checks periodically
-   → Worker executes search → Results stored in DB → User views results
-   ```
+
+```mermaid
+graph LR
+    A[User creates search] --> B[API stores in DB]
+    B --> C[Scheduler checks periodically]
+    C --> D[Worker executes search]
+    D --> E[Results stored in DB]
+    E --> F[User views results]
+```
 
 2. **Collection Sync Flow**:
-   ```
-   User triggers sync → API queues task → Worker fetches from Discogs
-   → Data processed and stored → Search results updated with matches
-   ```
+
+```mermaid
+graph LR
+    A[User triggers sync] --> B[API queues task]
+    B --> C[Worker fetches from Discogs]
+    C --> D[Data processed and stored]
+    D --> E[Search results updated with matches]
+```
 
 ### Caching Strategy
 
@@ -215,11 +224,17 @@ Redis is used for:
 
 External API keys are encrypted using Fernet symmetric encryption:
 
-```python
-# Encryption flow
-plaintext_key → Fernet.encrypt() → stored in database
-# Decryption flow
-encrypted_key → Fernet.decrypt() → used in API calls
+```mermaid
+graph TD
+    subgraph "Encryption Flow"
+        A1[Plaintext API Key] --> B1[Fernet.encrypt]
+        B1 --> C1[Encrypted Key stored in DB]
+    end
+
+    subgraph "Decryption Flow"
+        C2[Encrypted Key from DB] --> B2[Fernet.decrypt]
+        B2 --> A2[Plaintext Key for API calls]
+    end
 ```
 
 ### Security Headers
@@ -304,9 +319,10 @@ Each service runs in its own container:
 ### Environment Configuration
 
 Environment-specific settings:
-- Development: `.env` file
-- Production: Environment variables
+- Development: `backend/.env` file with docker-compose.override.yml
+- Production: Environment variables injected at runtime
 - Secrets: Encrypted in deployment platform
+- Database: Migrations run automatically on backend startup
 
 ## Monitoring and Observability
 

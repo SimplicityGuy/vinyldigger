@@ -8,6 +8,7 @@ VinylDigger provides a RESTful API for automating vinyl record discovery across 
 - **API Base**: `/api/v1`
 - **Health Check**: `/health`
 - **Interactive Documentation**: `/api/docs` (Swagger UI)
+- **ReDoc Documentation**: `/api/redoc`
 - **OpenAPI Schema**: `/api/openapi.json`
 
 ### Authentication
@@ -405,11 +406,11 @@ All endpoints use consistent error response format:
 
 - **200 OK**: Successful request
 - **201 Created**: Resource successfully created
-- **400 Bad Request**: Invalid request data
-- **401 Unauthorized**: Missing or invalid authentication
+- **400 Bad Request**: Invalid request data (e.g., email already registered)
+- **401 Unauthorized**: Missing or invalid authentication token
 - **404 Not Found**: Resource not found
-- **422 Unprocessable Entity**: Validation error
-- **500 Internal Server Error**: Server error
+- **422 Unprocessable Entity**: Validation error in request body
+- **500 Internal Server Error**: Server error (check logs for details)
 
 ### Validation Errors
 
