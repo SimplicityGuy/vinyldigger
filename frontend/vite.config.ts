@@ -14,7 +14,7 @@ export default defineConfig({
     host: true, // Listen on all interfaces to allow Docker access
     proxy: {
       '/api': {
-        target: process.env.API_URL || 'http://localhost:8000',
+        target: process.env.VITE_API_URL || 'http://localhost:8000',
         changeOrigin: true,
       },
     },
