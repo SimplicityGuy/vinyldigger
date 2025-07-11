@@ -178,7 +178,9 @@ function AdminPage() {
                     id="discogs-key"
                     type="text"
                     value={discogsData.consumer_key}
-                    onChange={(e) => setDiscogsData({ ...discogsData, consumer_key: e.target.value })}
+                    onChange={(e) =>
+                      setDiscogsData({ ...discogsData, consumer_key: e.target.value })
+                    }
                     placeholder="Enter Discogs consumer key"
                     required
                   />
@@ -190,7 +192,9 @@ function AdminPage() {
                     id="discogs-secret"
                     type="password"
                     value={discogsData.consumer_secret}
-                    onChange={(e) => setDiscogsData({ ...discogsData, consumer_secret: e.target.value })}
+                    onChange={(e) =>
+                      setDiscogsData({ ...discogsData, consumer_secret: e.target.value })
+                    }
                     placeholder="Enter Discogs consumer secret"
                     required
                   />
@@ -202,7 +206,9 @@ function AdminPage() {
                     id="discogs-callback"
                     type="url"
                     value={discogsData.callback_url}
-                    onChange={(e) => setDiscogsData({ ...discogsData, callback_url: e.target.value })}
+                    onChange={(e) =>
+                      setDiscogsData({ ...discogsData, callback_url: e.target.value })
+                    }
                     placeholder="https://yourdomain.com/oauth/callback/discogs"
                   />
                   <p className="text-xs text-muted-foreground">
@@ -226,9 +232,7 @@ function AdminPage() {
               <ShoppingBag className="h-5 w-5" />
               <CardTitle>eBay Configuration</CardTitle>
             </div>
-            <CardDescription>
-              Configure OAuth 2.0 credentials for eBay API access
-            </CardDescription>
+            <CardDescription>Configure OAuth 2.0 credentials for eBay API access</CardDescription>
           </CardHeader>
           <CardContent>
             {ebayConfig ? (
@@ -322,9 +326,7 @@ function AdminPage() {
             <AlertCircle className="h-5 w-5 text-yellow-600 mt-0.5" />
             <div>
               <CardTitle className="text-lg">Important Information</CardTitle>
-              <CardDescription>
-                About OAuth provider configuration
-              </CardDescription>
+              <CardDescription>About OAuth provider configuration</CardDescription>
             </div>
           </div>
         </CardHeader>

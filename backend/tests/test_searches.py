@@ -130,7 +130,7 @@ async def test_get_searches(client: AsyncClient, db_session: AsyncSession):
         {"name": "Rock Albums", "query": "rock vinyl", "platform": "EBAY"},
         {"name": "Classical", "query": "classical music", "platform": "BOTH"},
     ]
-    
+
     for search in searches:
         await client.post("/api/v1/searches", json=search, headers=headers)
 

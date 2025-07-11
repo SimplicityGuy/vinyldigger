@@ -10,7 +10,7 @@ afterEach(() => {
 // Mock window.matchMedia
 Object.defineProperty(window, 'matchMedia', {
   writable: true,
-  value: vi.fn().mockImplementation(query => ({
+  value: vi.fn().mockImplementation((query) => ({
     matches: false,
     media: query,
     onchange: null,
@@ -24,14 +24,18 @@ Object.defineProperty(window, 'matchMedia', {
 
 // Mock IntersectionObserver
 global.IntersectionObserver = class IntersectionObserver {
-  constructor(callback: IntersectionObserverCallback) {}
+  readonly root: Element | null = null
+  readonly rootMargin: string = ''
+  readonly thresholds: ReadonlyArray<number> = []
+
+  constructor() {}
   disconnect() {}
   observe() {}
   unobserve() {}
   takeRecords() {
     return []
   }
-}
+} as unknown as typeof IntersectionObserver
 
 // Mock fetch globally
 global.fetch = vi.fn()
@@ -45,4 +49,4 @@ const localStorageMock = {
   length: 0,
   key: vi.fn(),
 }
-global.localStorage = localStorageMock as any
+global.localStorage = localStorageMock as Storage

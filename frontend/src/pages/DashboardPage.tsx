@@ -164,7 +164,13 @@ export const DashboardPage = memo(function DashboardPage() {
             <Loader2 className="h-5 w-5 animate-spin text-blue-600" />
             <div className="flex-1">
               <p className="font-medium text-blue-900">
-                Syncing {syncType === 'collection' ? 'collection' : syncType === 'wantlist' ? 'want list' : 'collection and want list'} with Discogs...
+                Syncing{' '}
+                {syncType === 'collection'
+                  ? 'collection'
+                  : syncType === 'wantlist'
+                    ? 'want list'
+                    : 'collection and want list'}{' '}
+                with Discogs...
               </p>
               <p className="text-sm text-blue-700">
                 This may take a few minutes depending on the size
@@ -229,8 +235,12 @@ export const DashboardPage = memo(function DashboardPage() {
                   disabled={syncAllMutation.isPending || isSyncing}
                   className="gap-2"
                 >
-                  <RefreshCw className={`h-4 w-4 ${(syncAllMutation.isPending || (isSyncing && syncType === 'both')) ? 'animate-spin' : ''}`} />
-                  {(syncAllMutation.isPending || (isSyncing && syncType === 'both')) ? 'Syncing...' : 'Sync All'}
+                  <RefreshCw
+                    className={`h-4 w-4 ${syncAllMutation.isPending || (isSyncing && syncType === 'both') ? 'animate-spin' : ''}`}
+                  />
+                  {syncAllMutation.isPending || (isSyncing && syncType === 'both')
+                    ? 'Syncing...'
+                    : 'Sync All'}
                 </Button>
                 <Button
                   onClick={() => syncCollectionMutation.mutate()}
@@ -238,8 +248,12 @@ export const DashboardPage = memo(function DashboardPage() {
                   variant="outline"
                   className="gap-2"
                 >
-                  <Package className={`h-4 w-4 ${(syncCollectionMutation.isPending || (isSyncing && syncType === 'collection')) ? 'animate-spin' : ''}`} />
-                  {(syncCollectionMutation.isPending || (isSyncing && syncType === 'collection')) ? 'Syncing...' : 'Sync Collection Only'}
+                  <Package
+                    className={`h-4 w-4 ${syncCollectionMutation.isPending || (isSyncing && syncType === 'collection') ? 'animate-spin' : ''}`}
+                  />
+                  {syncCollectionMutation.isPending || (isSyncing && syncType === 'collection')
+                    ? 'Syncing...'
+                    : 'Sync Collection Only'}
                 </Button>
                 <Button
                   onClick={() => syncWantListMutation.mutate()}
@@ -247,8 +261,12 @@ export const DashboardPage = memo(function DashboardPage() {
                   variant="outline"
                   className="gap-2"
                 >
-                  <Heart className={`h-4 w-4 ${(syncWantListMutation.isPending || (isSyncing && syncType === 'wantlist')) ? 'animate-spin' : ''}`} />
-                  {(syncWantListMutation.isPending || (isSyncing && syncType === 'wantlist')) ? 'Syncing...' : 'Sync Want List Only'}
+                  <Heart
+                    className={`h-4 w-4 ${syncWantListMutation.isPending || (isSyncing && syncType === 'wantlist') ? 'animate-spin' : ''}`}
+                  />
+                  {syncWantListMutation.isPending || (isSyncing && syncType === 'wantlist')
+                    ? 'Syncing...'
+                    : 'Sync Want List Only'}
                 </Button>
               </div>
               <p className="text-sm text-muted-foreground">
@@ -293,7 +311,9 @@ export const DashboardPage = memo(function DashboardPage() {
                 ) : (
                   <div className="h-4 w-4 rounded-full border-2 border-gray-300" />
                 )}
-                <span className={completionStatus.discogsConnected ? 'text-green-700 line-through' : ''}>
+                <span
+                  className={completionStatus.discogsConnected ? 'text-green-700 line-through' : ''}
+                >
                   Connect your Discogs account in{' '}
                   <Link to="/settings" className="text-primary underline">
                     Settings
@@ -308,13 +328,15 @@ export const DashboardPage = memo(function DashboardPage() {
                 ) : (
                   <div className="h-4 w-4 rounded-full border-2 border-gray-300" />
                 )}
-                <span className={
-                  completionStatus.bothSynced ?
-                    'text-green-700 line-through' :
-                    completionStatus.eitherSynced ?
-                      'text-yellow-700' :
-                      ''
-                }>
+                <span
+                  className={
+                    completionStatus.bothSynced
+                      ? 'text-green-700 line-through'
+                      : completionStatus.eitherSynced
+                        ? 'text-yellow-700'
+                        : ''
+                  }
+                >
                   Sync your collection and want list using the button above
                   {completionStatus.eitherSynced && !completionStatus.bothSynced && (
                     <span className="text-xs ml-1">
@@ -329,7 +351,9 @@ export const DashboardPage = memo(function DashboardPage() {
                 ) : (
                   <div className="h-4 w-4 rounded-full border-2 border-gray-300" />
                 )}
-                <span className={completionStatus.searchCreated ? 'text-green-700 line-through' : ''}>
+                <span
+                  className={completionStatus.searchCreated ? 'text-green-700 line-through' : ''}
+                >
                   Create your first{' '}
                   <Link to="/searches" className="text-primary underline">
                     search

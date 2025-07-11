@@ -22,7 +22,7 @@ describe('api', () => {
   beforeEach(() => {
     vi.clearAllMocks()
     // Reset fetch mock
-    ;(global.fetch as any).mockReset()
+    vi.mocked(global.fetch).mockReset()
   })
 
   afterEach(() => {
@@ -33,7 +33,7 @@ describe('api', () => {
   describe('auth methods', () => {
     it('should login successfully', async () => {
       const mockTokens = { access_token: 'access', refresh_token: 'refresh', token_type: 'bearer' }
-      ;(global.fetch as any).mockResolvedValueOnce({
+      vi.mocked(global.fetch).mockResolvedValueOnce({
         ok: true,
         json: async () => mockTokens,
       })
@@ -46,7 +46,7 @@ describe('api', () => {
 
     it('should register successfully', async () => {
       const mockUser = { id: '123', email: 'test@example.com' }
-      ;(global.fetch as any).mockResolvedValueOnce({
+      vi.mocked(global.fetch).mockResolvedValueOnce({
         ok: true,
         json: async () => mockUser,
       })
@@ -65,11 +65,11 @@ describe('api', () => {
   describe('searches methods', () => {
     it('should fetch searches', async () => {
       const mockSearches = [{ id: '1', name: 'Test Search' }]
-      ;(global.fetch as any).mockResolvedValueOnce({
+      vi.mocked(global.fetch).mockResolvedValueOnce({
         ok: true,
         json: async () => mockSearches,
       })
-      ;(tokenService.getAccessToken as any).mockReturnValue('test-token')
+      vi.mocked(tokenService.getAccessToken).mockReturnValue('test-token')
 
       const result = await api.getSearches()
 
@@ -83,13 +83,13 @@ describe('api', () => {
     it('should create search', async () => {
       const newSearch = { name: 'New Search', query: 'test' }
       const mockCreated = { id: '123', ...newSearch }
-      ;(global.fetch as any).mockResolvedValueOnce({
+      vi.mocked(global.fetch).mockResolvedValueOnce({
         ok: true,
         json: async () => mockCreated,
       })
-      ;(tokenService.getAccessToken as any).mockReturnValue('test-token')
+      vi.mocked(tokenService.getAccessToken).mockReturnValue('test-token')
 
-      const result = await api.createSearch(newSearch as any)
+      const result = await api.createSearch(newSearch as Parameters<typeof api.createSearch>[0])
 
       expect(result).toEqual(mockCreated)
       expect(global.fetch).toHaveBeenCalledWith(
@@ -103,11 +103,11 @@ describe('api', () => {
 
     it('should run search', async () => {
       const searchId = '123'
-      ;(global.fetch as any).mockResolvedValueOnce({
+      vi.mocked(global.fetch).mockResolvedValueOnce({
         ok: true,
         json: async () => ({ message: 'Search started' }),
       })
-      ;(tokenService.getAccessToken as any).mockReturnValue('test-token')
+      vi.mocked(tokenService.getAccessToken).mockReturnValue('test-token')
 
       const result = await api.runSearch(searchId)
 
@@ -124,11 +124,11 @@ describe('api', () => {
   describe('collections methods', () => {
     it('should sync collections', async () => {
       const mockResponse = { message: 'Sync started' }
-      ;(global.fetch as any).mockResolvedValueOnce({
+      vi.mocked(global.fetch).mockResolvedValueOnce({
         ok: true,
         json: async () => mockResponse,
       })
-      ;(tokenService.getAccessToken as any).mockReturnValue('test-token')
+      vi.mocked(tokenService.getAccessToken).mockReturnValue('test-token')
 
       const result = await api.syncCollection()
 
@@ -145,11 +145,11 @@ describe('api', () => {
   describe('config methods', () => {
     it('should get preferences', async () => {
       const mockPrefs = { discogs_username: 'user123' }
-      ;(global.fetch as any).mockResolvedValueOnce({
+      vi.mocked(global.fetch).mockResolvedValueOnce({
         ok: true,
         json: async () => mockPrefs,
       })
-      ;(tokenService.getAccessToken as any).mockReturnValue('test-token')
+      vi.mocked(tokenService.getAccessToken).mockReturnValue('test-token')
 
       const result = await api.getPreferences()
 
@@ -159,11 +159,11 @@ describe('api', () => {
     it('should update preferences', async () => {
       const updates = { discogs_username: 'newuser' }
       const mockUpdated = { ...updates, ebay_max_price: 100 }
-      ;(global.fetch as any).mockResolvedValueOnce({
+      vi.mocked(global.fetch).mockResolvedValueOnce({
         ok: true,
         json: async () => mockUpdated,
       })
-      ;(tokenService.getAccessToken as any).mockReturnValue('test-token')
+      vi.mocked(tokenService.getAccessToken).mockReturnValue('test-token')
 
       const result = await api.updatePreferences(updates)
 

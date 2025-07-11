@@ -1,15 +1,62 @@
 import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest'
 
 // We'll import the token service fresh for each test
-let tokenService: any
+let tokenService: {
+  setTokens: (access: string, refresh: string) => void
+  getAccessToken: () => string | null
+  getRefreshToken: () => string | null
+  clearTokens: () => void
+  hasValidTokens: () => boolean
+  updateAccessToken: (token: string) => void
+  loadTokens?: () => void
+}
 
 describe('tokenService', () => {
+  // Create storage mocks with actual implementation
+  const sessionStorageData: Record<string, string> = {}
+  const localStorageData: Record<string, string> = {}
+
   beforeEach(async () => {
-    // Clear storage before each test
-    sessionStorage.clear()
-    localStorage.clear()
+    // Clear storage data
+    Object.keys(sessionStorageData).forEach(key => delete sessionStorageData[key])
+    Object.keys(localStorageData).forEach(key => delete localStorageData[key])
+
+    // Mock sessionStorage
+    Object.defineProperty(window, 'sessionStorage', {
+      value: {
+        getItem: vi.fn((key: string) => sessionStorageData[key] || null),
+        setItem: vi.fn((key: string, value: string) => {
+          sessionStorageData[key] = value
+        }),
+        removeItem: vi.fn((key: string) => {
+          delete sessionStorageData[key]
+        }),
+        clear: vi.fn(() => {
+          Object.keys(sessionStorageData).forEach(key => delete sessionStorageData[key])
+        }),
+      },
+      writable: true,
+    })
+
+    // Mock localStorage
+    Object.defineProperty(window, 'localStorage', {
+      value: {
+        getItem: vi.fn((key: string) => localStorageData[key] || null),
+        setItem: vi.fn((key: string, value: string) => {
+          localStorageData[key] = value
+        }),
+        removeItem: vi.fn((key: string) => {
+          delete localStorageData[key]
+        }),
+        clear: vi.fn(() => {
+          Object.keys(localStorageData).forEach(key => delete localStorageData[key])
+        }),
+      },
+      writable: true,
+    })
+
     vi.clearAllMocks()
-    
+
     // Reset module cache to get a fresh instance
     vi.resetModules()
     const module = await import('@/lib/token-service')
@@ -17,8 +64,8 @@ describe('tokenService', () => {
   })
 
   afterEach(() => {
-    sessionStorage.clear()
-    localStorage.clear()
+    Object.keys(sessionStorageData).forEach(key => delete sessionStorageData[key])
+    Object.keys(localStorageData).forEach(key => delete localStorageData[key])
   })
 
   describe('setTokens', () => {
@@ -30,7 +77,7 @@ describe('tokenService', () => {
 
       expect(sessionStorage.getItem('access_token')).toBe(accessToken)
       expect(tokenService.getAccessToken()).toBe(accessToken)
-      
+
       const storedRefresh = localStorage.getItem('refresh_token')
       expect(storedRefresh).toBeTruthy()
       const parsed = JSON.parse(storedRefresh!)
@@ -66,22 +113,22 @@ describe('tokenService', () => {
         token: 'expired-refresh-token',
         expiry: Date.now() - 1000, // 1 second ago
       }
-      localStorage.setItem('refresh_token', JSON.stringify(expiredData))
-      
+      localStorageData['refresh_token'] = JSON.stringify(expiredData)
+
       // Force reload tokens
-      ;(tokenService as any).loadTokens()
-      
+      tokenService.loadTokens?.()
+
       expect(tokenService.getRefreshToken()).toBe(null)
-      expect(localStorage.getItem('refresh_token')).toBe(null)
+      expect(localStorageData['refresh_token']).toBeUndefined()
     })
   })
 
   describe('clearTokens', () => {
     it('should clear all tokens', () => {
       tokenService.setTokens('access-123', 'refresh-123')
-      
+
       tokenService.clearTokens()
-      
+
       expect(sessionStorage.getItem('access_token')).toBe(null)
       expect(localStorage.getItem('refresh_token')).toBe(null)
       expect(tokenService.getAccessToken()).toBe(null)
@@ -101,7 +148,7 @@ describe('tokenService', () => {
 
     it('should return false when only access token exists', () => {
       sessionStorage.setItem('access_token', 'access-123')
-      ;(tokenService as any).loadTokens()
+      tokenService.loadTokens?.()
       expect(tokenService.hasValidTokens()).toBe(false)
     })
 
@@ -111,7 +158,7 @@ describe('tokenService', () => {
         expiry: Date.now() + 100000,
       }
       localStorage.setItem('refresh_token', JSON.stringify(refreshData))
-      ;(tokenService as any).loadTokens()
+      tokenService.loadTokens?.()
       expect(tokenService.hasValidTokens()).toBe(false)
     })
   })
@@ -119,9 +166,9 @@ describe('tokenService', () => {
   describe('updateAccessToken', () => {
     it('should update only the access token', () => {
       tokenService.setTokens('old-access', 'refresh-123')
-      
+
       tokenService.updateAccessToken('new-access')
-      
+
       expect(tokenService.getAccessToken()).toBe('new-access')
       expect(tokenService.getRefreshToken()).toBe('refresh-123')
       expect(sessionStorage.getItem('access_token')).toBe('new-access')
@@ -130,29 +177,29 @@ describe('tokenService', () => {
 
   describe('loadTokens', () => {
     it('should load valid tokens from storage on initialization', () => {
-      // Set tokens in storage
-      sessionStorage.setItem('access_token', 'stored-access')
+      // Set tokens in storage directly in the mock data
+      sessionStorageData['access_token'] = 'stored-access'
       const refreshData = {
         token: 'stored-refresh',
         expiry: Date.now() + 100000,
       }
-      localStorage.setItem('refresh_token', JSON.stringify(refreshData))
-      
+      localStorageData['refresh_token'] = JSON.stringify(refreshData)
+
       // Force reload
-      ;(tokenService as any).loadTokens()
-      
+      tokenService.loadTokens?.()
+
       expect(tokenService.getAccessToken()).toBe('stored-access')
       expect(tokenService.getRefreshToken()).toBe('stored-refresh')
     })
 
     it('should handle invalid JSON in refresh token', () => {
-      localStorage.setItem('refresh_token', 'invalid-json')
-      
+      localStorageData['refresh_token'] = 'invalid-json'
+
       // Force reload - should not throw
-      ;(tokenService as any).loadTokens()
-      
+      tokenService.loadTokens?.()
+
       expect(tokenService.getRefreshToken()).toBe(null)
-      expect(localStorage.getItem('refresh_token')).toBe(null)
+      expect(localStorageData['refresh_token']).toBeUndefined()
     })
   })
 })

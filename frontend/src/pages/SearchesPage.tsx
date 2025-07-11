@@ -145,8 +145,8 @@ function SearchesPageComponent() {
                     <div>
                       <CardTitle>{search.name}</CardTitle>
                       <CardDescription>
-                        {search.query} • {formatProvider(search.platform)} • Every {search.check_interval_hours}{' '}
-                        hours
+                        {search.query} • {formatProvider(search.platform)} • Every{' '}
+                        {search.check_interval_hours} hours
                       </CardDescription>
                     </div>
                     <div className="flex gap-2">
@@ -177,17 +177,22 @@ function SearchesPageComponent() {
                   <div className="space-y-1 text-sm text-muted-foreground">
                     <p>
                       Last checked:{' '}
-                      {search.last_run_at
-                        ? new Date(search.last_run_at).toLocaleString()
-                        : 'Never'}
+                      {search.last_run_at ? new Date(search.last_run_at).toLocaleString() : 'Never'}
                     </p>
-                    {(search.min_record_condition || search.min_sleeve_condition || search.seller_location_preference) && (
+                    {(search.min_record_condition ||
+                      search.min_sleeve_condition ||
+                      search.seller_location_preference) && (
                       <p>
-                        {search.min_record_condition && `Min Record: ${search.min_record_condition}`}
+                        {search.min_record_condition &&
+                          `Min Record: ${search.min_record_condition}`}
                         {search.min_record_condition && search.min_sleeve_condition && ' • '}
-                        {search.min_sleeve_condition && `Min Sleeve: ${search.min_sleeve_condition}`}
-                        {(search.min_record_condition || search.min_sleeve_condition) && search.seller_location_preference && ' • '}
-                        {search.seller_location_preference && `Location: ${search.seller_location_preference}`}
+                        {search.min_sleeve_condition &&
+                          `Min Sleeve: ${search.min_sleeve_condition}`}
+                        {(search.min_record_condition || search.min_sleeve_condition) &&
+                          search.seller_location_preference &&
+                          ' • '}
+                        {search.seller_location_preference &&
+                          `Location: ${search.seller_location_preference}`}
                       </p>
                     )}
                   </div>

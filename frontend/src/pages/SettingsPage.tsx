@@ -145,7 +145,8 @@ function SettingsPage() {
                   <div className="mt-4 p-4 border rounded-lg space-y-3 bg-muted/50">
                     <p className="text-sm font-medium">Enter Verification Code</p>
                     <p className="text-sm text-muted-foreground">
-                      After authorizing VinylDigger on Discogs, enter the verification code shown on the Discogs page.
+                      After authorizing VinylDigger on Discogs, enter the verification code shown on
+                      the Discogs page.
                     </p>
                     <div className="flex gap-2">
                       <Input
