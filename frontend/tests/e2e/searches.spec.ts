@@ -35,7 +35,7 @@ const mockSearches = [
     platform: 'both',
     is_active: true,
     check_interval_hours: 24,
-    last_checked_at: new Date(Date.now() - 3600000).toISOString(),
+    last_run_at: new Date(Date.now() - 3600000).toISOString(),
     created_at: new Date(Date.now() - 86400000).toISOString(),
     updated_at: new Date(Date.now() - 3600000).toISOString(),
     filters: {
@@ -52,7 +52,7 @@ const mockSearches = [
     platform: 'discogs',
     is_active: false,
     check_interval_hours: 12,
-    last_checked_at: null,
+    last_run_at: null,
     created_at: new Date(Date.now() - 172800000).toISOString(),
     updated_at: new Date(Date.now() - 172800000).toISOString(),
     filters: {

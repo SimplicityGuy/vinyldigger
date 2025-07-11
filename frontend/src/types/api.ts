@@ -38,7 +38,7 @@ export interface SavedSearch {
   filters: SearchFilters
   is_active: boolean
   check_interval_hours: number
-  last_checked_at?: string
+  last_run_at?: string
   created_at: string
   updated_at: string
   min_record_condition?: string

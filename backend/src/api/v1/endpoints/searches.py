@@ -35,7 +35,7 @@ class SavedSearchResponse(BaseModel):
     filters: dict[str, Any]
     is_active: bool
     check_interval_hours: int
-    last_checked_at: str | None
+    last_run_at: str | None
     min_record_condition: str | None
     min_sleeve_condition: str | None
     seller_location_preference: str | None
@@ -47,7 +47,7 @@ class SavedSearchResponse(BaseModel):
             return str(v)
         return v
 
-    @field_validator("last_checked_at", mode="before")
+    @field_validator("last_run_at", mode="before")
     @classmethod
     def convert_datetime_to_str(cls, v: datetime | str | None) -> str | None:
         if isinstance(v, datetime):

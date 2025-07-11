@@ -3,8 +3,8 @@ ARG BUILD_DATE
 ARG VCS_REF
 ARG VERSION=0.1.0
 
-# Base image
-FROM node:22-alpine AS base
+# Pin specific version for reproducibility
+FROM node:22.12-alpine3.21 AS base
 
 # Set environment variables
 ENV NODE_ENV=production
@@ -15,9 +15,11 @@ FROM base AS development
 # Set environment variables
 ENV NODE_ENV=development
 
-# Install curl for health checks
+# Install curl for health checks and dumb-init for proper signal handling
 # hadolint ignore=DL3018
-RUN apk add --no-cache curl
+RUN apk add --no-cache \
+    curl \
+    dumb-init
 
 # Set working directory
 WORKDIR /app
@@ -46,7 +48,7 @@ WORKDIR /app
 COPY package.json package-lock.json* ./
 
 # Install production dependencies only
-RUN npm ci --only=production
+RUN npm ci --omit=dev
 
 # Build stage
 FROM base AS builder
@@ -67,7 +69,8 @@ COPY . .
 RUN npm run build
 
 # Production stage
-FROM nginx:alpine AS runner
+# Pin specific version for reproducibility
+FROM nginx:1.27-alpine3.20 AS runner
 
 # Re-declare build arguments for use in this stage
 ARG BUILD_DATE
@@ -84,12 +87,14 @@ LABEL org.opencontainers.image.created="${BUILD_DATE}" \
       org.opencontainers.image.revision="${VCS_REF}" \
       org.opencontainers.image.source="https://github.com/SimplicityGuy/vinyldigger" \
       org.opencontainers.image.documentation="https://github.com/SimplicityGuy/vinyldigger/blob/main/README.md" \
-      org.opencontainers.image.licenses="MIT"
+      org.opencontainers.image.licenses="MIT" \
+      org.opencontainers.image.base.name="docker.io/library/nginx:1.27-alpine3.20"
 
-# Install wget for health check
+# Install wget for health check and dumb-init for proper signal handling
 # hadolint ignore=DL3018
 RUN apk add --no-cache \
     wget \
+    dumb-init \
     && rm -rf /tmp/* /var/tmp/*
 
 # Copy built assets
@@ -114,6 +119,9 @@ EXPOSE 3000
 # Health check
 HEALTHCHECK --interval=30s --timeout=3s --start-period=40s --retries=3 \
   CMD wget --no-verbose --tries=1 --spider http://localhost:3000 || exit 1
+
+# Use dumb-init as entrypoint for proper signal handling
+ENTRYPOINT ["/usr/bin/dumb-init", "--"]
 
 # Use nginx in foreground mode
 CMD ["nginx", "-g", "daemon off;"]

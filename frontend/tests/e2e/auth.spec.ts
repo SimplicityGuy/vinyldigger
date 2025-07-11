@@ -151,7 +151,7 @@ test.describe('Authentication Flow', () => {
       await expect(page).toHaveURL('/login')
 
       // Should show success toast
-      await expect(page.getByText('Registration successful')).toBeVisible()
+      await expect(page.getByText('Registration successful').first()).toBeVisible()
       await expect(page.getByText('Please log in with your new account.')).toBeVisible()
     })
 

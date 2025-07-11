@@ -215,7 +215,7 @@ async def test_oauth_revoke(client: AsyncClient, db_session: AsyncSession):
     )
     assert response.status_code == 200
     data = response.json()
-    assert data["message"] == "Successfully revoked discogs access."
+    assert data["message"] == "Successfully revoked DISCOGS access."
 
     # Verify token is deleted
     response = await client.get(

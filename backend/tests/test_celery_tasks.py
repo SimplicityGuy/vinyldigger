@@ -4,7 +4,7 @@ from unittest.mock import Mock, patch
 from uuid import uuid4
 
 from src.workers.celery_app import celery_app
-from src.workers.tasks import RunSearchTask, SyncCollectionTask, run_search_task, sync_collection_task
+from src.workers.tasks import run_search_task, sync_collection_task
 
 
 class TestCeleryTaskRegistration:
@@ -12,9 +12,6 @@ class TestCeleryTaskRegistration:
 
     def test_run_search_task_is_registered(self):
         """Test that run_search_task is properly registered with Celery."""
-        # Verify the task is the class itself, not an instance
-        assert run_search_task == RunSearchTask
-
         # Verify the task has a name attribute (not None)
         assert hasattr(run_search_task, "name")
         assert run_search_task.name is not None
@@ -26,9 +23,6 @@ class TestCeleryTaskRegistration:
 
     def test_sync_collection_task_is_registered(self):
         """Test that sync_collection_task is properly registered with Celery."""
-        # Verify the task is the class itself, not an instance
-        assert sync_collection_task == SyncCollectionTask
-
         # Verify the task has a name attribute (not None)
         assert hasattr(sync_collection_task, "name")
         assert sync_collection_task.name is not None

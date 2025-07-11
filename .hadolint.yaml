@@ -1,0 +1,28 @@
+# Hadolint configuration for VinylDigger Dockerfiles
+# https://github.com/hadolint/hadolint
+
+# Ignored rules with explanations
+ignored:
+  # DL3008: Pin versions in apt get install
+  # We use latest versions from the base image's repository for security updates
+  - DL3008
+
+  # DL3018: Pin versions in apk add
+  # We use latest versions from Alpine's repository for security updates
+  - DL3018
+
+# Trusted registries for FROM instructions
+trustedRegistries:
+  - docker.io
+  - ghcr.io
+
+# Label schema that should be present
+label-schema:
+  # OCI Standard Labels
+  org.opencontainers.image.created: required
+  org.opencontainers.image.title: required
+  org.opencontainers.image.description: required
+  org.opencontainers.image.version: required
+  org.opencontainers.image.revision: required
+  org.opencontainers.image.source: required
+  org.opencontainers.image.licenses: required

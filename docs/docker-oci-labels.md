@@ -16,6 +16,7 @@ Each Docker image includes the following OCI standard labels:
 - `org.opencontainers.image.source` - URL to the source code repository
 - `org.opencontainers.image.documentation` - URL to documentation
 - `org.opencontainers.image.licenses` - License(s) under which the software is distributed
+- `org.opencontainers.image.base.name` - Base image reference for better traceability
 
 ## Building Images with Labels
 
@@ -73,3 +74,36 @@ docker inspect vinyldigger-backend:latest | jq -r '.[0].Config.Labels | to_entri
 - **Documentation**: Direct links to source code and documentation
 - **Compliance**: Industry-standard metadata format
 - **Automation**: Tools can parse these labels for automated workflows
+
+## Docker Best Practices
+
+Our Dockerfiles implement several best practices:
+
+### Security & Performance
+- **Pinned base image versions** for reproducibility
+- **Non-root users** for both backend (appuser) and frontend (nginx)
+- **Multi-stage builds** to minimize final image size
+- **Proper signal handling** with tini (backend) and dumb-init (frontend)
+- **Health checks** for all services
+- **DEBIAN_FRONTEND=noninteractive** for unattended installs
+
+### Build Optimization
+- **Layer caching optimization** by copying dependency files first
+- **Minimal dependencies** - only install what's needed
+- **Clean package manager caches** to reduce image size
+- **.dockerignore files** to exclude unnecessary files
+
+### Configuration
+- **Environment variable support** for runtime configuration
+- **Build arguments** for dynamic labeling
+- **Hadolint compliance** with documented exceptions
+
+### Validation
+The build script automatically validates OCI compliance:
+
+```bash
+./scripts/docker-build.sh
+# Output includes:
+# ✓ backend: OCI compliant (found 11 OCI labels)
+# ✓ frontend: OCI compliant (found 11 OCI labels)
+```

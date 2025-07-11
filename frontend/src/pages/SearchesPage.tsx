@@ -176,8 +176,8 @@ function SearchesPageComponent() {
                   <div className="space-y-1 text-sm text-muted-foreground">
                     <p>
                       Last checked:{' '}
-                      {search.last_checked_at
-                        ? new Date(search.last_checked_at).toLocaleString()
+                      {search.last_run_at
+                        ? new Date(search.last_run_at).toLocaleString()
                         : 'Never'}
                     </p>
                     {(search.min_record_condition || search.min_sleeve_condition || search.seller_location_preference) && (
