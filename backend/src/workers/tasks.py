@@ -52,8 +52,8 @@ class RunSearchTask(AsyncTask):
                     for item in items_result.scalars():
                         if item.item_metadata and "release_id" in item.item_metadata:
                             collection_releases.add(str(item.item_metadata["release_id"]))
-                        elif item.platform_item_id:
-                            collection_releases.add(item.platform_item_id)
+                        elif item.item_id:
+                            collection_releases.add(item.item_id)
 
                 wantlist_result = await db.execute(select(WantList).where(WantList.user_id == UUID(user_id)))
                 wantlists = wantlist_result.scalars().all()
@@ -66,8 +66,8 @@ class RunSearchTask(AsyncTask):
                     for item in items_result.scalars():
                         if item.item_metadata and "release_id" in item.item_metadata:
                             wantlist_releases.add(str(item.item_metadata["release_id"]))
-                        elif item.platform_item_id:
-                            wantlist_releases.add(item.platform_item_id)
+                        elif item.item_id:
+                            wantlist_releases.add(item.item_id)
 
                 results_added = 0
 
@@ -249,7 +249,7 @@ class SyncCollectionTask(AsyncTask):
                             existing = await db.execute(
                                 select(CollectionItem).where(
                                     CollectionItem.collection_id == collection.id,
-                                    CollectionItem.platform_item_id == str(instance_id),
+                                    CollectionItem.item_id == str(instance_id),
                                 )
                             )
                             existing_item = existing.scalar_one_or_none()
@@ -279,7 +279,7 @@ class SyncCollectionTask(AsyncTask):
                                 # Add new
                                 collection_item = CollectionItem(
                                     collection_id=collection.id,
-                                    platform_item_id=str(instance_id),
+                                    item_id=str(instance_id),
                                     title=basic_info.get("title", "Unknown"),
                                     artist=", ".join([a["name"] for a in basic_info.get("artists", [])]),
                                     year=basic_info.get("year"),
@@ -333,7 +333,7 @@ class SyncCollectionTask(AsyncTask):
                             existing = await db.execute(
                                 select(WantListItem).where(
                                     WantListItem.want_list_id == wantlist.id,
-                                    WantListItem.platform_item_id == str(release_id),
+                                    WantListItem.item_id == str(release_id),
                                 )
                             )
                             existing_item = existing.scalar_one_or_none()
@@ -358,7 +358,7 @@ class SyncCollectionTask(AsyncTask):
                                 # Add new
                                 wantlist_item = WantListItem(
                                     want_list_id=wantlist.id,
-                                    platform_item_id=str(release_id),
+                                    item_id=str(release_id),
                                     title=basic_info.get("title", "Unknown"),
                                     artist=", ".join([a["name"] for a in basic_info.get("artists", [])]),
                                     year=basic_info.get("year"),

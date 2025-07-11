@@ -23,7 +23,7 @@ class CollectionItem(Base):
 
     id: Mapped[UUID] = mapped_column(PGUUID(as_uuid=True), primary_key=True, default=uuid4)
     collection_id: Mapped[UUID] = mapped_column(PGUUID(as_uuid=True), ForeignKey("collections.id"), nullable=False)
-    platform_item_id: Mapped[str] = mapped_column(String(255), nullable=False)
+    item_id: Mapped[str] = mapped_column(String(255), nullable=False)
     title: Mapped[str] = mapped_column(String(500), nullable=False)
     artist: Mapped[str | None] = mapped_column(String(255), nullable=True)
     year: Mapped[int | None] = mapped_column(Integer, nullable=True)
@@ -40,7 +40,7 @@ class CollectionItem(Base):
     # Relationships
     collection: Mapped[Collection] = relationship("Collection", back_populates="items")
 
-    __table_args__ = (UniqueConstraint("collection_id", "platform_item_id"),)
+    __table_args__ = (UniqueConstraint("collection_id", "item_id"),)
 
 
 class WantListItem(Base):
@@ -50,7 +50,7 @@ class WantListItem(Base):
 
     id: Mapped[UUID] = mapped_column(PGUUID(as_uuid=True), primary_key=True, default=uuid4)
     want_list_id: Mapped[UUID] = mapped_column(PGUUID(as_uuid=True), ForeignKey("want_lists.id"), nullable=False)
-    platform_item_id: Mapped[str] = mapped_column(String(255), nullable=False)
+    item_id: Mapped[str] = mapped_column(String(255), nullable=False)
     title: Mapped[str] = mapped_column(String(500), nullable=False)
     artist: Mapped[str | None] = mapped_column(String(255), nullable=True)
     year: Mapped[int | None] = mapped_column(Integer, nullable=True)
@@ -66,4 +66,4 @@ class WantListItem(Base):
     # Relationships
     want_list: Mapped[WantList] = relationship("WantList", back_populates="items")
 
-    __table_args__ = (UniqueConstraint("want_list_id", "platform_item_id"),)
+    __table_args__ = (UniqueConstraint("want_list_id", "item_id"),)
