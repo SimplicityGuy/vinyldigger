@@ -27,10 +27,12 @@ A powerful web application that automates vinyl record discovery and comparison 
 - **Want List Matching**: Automatically identify items from your Discogs want list
 - **Collection Awareness**: Skip items you already own
 - **Seller Optimization**: Find sellers with multiple items to save on shipping
+- **Flexible Sync Options**: Sync collection and want list together or separately
 
 ### 📊 Advanced Filtering
-- **Condition Filtering**: Set minimum acceptable conditions for records and sleeves
-- **Location Preferences**: Filter by seller location (US or worldwide)
+- **Per-Search Preferences**: Set condition and location preferences for each search
+- **Condition Filtering**: Minimum acceptable conditions for records and sleeves
+- **Location Preferences**: Filter by seller location (US, EU, UK, or worldwide)
 - **Price History**: Track price changes over time
 - **Automated Monitoring**: Schedule searches to run periodically
 
@@ -199,7 +201,9 @@ Once the application is running, visit:
 - `POST /api/v1/auth/login` - User login
 - `GET /api/v1/searches` - List saved searches
 - `POST /api/v1/searches` - Create new search
-- `POST /api/v1/collections/sync` - Sync Discogs collection
+- `POST /api/v1/collections/sync` - Sync Discogs collection and want list
+- `POST /api/v1/collections/sync/collection` - Sync collection only
+- `POST /api/v1/collections/sync/wantlist` - Sync want list only
 
 See the [complete API documentation](docs/api.md) for all endpoints and examples.
 

@@ -190,13 +190,25 @@ class VinylDiggerClient:
 
     # Collection Management
 
-    def sync_collection(self, full_sync: bool = False) -> Dict[str, Any]:
-        """Sync Discogs collection"""
-        return self._request("POST", "/collections/sync", json={"full_sync": full_sync})
+    def sync_collection_and_wantlist(self) -> Dict[str, Any]:
+        """Sync both Discogs collection and want list"""
+        return self._request("POST", "/collections/sync")
 
-    def get_collection_stats(self) -> Dict[str, Any]:
-        """Get collection statistics"""
-        return self._request("GET", "/collections/stats")
+    def sync_collection_only(self) -> Dict[str, Any]:
+        """Sync Discogs collection only"""
+        return self._request("POST", "/collections/sync/collection")
+
+    def sync_wantlist_only(self) -> Dict[str, Any]:
+        """Sync Discogs want list only"""
+        return self._request("POST", "/collections/sync/wantlist")
+
+    def get_collection_status(self) -> Dict[str, Any]:
+        """Get collection status"""
+        return self._request("GET", "/collections/status")
+
+    def get_wantlist_status(self) -> Dict[str, Any]:
+        """Get want list status"""
+        return self._request("GET", "/wantlist/status")
 
 # Example Usage
 if __name__ == "__main__":

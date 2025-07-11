@@ -397,8 +397,8 @@ Authorization: Bearer <access_token>
 
 ## Collection Endpoints
 
-### Sync Collection
-Triggers synchronization with user's Discogs collection.
+### Sync Collection and Want List
+Triggers synchronization with both user's Discogs collection and want list.
 
 ```http
 POST /api/v1/collections/sync
@@ -408,7 +408,37 @@ Authorization: Bearer <access_token>
 **Response**:
 ```json
 {
+  "message": "Collection and want list sync queued successfully"
+}
+```
+
+### Sync Collection Only
+Triggers synchronization with user's Discogs collection only.
+
+```http
+POST /api/v1/collections/sync/collection
+Authorization: Bearer <access_token>
+```
+
+**Response**:
+```json
+{
   "message": "Collection sync queued successfully"
+}
+```
+
+### Sync Want List Only
+Triggers synchronization with user's Discogs want list only.
+
+```http
+POST /api/v1/collections/sync/wantlist
+Authorization: Bearer <access_token>
+```
+
+**Response**:
+```json
+{
+  "message": "Want list sync queued successfully"
 }
 ```
 
