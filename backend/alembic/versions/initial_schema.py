@@ -145,24 +145,10 @@ def upgrade() -> None:
             nullable=False,
         ),
         sa.Column("item_id", sa.String(length=255), nullable=False),
-        sa.Column("title", sa.String(length=500), nullable=False),
-        sa.Column("artist", sa.String(length=255), nullable=True),
-        sa.Column("price", sa.Numeric(precision=10, scale=2), nullable=False),
-        sa.Column("currency", sa.String(length=3), nullable=False),
-        sa.Column("condition", sa.String(length=50), nullable=True),
-        sa.Column("media_condition", sa.String(length=50), nullable=True),
-        sa.Column("sleeve_condition", sa.String(length=50), nullable=True),
-        sa.Column("seller", sa.String(length=255), nullable=True),
-        sa.Column("location", sa.String(length=255), nullable=True),
-        sa.Column("url", sa.String(length=1000), nullable=False),
-        sa.Column("image_url", sa.String(length=1000), nullable=True),
-        sa.Column("description", sa.Text(), nullable=True),
-        sa.Column("metadata", postgresql.JSON(astext_type=sa.Text()), nullable=True),
-        sa.Column("in_collection", sa.Boolean(), nullable=False, server_default="false"),
-        sa.Column("in_wantlist", sa.Boolean(), nullable=False, server_default="false"),
-        sa.Column("found_at", sa.DateTime(timezone=True), server_default=sa.text("now()"), nullable=False),
+        sa.Column("item_data", postgresql.JSON(astext_type=sa.Text()), nullable=False),
+        sa.Column("is_in_collection", sa.Boolean(), nullable=False, server_default="false"),
+        sa.Column("is_in_wantlist", sa.Boolean(), nullable=False, server_default="false"),
         sa.Column("created_at", sa.DateTime(timezone=True), server_default=sa.text("now()"), nullable=False),
-        sa.Column("updated_at", sa.DateTime(timezone=True), server_default=sa.text("now()"), nullable=False),
         sa.ForeignKeyConstraint(
             ["search_id"],
             ["saved_searches.id"],
@@ -170,8 +156,6 @@ def upgrade() -> None:
         sa.PrimaryKeyConstraint("id"),
         sa.UniqueConstraint("search_id", "platform", "item_id"),
     )
-    op.create_index(op.f("ix_search_results_found_at"), "search_results", ["found_at"], unique=False)
-    op.create_index(op.f("ix_search_results_price"), "search_results", ["price"], unique=False)
     op.create_index(op.f("ix_search_results_search_id"), "search_results", ["search_id"], unique=False)
 
     # Create search_runs table
@@ -296,24 +280,22 @@ def upgrade() -> None:
     op.create_table(
         "price_history",
         sa.Column("id", postgresql.UUID(as_uuid=True), nullable=False),
-        sa.Column("result_id", postgresql.UUID(as_uuid=True), nullable=False),
+        sa.Column("platform", sa.String(length=50), nullable=False),
+        sa.Column("item_id", sa.String(length=255), nullable=False),
         sa.Column("price", sa.Numeric(precision=10, scale=2), nullable=False),
-        sa.Column("currency", sa.String(length=3), nullable=False),
-        sa.Column("observed_at", sa.DateTime(timezone=True), server_default=sa.text("now()"), nullable=False),
-        sa.ForeignKeyConstraint(
-            ["result_id"],
-            ["search_results.id"],
-        ),
+        sa.Column("currency", sa.String(length=3), nullable=False, server_default="USD"),
+        sa.Column("condition", sa.String(length=50), nullable=True),
+        sa.Column("sleeve_condition", sa.String(length=50), nullable=True),
+        sa.Column("seller_location", sa.String(length=100), nullable=True),
+        sa.Column("created_at", sa.DateTime(timezone=True), server_default=sa.text("now()"), nullable=False),
         sa.PrimaryKeyConstraint("id"),
     )
-    op.create_index(op.f("ix_price_history_observed_at"), "price_history", ["observed_at"], unique=False)
-    op.create_index(op.f("ix_price_history_result_id"), "price_history", ["result_id"], unique=False)
+    op.create_index(op.f("ix_price_history_item_id"), "price_history", ["item_id"], unique=False)
 
 
 def downgrade() -> None:
     # Drop tables in reverse order
-    op.drop_index(op.f("ix_price_history_result_id"), table_name="price_history")
-    op.drop_index(op.f("ix_price_history_observed_at"), table_name="price_history")
+    op.drop_index(op.f("ix_price_history_item_id"), table_name="price_history")
     op.drop_table("price_history")
 
     op.drop_index(op.f("ix_want_list_items_want_list_id"), table_name="want_list_items")
@@ -329,8 +311,6 @@ def downgrade() -> None:
     op.drop_table("search_runs")
 
     op.drop_index(op.f("ix_search_results_search_id"), table_name="search_results")
-    op.drop_index(op.f("ix_search_results_price"), table_name="search_results")
-    op.drop_index(op.f("ix_search_results_found_at"), table_name="search_results")
     op.drop_table("search_results")
 
     op.drop_index(op.f("ix_saved_searches_user_id"), table_name="saved_searches")
