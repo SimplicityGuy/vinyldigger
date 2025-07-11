@@ -9,7 +9,7 @@
 - **Main Documentation**: 11 files in `/docs` directory
 - **Backend Documentation**: 2 files in `/backend/docs`
 - **Frontend Documentation**: 1 file in `/frontend/tests/e2e`
-- **Root Documentation**: 4 files (README.md, CONTRIBUTING.md, CLAUDE.md, LICENSE)
+- **Root Documentation**: 4 files (README.md, contributing.md, CLAUDE.md, LICENSE)
 
 ### ✅ Link Integrity
 All documentation links have been verified and are working correctly:
@@ -70,7 +70,7 @@ All documentation links have been verified and are working correctly:
 ```
 Documentation Tree:
 ├── README.md (Main project documentation)
-├── CONTRIBUTING.md (Developer guidelines)
+├── contributing.md (Developer guidelines)
 ├── CLAUDE.md (AI assistant configuration)
 ├── docs/
 │   ├── README.md (Documentation index)

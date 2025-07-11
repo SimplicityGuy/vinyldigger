@@ -6,7 +6,7 @@ Welcome to the VinylDigger documentation! This index provides quick access to al
 
 ### Getting Started
 - **[Main README](../README.md)** - Project overview, features, and quick start guide
-- **[Contributing Guide](../CONTRIBUTING.md)** - How to contribute to the project
+- **[Contributing Guide](../contributing.md)** - How to contribute to the project
 - **[Project Context](../CLAUDE.md)** - Technical context and AI assistant configuration
 
 ### Technical Documentation
@@ -19,7 +19,7 @@ Welcome to the VinylDigger documentation! This index provides quick access to al
 - **[Security Guide](security.md)** - Security best practices and implementation guidelines
 - **[Monitoring & Observability](monitoring.md)** - Comprehensive monitoring, logging, and alerting setup
 - **[Troubleshooting Guide](troubleshooting.md)** - Common issues and their solutions
-- **[Documentation Status Report](DOCUMENTATION_STATUS.md)** - Comprehensive documentation audit and verification
+- **[Documentation Status Report](documentation-status.md)** - Comprehensive documentation audit and verification
 
 ### Specialized Guides
 - **[E2E Testing Guide](../frontend/tests/e2e/README.md)** - End-to-end testing with Playwright
@@ -35,7 +35,7 @@ Welcome to the VinylDigger documentation! This index provides quick access to al
 3. Review the [Deployment Guide](deployment.md) for production setup
 
 ### For Developers
-1. Read the [Contributing Guide](../CONTRIBUTING.md) first
+1. Read the [Contributing Guide](../contributing.md) first
 2. Understand the [Architecture](architecture.md)
 3. Learn about [Testing](testing.md)
 4. Reference [Project Context](../CLAUDE.md) for development patterns
