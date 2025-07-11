@@ -48,6 +48,10 @@ class Token(BaseModel):
     token_type: str = "bearer"
 
 
+class RefreshTokenRequest(BaseModel):
+    refresh_token: str
+
+
 async def get_current_user(
     token: Annotated[str, Depends(oauth2_scheme)],
     db: AsyncSession = Depends(get_db),
@@ -135,9 +139,10 @@ async def login(
 
 @router.post("/refresh", response_model=Token)
 async def refresh_token(
-    refresh_token: str,
+    request: RefreshTokenRequest,
     db: AsyncSession = Depends(get_db),
 ) -> Token:
+    refresh_token = request.refresh_token
     try:
         payload = decode_token(refresh_token)
         if payload.get("type") != "refresh":

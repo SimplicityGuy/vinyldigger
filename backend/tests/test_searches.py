@@ -101,3 +101,163 @@ async def test_create_search_with_preferences(client: AsyncClient, db_session: A
     assert data["min_record_condition"] == "NM"
     assert data["min_sleeve_condition"] == "VG+"
     assert data["seller_location_preference"] == "US"
+
+
+@pytest.mark.asyncio
+async def test_get_searches(client: AsyncClient, db_session: AsyncSession):
+    # Create a test user
+    user = User(
+        email="test@example.com",
+        hashed_password=get_password_hash("testpassword123"),
+    )
+    db_session.add(user)
+    await db_session.commit()
+
+    # Login
+    login_response = await client.post(
+        "/api/v1/auth/login",
+        data={
+            "username": "test@example.com",
+            "password": "testpassword123",
+        },
+    )
+    token = login_response.json()["access_token"]
+    headers = {"Authorization": f"Bearer {token}"}
+
+    # Create multiple searches
+    searches = [
+        {"name": "Jazz Records", "query": "jazz vinyl", "platform": "DISCOGS"},
+        {"name": "Rock Albums", "query": "rock vinyl", "platform": "EBAY"},
+        {"name": "Classical", "query": "classical music", "platform": "BOTH"},
+    ]
+    
+    for search in searches:
+        await client.post("/api/v1/searches", json=search, headers=headers)
+
+    # Get all searches
+    response = await client.get("/api/v1/searches", headers=headers)
+    assert response.status_code == 200
+    data = response.json()
+    assert len(data) == 3
+    assert {s["name"] for s in data} == {"Jazz Records", "Rock Albums", "Classical"}
+
+
+@pytest.mark.asyncio
+async def test_delete_search(client: AsyncClient, db_session: AsyncSession):
+    # Create a test user
+    user = User(
+        email="test@example.com",
+        hashed_password=get_password_hash("testpassword123"),
+    )
+    db_session.add(user)
+    await db_session.commit()
+
+    # Login
+    login_response = await client.post(
+        "/api/v1/auth/login",
+        data={
+            "username": "test@example.com",
+            "password": "testpassword123",
+        },
+    )
+    token = login_response.json()["access_token"]
+    headers = {"Authorization": f"Bearer {token}"}
+
+    # Create a search
+    create_response = await client.post(
+        "/api/v1/searches",
+        json={
+            "name": "Test Delete",
+            "query": "test query",
+            "platform": "BOTH",
+        },
+        headers=headers,
+    )
+    search_id = create_response.json()["id"]
+
+    # Delete the search
+    delete_response = await client.delete(f"/api/v1/searches/{search_id}", headers=headers)
+    assert delete_response.status_code == 200
+
+    # Verify it's deleted
+    get_response = await client.get("/api/v1/searches", headers=headers)
+    searches = get_response.json()
+    assert len(searches) == 0
+
+
+@pytest.mark.asyncio
+async def test_run_search(client: AsyncClient, db_session: AsyncSession):
+    # Create a test user
+    user = User(
+        email="test@example.com",
+        hashed_password=get_password_hash("testpassword123"),
+    )
+    db_session.add(user)
+    await db_session.commit()
+
+    # Login
+    login_response = await client.post(
+        "/api/v1/auth/login",
+        data={
+            "username": "test@example.com",
+            "password": "testpassword123",
+        },
+    )
+    token = login_response.json()["access_token"]
+    headers = {"Authorization": f"Bearer {token}"}
+
+    # Create a search
+    create_response = await client.post(
+        "/api/v1/searches",
+        json={
+            "name": "Test Run",
+            "query": "test query",
+            "platform": "DISCOGS",
+        },
+        headers=headers,
+    )
+    search_id = create_response.json()["id"]
+
+    # Run the search
+    run_response = await client.post(f"/api/v1/searches/{search_id}/run", headers=headers)
+    assert run_response.status_code == 200
+    assert "message" in run_response.json()
+
+
+@pytest.mark.asyncio
+async def test_get_search_results(client: AsyncClient, db_session: AsyncSession):
+    # Create a test user
+    user = User(
+        email="test@example.com",
+        hashed_password=get_password_hash("testpassword123"),
+    )
+    db_session.add(user)
+    await db_session.commit()
+
+    # Login
+    login_response = await client.post(
+        "/api/v1/auth/login",
+        data={
+            "username": "test@example.com",
+            "password": "testpassword123",
+        },
+    )
+    token = login_response.json()["access_token"]
+    headers = {"Authorization": f"Bearer {token}"}
+
+    # Create a search
+    create_response = await client.post(
+        "/api/v1/searches",
+        json={
+            "name": "Test Results",
+            "query": "test query",
+            "platform": "BOTH",
+        },
+        headers=headers,
+    )
+    search_id = create_response.json()["id"]
+
+    # Get search results (should be empty initially)
+    results_response = await client.get(f"/api/v1/searches/{search_id}/results", headers=headers)
+    assert results_response.status_code == 200
+    assert results_response.json() == []
