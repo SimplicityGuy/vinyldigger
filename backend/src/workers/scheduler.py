@@ -21,18 +21,18 @@ async def check_scheduled_searches() -> None:
             result = await db.execute(
                 select(SavedSearch).where(
                     SavedSearch.is_active,
-                    (SavedSearch.last_checked_at.is_(None)) | (SavedSearch.last_checked_at < now - timedelta(hours=1)),
+                    (SavedSearch.last_run_at.is_(None)) | (SavedSearch.last_run_at < now - timedelta(hours=1)),
                 )
             )
             searches = result.scalars().all()
 
             for search in searches:
-                if search.last_checked_at is None:
+                if search.last_run_at is None:
                     # First run
                     should_run = True
                 else:
                     # Check if enough time has passed
-                    time_since_last = now - search.last_checked_at
+                    time_since_last = now - search.last_run_at
                     should_run = time_since_last >= timedelta(hours=search.check_interval_hours)
 
                 if should_run:

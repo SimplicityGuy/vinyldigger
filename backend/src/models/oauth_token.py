@@ -27,7 +27,7 @@ class OAuthToken(Base):
 
     id: Mapped[UUID] = mapped_column(PGUUID(as_uuid=True), primary_key=True, default=uuid4)
     user_id: Mapped[UUID] = mapped_column(PGUUID(as_uuid=True), ForeignKey("users.id"), nullable=False)
-    provider: Mapped[OAuthProvider] = mapped_column(SQLEnum(OAuthProvider), nullable=False)
+    provider: Mapped[OAuthProvider] = mapped_column(SQLEnum(OAuthProvider, create_type=False), nullable=False)
 
     # OAuth 1.0a tokens (Discogs)
     access_token: Mapped[str] = mapped_column(String(500), nullable=False)

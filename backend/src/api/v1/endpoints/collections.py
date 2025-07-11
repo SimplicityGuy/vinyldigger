@@ -54,7 +54,7 @@ async def get_collection_status(
         return CollectionResponse(id="", item_count=0, last_sync_at=None)
     return CollectionResponse(
         id=str(collection.id),
-        item_count=len(collection.discogs_data) if collection.discogs_data else 0,
+        item_count=collection.item_count,
         last_sync_at=collection.last_sync_at.isoformat() if collection.last_sync_at else None,
     )
 
@@ -70,6 +70,6 @@ async def get_wantlist_status(
         return WantListResponse(id="", item_count=0, last_sync_at=None)
     return WantListResponse(
         id=str(wantlist.id),
-        item_count=len(wantlist.discogs_data) if wantlist.discogs_data else 0,
+        item_count=wantlist.item_count,
         last_sync_at=wantlist.last_sync_at.isoformat() if wantlist.last_sync_at else None,
     )

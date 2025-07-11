@@ -3,6 +3,7 @@ import { useSearchParams, useNavigate } from 'react-router-dom'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Loader2, CheckCircle, XCircle } from 'lucide-react'
 import { Button } from '@/components/ui/button'
+import { oauthApi } from '@/lib/api'
 
 function OAuthCallbackPage() {
   const [searchParams] = useSearchParams()
@@ -29,18 +30,32 @@ function OAuthCallbackPage() {
       return
     }
 
-    // The backend will handle the callback
-    // For now, we'll just show a success message
-    // In a real implementation, you'd call the backend callback endpoint
-    setStatus('success')
-    setMessage('Authorization successful! You can now close this window.')
+    // Call the backend callback endpoint
+    const completeOAuth = async () => {
+      try {
+        const response = await oauthApi.discogsCallback({
+          oauth_token: oauthToken,
+          oauth_verifier: oauthVerifier,
+          state: state,
+        })
 
-    // Optionally redirect back to settings after a delay
-    setTimeout(() => {
-      window.close() // Try to close the window
-      // If window.close() doesn't work (e.g., not opened by script), redirect
-      navigate('/settings')
-    }, 3000)
+        setStatus('success')
+        setMessage(`Successfully authorized Discogs access for user: ${response.username}`)
+
+        // Redirect back to settings after a delay
+        setTimeout(() => {
+          window.close() // Try to close the window
+          // If window.close() doesn't work (e.g., not opened by script), redirect
+          navigate('/settings')
+        }, 3000)
+      } catch (error) {
+        setStatus('error')
+        setMessage(error instanceof Error ? error.message : 'Failed to complete authorization.')
+        console.error('OAuth callback error:', error)
+      }
+    }
+
+    completeOAuth()
   }, [searchParams, navigate])
 
   return (
@@ -77,9 +92,7 @@ function OAuthCallbackPage() {
               <>
                 <XCircle className="h-8 w-8 text-red-600" />
                 <p className="text-sm text-center">{message}</p>
-                <Button onClick={() => navigate('/settings')}>
-                  Back to Settings
-                </Button>
+                <Button onClick={() => navigate('/settings')}>Back to Settings</Button>
               </>
             )}
           </div>

@@ -1,16 +1,19 @@
 from __future__ import annotations
 
 from datetime import datetime
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING
 from uuid import UUID, uuid4
 
-from sqlalchemy import JSON, DateTime, ForeignKey, func
+from sqlalchemy import DateTime, ForeignKey, String, UniqueConstraint, func
+from sqlalchemy import Enum as SQLEnum
 from sqlalchemy.dialects.postgresql import UUID as PGUUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from src.core.database import Base
+from src.models.search import SearchPlatform
 
 if TYPE_CHECKING:
+    from src.models.collection_item import CollectionItem, WantListItem
     from src.models.user import User
 
 
@@ -19,7 +22,8 @@ class Collection(Base):
 
     id: Mapped[UUID] = mapped_column(PGUUID(as_uuid=True), primary_key=True, default=uuid4)
     user_id: Mapped[UUID] = mapped_column(PGUUID(as_uuid=True), ForeignKey("users.id"), nullable=False)
-    discogs_data: Mapped[dict[str, Any]] = mapped_column(JSON, default=dict)
+    platform: Mapped[SearchPlatform] = mapped_column(SQLEnum(SearchPlatform, create_type=False), nullable=False)
+    platform_collection_id: Mapped[str | None] = mapped_column(String(255), nullable=True)
     item_count: Mapped[int] = mapped_column(default=0)
     last_sync_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
@@ -29,6 +33,11 @@ class Collection(Base):
 
     # Relationships
     user: Mapped[User] = relationship("User", back_populates="collections")
+    items: Mapped[list[CollectionItem]] = relationship(
+        "CollectionItem", back_populates="collection", cascade="all, delete-orphan"
+    )
+
+    __table_args__ = (UniqueConstraint("user_id", "platform", name="collections_user_id_platform_key"),)
 
 
 class WantList(Base):
@@ -36,7 +45,7 @@ class WantList(Base):
 
     id: Mapped[UUID] = mapped_column(PGUUID(as_uuid=True), primary_key=True, default=uuid4)
     user_id: Mapped[UUID] = mapped_column(PGUUID(as_uuid=True), ForeignKey("users.id"), nullable=False)
-    discogs_data: Mapped[dict[str, Any]] = mapped_column(JSON, default=dict)
+    platform: Mapped[SearchPlatform] = mapped_column(SQLEnum(SearchPlatform, create_type=False), nullable=False)
     item_count: Mapped[int] = mapped_column(default=0)
     last_sync_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
@@ -46,3 +55,8 @@ class WantList(Base):
 
     # Relationships
     user: Mapped[User] = relationship("User", back_populates="want_lists")
+    items: Mapped[list[WantListItem]] = relationship(
+        "WantListItem", back_populates="want_list", cascade="all, delete-orphan"
+    )
+
+    __table_args__ = (UniqueConstraint("user_id", "platform", name="want_lists_user_id_platform_key"),)

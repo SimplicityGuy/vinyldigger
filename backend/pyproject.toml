@@ -131,3 +131,9 @@ exclude_lines = [
     "pass",
     "except ImportError:",
 ]
+
+[dependency-groups]
+dev = [
+    "types-oauthlib>=3.3.0.20250708",
+    "types-requests-oauthlib>=2.0.0.20250516",
+]

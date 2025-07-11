@@ -7,12 +7,15 @@ from fastapi.middleware.cors import CORSMiddleware
 from src.api.v1.api import api_router
 from src.core.config import settings
 from src.core.logging import setup_logging
+from src.core.redis_client import close_redis
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> Any:
     setup_logging()
     yield
+    # Cleanup
+    await close_redis()
 
 
 app = FastAPI(

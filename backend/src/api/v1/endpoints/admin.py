@@ -1,7 +1,7 @@
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException, status
-from pydantic import BaseModel
+from pydantic import BaseModel, field_validator
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -19,6 +19,13 @@ class AppConfigCreate(BaseModel):
     callback_url: str | None = None
     redirect_uri: str | None = None
     scope: str | None = None
+
+    @field_validator("provider", mode="before")
+    @classmethod
+    def normalize_provider(cls, v):
+        if isinstance(v, str):
+            return v.upper()
+        return v
 
 
 class AppConfigResponse(BaseModel):
@@ -71,7 +78,7 @@ async def list_app_configurations(
 
 @router.put("/app-config/{provider}", response_model=AppConfigResponse)
 async def update_app_configuration(
-    provider: OAuthProvider,
+    provider: str,
     config_data: AppConfigCreate,
     current_user: Annotated[User, Depends(get_current_user)],
     db: AsyncSession = Depends(get_db),
@@ -79,14 +86,23 @@ async def update_app_configuration(
     """Create or update OAuth provider configuration (admin only)."""
     require_admin(current_user)
 
-    if provider != config_data.provider:
+    # Convert provider string to enum
+    try:
+        provider_enum = OAuthProvider(provider.upper())
+    except ValueError:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail=f"Invalid provider: {provider}. Must be one of: DISCOGS, EBAY",
+        ) from None
+
+    if provider_enum != config_data.provider:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Provider in URL must match provider in body.",
         )
 
     # Check if configuration already exists
-    result = await db.execute(select(AppConfig).where(AppConfig.provider == provider))
+    result = await db.execute(select(AppConfig).where(AppConfig.provider == provider_enum))
     existing_config = result.scalar_one_or_none()
 
     if existing_config:
@@ -100,7 +116,7 @@ async def update_app_configuration(
     else:
         # Create new configuration
         config = AppConfig(
-            provider=provider,
+            provider=provider_enum,
             consumer_key=config_data.consumer_key,
             consumer_secret=config_data.consumer_secret,
             callback_url=config_data.callback_url,
@@ -123,23 +139,32 @@ async def update_app_configuration(
 
 @router.delete("/app-config/{provider}")
 async def delete_app_configuration(
-    provider: OAuthProvider,
+    provider: str,
     current_user: Annotated[User, Depends(get_current_user)],
     db: AsyncSession = Depends(get_db),
 ) -> dict[str, str]:
     """Delete OAuth provider configuration (admin only)."""
     require_admin(current_user)
 
-    result = await db.execute(select(AppConfig).where(AppConfig.provider == provider))
+    # Convert provider string to enum
+    try:
+        provider_enum = OAuthProvider(provider.upper())
+    except ValueError:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail=f"Invalid provider: {provider}. Must be one of: DISCOGS, EBAY",
+        ) from None
+
+    result = await db.execute(select(AppConfig).where(AppConfig.provider == provider_enum))
     config = result.scalar_one_or_none()
 
     if not config:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"Configuration for {provider.value} not found.",
+            detail=f"Configuration for {provider_enum.value} not found.",
         )
 
     await db.delete(config)
     await db.commit()
 
-    return {"message": f"Configuration for {provider.value} deleted successfully."}
+    return {"message": f"Configuration for {provider_enum.value} deleted successfully."}

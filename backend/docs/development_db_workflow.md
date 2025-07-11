@@ -28,7 +28,13 @@ When you need to change database models during development:
 
 1. **Make your model changes** in the appropriate files under `src/models/`
 
-2. **Drop and recreate the database**:
+2. **Update the initial migration** (`alembic/versions/initial_schema.py`):
+   - Add new columns to the appropriate table creation
+   - Modify existing column definitions as needed
+   - Add any new tables or enum types
+   - This keeps all schema in one place during development
+
+3. **Drop and recreate the database**:
    ```bash
    # Stop all services
    just down
@@ -54,11 +60,34 @@ When you need to change database models during development:
    docker-compose restart backend
    ```
 
+### Example: Adding Search Preferences
+
+Here's how we recently added search preference columns to the SavedSearch model:
+
+1. **Updated the model** (`src/models/search.py`):
+   ```python
+   # Added to SavedSearch class
+   min_record_condition: Mapped[str | None] = mapped_column(String(10), nullable=True)
+   min_sleeve_condition: Mapped[str | None] = mapped_column(String(10), nullable=True)
+   seller_location_preference: Mapped[str | None] = mapped_column(String(10), nullable=True)
+   ```
+
+2. **Updated the initial migration** (`alembic/versions/initial_schema.py`):
+   ```python
+   # Added to saved_searches table creation
+   sa.Column("min_record_condition", sa.String(length=10), nullable=True),
+   sa.Column("min_sleeve_condition", sa.String(length=10), nullable=True),
+   sa.Column("seller_location_preference", sa.String(length=10), nullable=True),
+   ```
+
+3. **Dropped and recreated the database** using the steps above
+
 ### Important Notes
 
 - **No incremental migrations during development**: We maintain only the initial migration
 - **Data loss**: This approach means all data is lost when recreating the database
 - **Test data**: Use scripts or fixtures to reload test data after recreation
+- **Schema consistency**: Always ensure the initial migration matches your models exactly
 
 ## Production Workflow (Future)
 

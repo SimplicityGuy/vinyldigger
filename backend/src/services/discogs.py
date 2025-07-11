@@ -26,7 +26,7 @@ class DiscogsOAuth1Auth(httpx.Auth):
             signature_type="AUTH_HEADER",
         )
 
-    def auth_flow(self, request: httpx.Request):
+    def auth_flow(self, request: httpx.Request) -> httpx.Request:
         """Apply OAuth1 signature to the request."""
         # Convert httpx request to a format oauthlib can work with
         uri = str(request.url)

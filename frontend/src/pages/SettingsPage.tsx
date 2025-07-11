@@ -7,8 +7,13 @@ import { Input } from '@/components/ui/input'
 import { Select } from '@/components/ui/select'
 import { Key, Settings2, User, AlertCircle, CheckCircle, ExternalLink } from 'lucide-react'
 import api from '@/lib/api'
+import { useToast } from '@/hooks/useToast'
 
 function SettingsPage() {
+  const { toast } = useToast()
+  const [discogsVerificationCode, setDiscogsVerificationCode] = useState('')
+  const [discogsState, setDiscogsState] = useState('')
+  const [showVerificationInput, setShowVerificationInput] = useState(false)
   const [preferences, setPreferences] = useState({
     min_record_condition: 'VG+',
     min_sleeve_condition: 'VG+',
@@ -35,8 +40,9 @@ function SettingsPage() {
     onSuccess: (data) => {
       // Open authorization URL in new window
       window.open(data.authorization_url, '_blank', 'width=600,height=800')
-      // Store state for later verification if needed
-      localStorage.setItem('discogs_oauth_state', data.state)
+      // Store state and show verification input
+      setDiscogsState(data.state)
+      setShowVerificationInput(true)
     },
   })
 
@@ -44,6 +50,30 @@ function SettingsPage() {
     mutationFn: () => api.revokeOAuth('discogs'),
     onSuccess: () => {
       refetchDiscogsStatus()
+      setShowVerificationInput(false)
+      setDiscogsVerificationCode('')
+      setDiscogsState('')
+    },
+  })
+
+  const verifyDiscogsMutation = useMutation({
+    mutationFn: () => api.verifyDiscogs(discogsState, discogsVerificationCode),
+    onSuccess: (data) => {
+      toast({
+        title: 'Success!',
+        description: `Connected to Discogs as ${data.username}`,
+      })
+      refetchDiscogsStatus()
+      setShowVerificationInput(false)
+      setDiscogsVerificationCode('')
+      setDiscogsState('')
+    },
+    onError: () => {
+      toast({
+        title: 'Verification failed',
+        description: 'Please check the code and try again.',
+        variant: 'destructive',
+      })
     },
   })
 
@@ -125,6 +155,44 @@ function SettingsPage() {
                     <AlertCircle className="h-4 w-4" />
                     Failed to start authorization. Please try again.
                   </p>
+                )}
+                {showVerificationInput && (
+                  <div className="mt-4 p-4 border rounded-lg space-y-3 bg-muted/50">
+                    <p className="text-sm font-medium">Enter Verification Code</p>
+                    <p className="text-sm text-muted-foreground">
+                      After authorizing VinylDigger on Discogs, enter the verification code shown on the Discogs page.
+                    </p>
+                    <div className="flex gap-2">
+                      <Input
+                        type="text"
+                        placeholder="Enter verification code"
+                        value={discogsVerificationCode}
+                        onChange={(e) => setDiscogsVerificationCode(e.target.value)}
+                        className="flex-1"
+                      />
+                      <Button
+                        onClick={() => verifyDiscogsMutation.mutate()}
+                        disabled={!discogsVerificationCode || verifyDiscogsMutation.isPending}
+                      >
+                        {verifyDiscogsMutation.isPending ? 'Verifying...' : 'Verify'}
+                      </Button>
+                      <Button
+                        variant="outline"
+                        onClick={() => {
+                          setShowVerificationInput(false)
+                          setDiscogsVerificationCode('')
+                          setDiscogsState('')
+                        }}
+                      >
+                        Cancel
+                      </Button>
+                    </div>
+                    {verifyDiscogsMutation.isError && (
+                      <p className="text-sm text-red-600">
+                        Verification failed. Please check the code and try again.
+                      </p>
+                    )}
+                  </div>
                 )}
               </div>
             )}

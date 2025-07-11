@@ -41,6 +41,9 @@ export interface SavedSearch {
   last_checked_at?: string
   created_at: string
   updated_at: string
+  min_record_condition?: string
+  min_sleeve_condition?: string
+  seller_location_preference?: string
 }
 
 export interface SearchResult {
@@ -78,6 +81,9 @@ export interface CreateSearchData {
   filters?: SearchFilters
   is_active?: boolean
   check_interval_hours?: number
+  min_record_condition?: string
+  min_sleeve_condition?: string
+  seller_location_preference?: string
 }
 
 export interface UpdatePreferencesData {

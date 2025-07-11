@@ -22,6 +22,9 @@ class SavedSearchCreate(BaseModel):
     platform: SearchPlatform
     filters: dict[str, Any] = {}
     check_interval_hours: int = 24
+    min_record_condition: str | None = None
+    min_sleeve_condition: str | None = None
+    seller_location_preference: str | None = None
 
 
 class SavedSearchResponse(BaseModel):
@@ -33,6 +36,9 @@ class SavedSearchResponse(BaseModel):
     is_active: bool
     check_interval_hours: int
     last_checked_at: str | None
+    min_record_condition: str | None
+    min_sleeve_condition: str | None
+    seller_location_preference: str | None
 
     @field_validator("id", mode="before")
     @classmethod
@@ -78,6 +84,9 @@ async def create_search(
         platform=search_data.platform,
         filters=search_data.filters,
         check_interval_hours=search_data.check_interval_hours,
+        min_record_condition=search_data.min_record_condition,
+        min_sleeve_condition=search_data.min_sleeve_condition,
+        seller_location_preference=search_data.seller_location_preference,
     )
     db.add(search)
     await db.commit()

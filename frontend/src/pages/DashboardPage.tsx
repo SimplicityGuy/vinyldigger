@@ -3,8 +3,9 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { AlertCircle, Package, Heart, RefreshCw } from 'lucide-react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
-import { collectionApi } from '@/lib/api'
+import { collectionApi, oauthApi } from '@/lib/api'
 import { useToast } from '@/hooks/useToast'
+import { Link } from 'react-router-dom'
 
 export const DashboardPage = memo(function DashboardPage() {
   const { toast } = useToast()
@@ -18,6 +19,11 @@ export const DashboardPage = memo(function DashboardPage() {
   const { data: wantListStatus } = useQuery({
     queryKey: ['wantlist-status'],
     queryFn: collectionApi.getWantListStatus,
+  })
+
+  const { data: discogsOAuthStatus } = useQuery({
+    queryKey: ['oauth-status', 'discogs'],
+    queryFn: () => oauthApi.getOAuthStatus('discogs'),
   })
 
   const syncMutation = useMutation({
@@ -98,14 +104,30 @@ export const DashboardPage = memo(function DashboardPage() {
           <CardDescription>Common tasks to manage your collection</CardDescription>
         </CardHeader>
         <CardContent className="flex gap-4">
-          <Button
-            onClick={() => syncMutation.mutate()}
-            disabled={syncMutation.isPending}
-            className="gap-2"
-          >
-            <RefreshCw className={`h-4 w-4 ${syncMutation.isPending ? 'animate-spin' : ''}`} />
-            {syncMutation.isPending ? 'Syncing...' : 'Sync Collection'}
-          </Button>
+          {discogsOAuthStatus?.is_authorized ? (
+            <Button
+              onClick={() => syncMutation.mutate()}
+              disabled={syncMutation.isPending}
+              className="gap-2"
+            >
+              <RefreshCw className={`h-4 w-4 ${syncMutation.isPending ? 'animate-spin' : ''}`} />
+              {syncMutation.isPending ? 'Syncing...' : 'Sync Collection'}
+            </Button>
+          ) : (
+            <div className="flex items-center gap-4">
+              <Button disabled className="gap-2">
+                <RefreshCw className="h-4 w-4" />
+                Sync Collection
+              </Button>
+              <p className="text-sm text-muted-foreground">
+                Connect your Discogs account in{' '}
+                <Link to="/settings" className="text-primary underline">
+                  Settings
+                </Link>{' '}
+                to sync your collection.
+              </p>
+            </div>
+          )}
         </CardContent>
       </Card>
 
@@ -121,8 +143,7 @@ export const DashboardPage = memo(function DashboardPage() {
               To start using VinylDigger, make sure to:
             </p>
             <ol className="mt-2 list-inside list-decimal space-y-1 text-sm">
-              <li>Add your Discogs API credentials in Settings</li>
-              <li>Add your eBay API credentials in Settings</li>
+              <li>Connect your Discogs account in Settings</li>
               <li>Sync your collection using the button above</li>
               <li>Create your first search to find great deals</li>
             </ol>

@@ -11,6 +11,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from src.core.database import AsyncSessionLocal
 from src.core.logging import get_logger
 from src.models.collection import Collection, WantList
+from src.models.collection_item import CollectionItem, WantListItem
 from src.models.price_history import PriceHistory
 from src.models.search import SavedSearch, SearchPlatform, SearchResult
 from src.services.discogs import DiscogsService
@@ -40,19 +41,33 @@ class RunSearchTask(AsyncTask):
                     return
 
                 # Check user's collection and want list for matching
-                collection_items = await db.execute(select(Collection).where(Collection.user_id == UUID(user_id)))
-                collection_releases = {
-                    item.discogs_data.get("release_id") or item.discogs_data.get("id")
-                    for item in collection_items.scalars()
-                    if item.discogs_data
-                }
+                collection_result = await db.execute(select(Collection).where(Collection.user_id == UUID(user_id)))
+                collections = collection_result.scalars().all()
 
-                wantlist_items = await db.execute(select(WantList).where(WantList.user_id == UUID(user_id)))
-                wantlist_releases = {
-                    item.discogs_data.get("release_id") or item.discogs_data.get("id")
-                    for item in wantlist_items.scalars()
-                    if item.discogs_data
-                }
+                collection_releases = set()
+                for collection in collections:
+                    items_result = await db.execute(
+                        select(CollectionItem).where(CollectionItem.collection_id == collection.id)
+                    )
+                    for item in items_result.scalars():
+                        if item.item_metadata and "release_id" in item.item_metadata:
+                            collection_releases.add(str(item.item_metadata["release_id"]))
+                        elif item.platform_item_id:
+                            collection_releases.add(item.platform_item_id)
+
+                wantlist_result = await db.execute(select(WantList).where(WantList.user_id == UUID(user_id)))
+                wantlists = wantlist_result.scalars().all()
+
+                wantlist_releases = set()
+                for wantlist in wantlists:
+                    items_result = await db.execute(
+                        select(WantListItem).where(WantListItem.want_list_id == wantlist.id)
+                    )
+                    for item in items_result.scalars():
+                        if item.item_metadata and "release_id" in item.item_metadata:
+                            wantlist_releases.add(str(item.item_metadata["release_id"]))
+                        elif item.platform_item_id:
+                            wantlist_releases.add(item.platform_item_id)
 
                 results_added = 0
 
@@ -67,8 +82,8 @@ class RunSearchTask(AsyncTask):
                         db, search, user_id, collection_releases, wantlist_releases
                     )
 
-                # Update last_checked_at
-                search.last_checked_at = datetime.utcnow()
+                # Update last_run_at
+                search.last_run_at = datetime.utcnow()
                 await db.commit()
 
                 logger.info(f"Search {search_id} completed successfully. Added {results_added} new results.")
@@ -203,86 +218,157 @@ class SyncCollectionTask(AsyncTask):
                     collection_added = 0
                     collection_updated = 0
 
+                    # Get or create collection for this user and platform
+                    collection_result = await db.execute(
+                        select(Collection).where(
+                            Collection.user_id == UUID(user_id),
+                            Collection.platform == SearchPlatform.DISCOGS,
+                        )
+                    )
+                    collection = collection_result.scalar_one_or_none()
+
+                    if not collection:
+                        collection = Collection(
+                            user_id=UUID(user_id),
+                            platform=SearchPlatform.DISCOGS,
+                            item_count=0,
+                        )
+                        db.add(collection)
+                        await db.flush()
+
                     for item in collection_items:
                         release_id = item["basic_information"]["id"]
+                        basic_info = item["basic_information"]
 
                         # Check if already in collection
                         existing = await db.execute(
-                            select(Collection).where(
-                                Collection.user_id == UUID(user_id),
-                                Collection.discogs_data["release_id"].as_string() == str(release_id),
+                            select(CollectionItem).where(
+                                CollectionItem.collection_id == collection.id,
+                                CollectionItem.platform_item_id == str(release_id),
                             )
                         )
-                        existing_item = existing.scalar()
+                        existing_item = existing.scalar_one_or_none()
 
                         if existing_item:
                             # Update existing
-                            existing_item.discogs_data = {
+                            existing_item.title = basic_info.get("title", "Unknown")
+                            existing_item.artist = ", ".join([a["name"] for a in basic_info.get("artists", [])])
+                            existing_item.year = basic_info.get("year")
+                            existing_item.format = ", ".join([f.get("name", "") for f in basic_info.get("formats", [])])
+                            existing_item.label = ", ".join([label["name"] for label in basic_info.get("labels", [])])
+                            existing_item.catalog_number = basic_info.get("catno", "")
+                            existing_item.item_metadata = {
                                 "release_id": release_id,
                                 "instance_id": item["instance_id"],
                                 "date_added": item["date_added"],
-                                "basic_information": item["basic_information"],
+                                "basic_information": basic_info,
                                 "notes": item.get("notes", ""),
                                 "rating": item.get("rating", 0),
                             }
                             collection_updated += 1
                         else:
                             # Add new
-                            collection_item = Collection(
-                                user_id=UUID(user_id),
-                                discogs_data={
+                            collection_item = CollectionItem(
+                                collection_id=collection.id,
+                                platform_item_id=str(release_id),
+                                title=basic_info.get("title", "Unknown"),
+                                artist=", ".join([a["name"] for a in basic_info.get("artists", [])]),
+                                year=basic_info.get("year"),
+                                format=", ".join([f.get("name", "") for f in basic_info.get("formats", [])]),
+                                label=", ".join([label["name"] for label in basic_info.get("labels", [])]),
+                                catalog_number=basic_info.get("catno", ""),
+                                item_metadata={
                                     "release_id": release_id,
                                     "instance_id": item["instance_id"],
                                     "date_added": item["date_added"],
-                                    "basic_information": item["basic_information"],
+                                    "basic_information": basic_info,
                                     "notes": item.get("notes", ""),
                                     "rating": item.get("rating", 0),
                                 },
+                                added_at=datetime.utcnow(),
                             )
                             db.add(collection_item)
                             collection_added += 1
+
+                    # Update collection item count
+                    collection.item_count = collection_added + collection_updated
+                    collection.last_sync_at = datetime.utcnow()
 
                     # Sync wantlist
                     wantlist_items = await service.sync_wantlist(db, user_id)
                     wantlist_added = 0
                     wantlist_updated = 0
 
+                    # Get or create wantlist for this user and platform
+                    wantlist_result = await db.execute(
+                        select(WantList).where(
+                            WantList.user_id == UUID(user_id),
+                            WantList.platform == SearchPlatform.DISCOGS,
+                        )
+                    )
+                    wantlist = wantlist_result.scalar_one_or_none()
+
+                    if not wantlist:
+                        wantlist = WantList(
+                            user_id=UUID(user_id),
+                            platform=SearchPlatform.DISCOGS,
+                            item_count=0,
+                        )
+                        db.add(wantlist)
+                        await db.flush()
+
                     for item in wantlist_items:
                         release_id = item["basic_information"]["id"]
+                        basic_info = item["basic_information"]
 
                         # Check if already in wantlist
                         existing = await db.execute(
-                            select(WantList).where(
-                                WantList.user_id == UUID(user_id),
-                                WantList.discogs_data["release_id"].as_string() == str(release_id),
+                            select(WantListItem).where(
+                                WantListItem.want_list_id == wantlist.id,
+                                WantListItem.platform_item_id == str(release_id),
                             )
                         )
-                        existing_item = existing.scalar()
+                        existing_item = existing.scalar_one_or_none()
 
                         if existing_item:
                             # Update existing
-                            existing_item.discogs_data = {
+                            existing_item.title = basic_info.get("title", "Unknown")
+                            existing_item.artist = ", ".join([a["name"] for a in basic_info.get("artists", [])])
+                            existing_item.year = basic_info.get("year")
+                            existing_item.format = ", ".join([f.get("name", "") for f in basic_info.get("formats", [])])
+                            existing_item.item_metadata = {
                                 "release_id": release_id,
                                 "date_added": item["date_added"],
-                                "basic_information": item["basic_information"],
+                                "basic_information": basic_info,
                                 "notes": item.get("notes", ""),
                                 "rating": item.get("rating", 0),
                             }
                             wantlist_updated += 1
                         else:
                             # Add new
-                            wantlist_item = WantList(
-                                user_id=UUID(user_id),
-                                discogs_data={
+                            wantlist_item = WantListItem(
+                                want_list_id=wantlist.id,
+                                platform_item_id=str(release_id),
+                                title=basic_info.get("title", "Unknown"),
+                                artist=", ".join([a["name"] for a in basic_info.get("artists", [])]),
+                                year=basic_info.get("year"),
+                                format=", ".join([f.get("name", "") for f in basic_info.get("formats", [])]),
+                                notes=item.get("notes", ""),
+                                item_metadata={
                                     "release_id": release_id,
                                     "date_added": item["date_added"],
-                                    "basic_information": item["basic_information"],
+                                    "basic_information": basic_info,
                                     "notes": item.get("notes", ""),
                                     "rating": item.get("rating", 0),
                                 },
+                                added_at=datetime.utcnow(),
                             )
                             db.add(wantlist_item)
                             wantlist_added += 1
+
+                    # Update wantlist item count
+                    wantlist.item_count = wantlist_added + wantlist_updated
+                    wantlist.last_sync_at = datetime.utcnow()
 
                     await db.commit()
 
@@ -303,7 +389,7 @@ class SyncCollectionTask(AsyncTask):
 _thread_local = threading.local()
 
 
-def get_or_create_eventloop():
+def get_or_create_eventloop() -> asyncio.AbstractEventLoop:
     try:
         return asyncio.get_running_loop()
     except RuntimeError:

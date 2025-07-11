@@ -164,7 +164,6 @@ export const authApi = {
 }
 
 export const configApi = {
-
   async getPreferences(): Promise<UserPreferences> {
     const response = await fetchApi('/config/preferences')
     return response.json()
@@ -245,9 +244,29 @@ export const oauthApi = {
     return response.json()
   },
 
+  async discogsCallback(params: { oauth_token: string; oauth_verifier: string; state: string }) {
+    const queryParams = new URLSearchParams(params).toString()
+    const response = await fetchApi(`/oauth/callback/discogs?${queryParams}`)
+    return response.json()
+  },
+
   async revokeOAuth(provider: string) {
     const response = await fetchApi(`/oauth/revoke/${provider}`, {
       method: 'DELETE',
+    })
+    return response.json()
+  },
+
+  async verifyDiscogs(state: string, verificationCode: string) {
+    const response = await fetchApi('/oauth/verify/discogs', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        state,
+        verification_code: verificationCode,
+      }),
     })
     return response.json()
   },

@@ -1017,6 +1017,15 @@ wheels = [
 ]
 
 [[package]]
+name = "types-oauthlib"
+version = "3.3.0.20250708"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/4e/5e/70b55a4d4b7f6fb5d94e943ab327701e1f62d1e55c9e212511fd80972de4/types_oauthlib-3.3.0.20250708.tar.gz", hash = "sha256:32a15d1139801990b70dadcbdc630045699b70325f4523c2dbd8923d75ebf0e2", size = 25534, upload-time = "2025-07-08T03:13:46.475Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/a0/25/693c5337884660bac23b6c474a933422b6cd3cc9cb4c9c9f73975e19998c/types_oauthlib-3.3.0.20250708-py3-none-any.whl", hash = "sha256:d2e764b2b2fd18a2521215b6f3ba325547eb0ad954df5a299a8555d402842e0d", size = 48753, upload-time = "2025-07-08T03:13:45.37Z" },
+]
+
+[[package]]
 name = "types-passlib"
 version = "1.7.7.20250602"
 source = { registry = "https://pypi.org/simple" }
@@ -1070,6 +1079,31 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/3a/95/c054d3ac940e8bac4ca216470c80c26688a0e79e09f520a942bb27da3386/types-redis-4.6.0.20241004.tar.gz", hash = "sha256:5f17d2b3f9091ab75384153bfa276619ffa1cf6a38da60e10d5e6749cc5b902e", size = 49679, upload-time = "2024-10-04T02:43:59.224Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/55/82/7d25dce10aad92d2226b269bce2f85cfd843b4477cd50245d7d40ecf8f89/types_redis-4.6.0.20241004-py3-none-any.whl", hash = "sha256:ef5da68cb827e5f606c8f9c0b49eeee4c2669d6d97122f301d3a55dc6a63f6ed", size = 58737, upload-time = "2024-10-04T02:43:57.968Z" },
+]
+
+[[package]]
+name = "types-requests"
+version = "2.32.4.20250611"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "urllib3" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/6d/7f/73b3a04a53b0fd2a911d4ec517940ecd6600630b559e4505cc7b68beb5a0/types_requests-2.32.4.20250611.tar.gz", hash = "sha256:741c8777ed6425830bf51e54d6abe245f79b4dcb9019f1622b773463946bf826", size = 23118, upload-time = "2025-06-11T03:11:41.272Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/3d/ea/0be9258c5a4fa1ba2300111aa5a0767ee6d18eb3fd20e91616c12082284d/types_requests-2.32.4.20250611-py3-none-any.whl", hash = "sha256:ad2fe5d3b0cb3c2c902c8815a70e7fb2302c4b8c1f77bdcd738192cdb3878072", size = 20643, upload-time = "2025-06-11T03:11:40.186Z" },
+]
+
+[[package]]
+name = "types-requests-oauthlib"
+version = "2.0.0.20250516"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "types-oauthlib" },
+    { name = "types-requests" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/fc/7b/1803a83dbccf0698a9fb70a444d12f1dcb0f49a5d8a6327a1e53fac19e15/types_requests_oauthlib-2.0.0.20250516.tar.gz", hash = "sha256:2a384b6ca080bd1eb30a88e14836237dc43d217892fddf869f03aea65213e0d4", size = 11034, upload-time = "2025-05-16T03:09:45.119Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/e8/3c/1bc76f1097cc4978cc97df11524f47559f8927fb2a2807375947bd185189/types_requests_oauthlib-2.0.0.20250516-py3-none-any.whl", hash = "sha256:faf417c259a3ae54c1b72c77032c07af3025ed90164c905fb785d21e8580139c", size = 14343, upload-time = "2025-05-16T03:09:43.874Z" },
 ]
 
 [[package]]
@@ -1224,6 +1258,12 @@ dev = [
     { name = "types-redis" },
 ]
 
+[package.dev-dependencies]
+dev = [
+    { name = "types-oauthlib" },
+    { name = "types-requests-oauthlib" },
+]
+
 [package.metadata]
 requires-dist = [
     { name = "aiosqlite", marker = "extra == 'dev'", specifier = ">=0.20.0" },
@@ -1262,6 +1302,12 @@ requires-dist = [
     { name = "uvicorn", extras = ["standard"], specifier = ">=0.31.0" },
 ]
 provides-extras = ["dev"]
+
+[package.metadata.requires-dev]
+dev = [
+    { name = "types-oauthlib", specifier = ">=3.3.0.20250708" },
+    { name = "types-requests-oauthlib", specifier = ">=2.0.0.20250516" },
+]
 
 [[package]]
 name = "watchfiles"

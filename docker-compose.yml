@@ -19,6 +19,9 @@ services:
     image: redis:7-alpine
     ports:
       - "6379:6379"
+    command: redis-server --save 60 1 --loglevel warning
+    sysctls:
+      - net.core.somaxconn=511
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
       interval: 5s
@@ -83,6 +86,12 @@ services:
     command: celery -A src.workers.celery_app worker --loglevel=info
     volumes:
       - ./backend:/app
+    healthcheck:
+      test: ["CMD", "celery", "-A", "src.workers.celery_app", "inspect", "ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
 
   scheduler:
     build:
@@ -109,6 +118,12 @@ services:
     command: python -m src.workers.scheduler
     volumes:
       - ./backend:/app
+    healthcheck:
+      test: ["CMD", "python", "-c", "import src.workers.scheduler; print('Scheduler module loaded')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
 
   frontend:
     build:

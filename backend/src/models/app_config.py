@@ -17,8 +17,8 @@ if TYPE_CHECKING:
 
 
 class OAuthProvider(str, Enum):
-    DISCOGS = "discogs"
-    EBAY = "ebay"
+    DISCOGS = "DISCOGS"
+    EBAY = "EBAY"
 
 
 class AppConfig(Base):
@@ -31,7 +31,9 @@ class AppConfig(Base):
     __tablename__ = "app_config"
 
     id: Mapped[UUID] = mapped_column(PGUUID(as_uuid=True), primary_key=True, default=uuid4)
-    provider: Mapped[OAuthProvider] = mapped_column(SQLEnum(OAuthProvider), unique=True, nullable=False)
+    provider: Mapped[OAuthProvider] = mapped_column(
+        SQLEnum(OAuthProvider, create_type=False), unique=True, nullable=False
+    )
     consumer_key: Mapped[str] = mapped_column(String(500), nullable=False)
     consumer_secret: Mapped[str] = mapped_column(String(500), nullable=False)
 
