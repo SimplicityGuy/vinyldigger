@@ -19,6 +19,7 @@ Welcome to the VinylDigger documentation! This index provides quick access to al
 - **[Security Guide](security.md)** - Security best practices and implementation guidelines
 - **[Monitoring & Observability](monitoring.md)** - Comprehensive monitoring, logging, and alerting setup
 - **[Troubleshooting Guide](troubleshooting.md)** - Common issues and their solutions
+- **[Documentation Status Report](DOCUMENTATION_STATUS.md)** - Comprehensive documentation audit and verification
 
 ### Specialized Guides
 - **[E2E Testing Guide](../frontend/tests/e2e/README.md)** - End-to-end testing with Playwright
