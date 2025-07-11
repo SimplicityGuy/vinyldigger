@@ -24,6 +24,9 @@ interface SearchFormData {
   query: string
   platform: 'ebay' | 'discogs' | 'both'
   check_interval_hours: number
+  min_record_condition?: string
+  min_sleeve_condition?: string
+  seller_location_preference?: string
 }
 
 function SearchesPageComponent() {
@@ -39,6 +42,9 @@ function SearchesPageComponent() {
     defaultValues: {
       platform: 'both',
       check_interval_hours: 24,
+      min_record_condition: 'VG+',
+      min_sleeve_condition: 'VG+',
+      seller_location_preference: 'US',
     },
   })
 
@@ -167,12 +173,23 @@ function SearchesPageComponent() {
                   </div>
                 </CardHeader>
                 <CardContent>
-                  <p className="text-sm text-muted-foreground">
-                    Last checked:{' '}
-                    {search.last_checked_at
-                      ? new Date(search.last_checked_at).toLocaleString()
-                      : 'Never'}
-                  </p>
+                  <div className="space-y-1 text-sm text-muted-foreground">
+                    <p>
+                      Last checked:{' '}
+                      {search.last_checked_at
+                        ? new Date(search.last_checked_at).toLocaleString()
+                        : 'Never'}
+                    </p>
+                    {(search.min_record_condition || search.min_sleeve_condition || search.seller_location_preference) && (
+                      <p>
+                        {search.min_record_condition && `Min Record: ${search.min_record_condition}`}
+                        {search.min_record_condition && search.min_sleeve_condition && ' • '}
+                        {search.min_sleeve_condition && `Min Sleeve: ${search.min_sleeve_condition}`}
+                        {(search.min_record_condition || search.min_sleeve_condition) && search.seller_location_preference && ' • '}
+                        {search.seller_location_preference && `Location: ${search.seller_location_preference}`}
+                      </p>
+                    )}
+                  </div>
                 </CardContent>
               </Card>
             ))}
@@ -236,6 +253,37 @@ function SearchesPageComponent() {
                   {errors.check_interval_hours.message}
                 </p>
               )}
+            </div>
+            <div className="grid gap-4 md:grid-cols-2">
+              <div>
+                <Label htmlFor="min_record_condition">Minimum Record Condition</Label>
+                <Select id="min_record_condition" {...register('min_record_condition')}>
+                  <option value="M">Mint (M)</option>
+                  <option value="NM">Near Mint (NM)</option>
+                  <option value="VG+">Very Good Plus (VG+)</option>
+                  <option value="VG">Very Good (VG)</option>
+                  <option value="G+">Good Plus (G+)</option>
+                </Select>
+              </div>
+              <div>
+                <Label htmlFor="min_sleeve_condition">Minimum Sleeve Condition</Label>
+                <Select id="min_sleeve_condition" {...register('min_sleeve_condition')}>
+                  <option value="M">Mint (M)</option>
+                  <option value="NM">Near Mint (NM)</option>
+                  <option value="VG+">Very Good Plus (VG+)</option>
+                  <option value="VG">Very Good (VG)</option>
+                  <option value="G+">Good Plus (G+)</option>
+                </Select>
+              </div>
+            </div>
+            <div>
+              <Label htmlFor="seller_location_preference">Preferred Seller Location</Label>
+              <Select id="seller_location_preference" {...register('seller_location_preference')}>
+                <option value="US">United States</option>
+                <option value="EU">Europe</option>
+                <option value="UK">United Kingdom</option>
+                <option value="ANY">Any Location</option>
+              </Select>
             </div>
             <div className="flex justify-end gap-3 pt-4">
               <Button type="button" variant="outline" onClick={() => setIsCreating(false)}>

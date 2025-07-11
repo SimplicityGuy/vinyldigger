@@ -4,7 +4,6 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button'
 import { Label } from '@/components/ui/label'
 import { Input } from '@/components/ui/input'
-import { Select } from '@/components/ui/select'
 import { Key, Settings2, User, AlertCircle, CheckCircle, ExternalLink } from 'lucide-react'
 import api from '@/lib/api'
 import { useToast } from '@/hooks/useToast'
@@ -14,13 +13,7 @@ function SettingsPage() {
   const [discogsVerificationCode, setDiscogsVerificationCode] = useState('')
   const [discogsState, setDiscogsState] = useState('')
   const [showVerificationInput, setShowVerificationInput] = useState(false)
-  const [preferences, setPreferences] = useState({
-    min_record_condition: 'VG+',
-    min_sleeve_condition: 'VG+',
-    seller_location_preference: 'US',
-    check_interval_hours: 24,
-    email_notifications: true,
-  })
+  const [emailNotifications, setEmailNotifications] = useState(true)
 
   // Query OAuth status
   const { data: discogsOAuthStatus, refetch: refetchDiscogsStatus } = useQuery({
@@ -77,10 +70,6 @@ function SettingsPage() {
     },
   })
 
-  const updatePreferencesMutation = useMutation({
-    mutationFn: (prefs: typeof preferences) => api.updatePreferences(prefs),
-  })
-
   const handleAuthorizeDiscogs = () => {
     authorizeDiscogsMutation.mutate()
   }
@@ -89,10 +78,6 @@ function SettingsPage() {
     if (confirm('Are you sure you want to revoke Discogs access?')) {
       revokeDiscogsMutation.mutate()
     }
-  }
-
-  const handleSavePreferences = () => {
-    updatePreferencesMutation.mutate(preferences)
   }
 
   return (
@@ -214,84 +199,6 @@ function SettingsPage() {
         </CardContent>
       </Card>
 
-      {/* Search Preferences */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Search Preferences</CardTitle>
-          <CardDescription>Configure your default search settings</CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="grid gap-4 md:grid-cols-2">
-            <div className="space-y-2">
-              <Label htmlFor="min-record">Minimum Record Condition</Label>
-              <Select
-                id="min-record"
-                value={preferences.min_record_condition}
-                onChange={(e) =>
-                  setPreferences((prev) => ({ ...prev, min_record_condition: e.target.value }))
-                }
-              >
-                <option value="M">Mint (M)</option>
-                <option value="NM">Near Mint (NM)</option>
-                <option value="VG+">Very Good Plus (VG+)</option>
-                <option value="VG">Very Good (VG)</option>
-                <option value="G+">Good Plus (G+)</option>
-              </Select>
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="min-sleeve">Minimum Sleeve Condition</Label>
-              <Select
-                id="min-sleeve"
-                value={preferences.min_sleeve_condition}
-                onChange={(e) =>
-                  setPreferences((prev) => ({ ...prev, min_sleeve_condition: e.target.value }))
-                }
-              >
-                <option value="M">Mint (M)</option>
-                <option value="NM">Near Mint (NM)</option>
-                <option value="VG+">Very Good Plus (VG+)</option>
-                <option value="VG">Very Good (VG)</option>
-                <option value="G+">Good Plus (G+)</option>
-              </Select>
-            </div>
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="location">Preferred Seller Location</Label>
-            <Select
-              id="location"
-              value={preferences.seller_location_preference}
-              onChange={(e) =>
-                setPreferences((prev) => ({ ...prev, seller_location_preference: e.target.value }))
-              }
-            >
-              <option value="US">United States</option>
-              <option value="EU">Europe</option>
-              <option value="UK">United Kingdom</option>
-              <option value="ANY">Any Location</option>
-            </Select>
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="check-interval">Check Interval (hours)</Label>
-            <Input
-              id="check-interval"
-              type="number"
-              min={1}
-              max={168}
-              value={preferences.check_interval_hours}
-              onChange={(e) =>
-                setPreferences((prev) => ({
-                  ...prev,
-                  check_interval_hours: parseInt(e.target.value) || 24,
-                }))
-              }
-            />
-          </div>
-          <Button onClick={handleSavePreferences} disabled={updatePreferencesMutation.isPending}>
-            Save Preferences
-          </Button>
-        </CardContent>
-      </Card>
-
       {/* Notifications */}
       <Card>
         <CardHeader>
@@ -309,10 +216,8 @@ function SettingsPage() {
             <input
               type="checkbox"
               id="notifications"
-              checked={preferences.email_notifications}
-              onChange={(e) =>
-                setPreferences((prev) => ({ ...prev, email_notifications: e.target.checked }))
-              }
+              checked={emailNotifications}
+              onChange={(e) => setEmailNotifications(e.target.checked)}
               className="h-4 w-4 rounded border-gray-300"
             />
           </div>

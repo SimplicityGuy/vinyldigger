@@ -33,14 +33,36 @@ class WantListResponse(BaseModel):
 
 
 @router.post("/sync")
-async def sync_collection(
+async def sync_all(
     current_user: Annotated[User, Depends(get_current_user)],
     db: AsyncSession = Depends(get_db),
 ) -> dict[str, str]:
-    # Queue sync task
+    # Queue sync task for both collection and want list
     sync_collection_task.delay(str(current_user.id))
 
+    return {"message": "Collection and want list sync queued successfully"}
+
+
+@router.post("/sync/collection")
+async def sync_collection_only(
+    current_user: Annotated[User, Depends(get_current_user)],
+    db: AsyncSession = Depends(get_db),
+) -> dict[str, str]:
+    # Queue sync task for collection only
+    sync_collection_task.delay(str(current_user.id), sync_type="collection")
+
     return {"message": "Collection sync queued successfully"}
+
+
+@router.post("/sync/wantlist")
+async def sync_wantlist_only(
+    current_user: Annotated[User, Depends(get_current_user)],
+    db: AsyncSession = Depends(get_db),
+) -> dict[str, str]:
+    # Queue sync task for want list only
+    sync_collection_task.delay(str(current_user.id), sync_type="wantlist")
+
+    return {"message": "Want list sync queued successfully"}
 
 
 @router.get("/status", response_model=CollectionResponse)

@@ -220,6 +220,20 @@ export const collectionApi = {
     return response.json()
   },
 
+  async syncCollectionOnly(): Promise<{ message: string }> {
+    const response = await fetchApi('/collections/sync/collection', {
+      method: 'POST',
+    })
+    return response.json()
+  },
+
+  async syncWantListOnly(): Promise<{ message: string }> {
+    const response = await fetchApi('/collections/sync/wantlist', {
+      method: 'POST',
+    })
+    return response.json()
+  },
+
   async getCollectionStatus(): Promise<CollectionStatus> {
     const response = await fetchApi('/collections/status')
     return response.json()
