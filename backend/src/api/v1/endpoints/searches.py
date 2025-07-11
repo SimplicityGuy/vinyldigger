@@ -26,6 +26,12 @@ class SavedSearchCreate(BaseModel):
     min_sleeve_condition: str | None = None
     seller_location_preference: str | None = None
 
+    @field_validator("platform", mode="before")
+    def normalize_platform(cls, v):
+        if isinstance(v, str):
+            return v.upper()
+        return v
+
 
 class SavedSearchResponse(BaseModel):
     id: str
