@@ -20,6 +20,7 @@ Welcome to the VinylDigger documentation! This index provides quick access to al
 - **[Monitoring & Observability](monitoring.md)** - Comprehensive monitoring, logging, and alerting setup
 - **[Troubleshooting Guide](troubleshooting.md)** - Common issues and their solutions
 - **[Documentation Status Report](documentation-status.md)** - Comprehensive documentation audit and verification
+- **[Documentation Cleanup Summary](documentation-cleanup-summary.md)** - Recent standardization actions and results
 
 ### Specialized Guides
 - **[E2E Testing Guide](../frontend/tests/e2e/README.md)** - End-to-end testing with Playwright
