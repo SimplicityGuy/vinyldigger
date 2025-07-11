@@ -180,7 +180,7 @@ See the [Testing Guide](docs/testing.md) for detailed testing instructions.
 - [Performance Tuning](docs/performance.md) - Optimization strategies and best practices
 - [Security Guide](docs/security.md) - Security best practices and implementation
 - [Monitoring & Observability](docs/monitoring.md) - Logging, metrics, and alerting
-- [Contributing Guidelines](contributing.md) - How to contribute to the project
+- [Contributing Guidelines](CONTRIBUTING.md) - How to contribute to the project
 - [E2E Testing Guide](frontend/tests/e2e/README.md) - End-to-end testing documentation
 
 ### Additional Documentation

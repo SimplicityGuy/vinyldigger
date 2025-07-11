@@ -6,9 +6,9 @@
 ## ✅ Actions Completed
 
 ### 🏷️ Naming Convention Standardization
-**Fixed uppercase filenames to follow lowercase convention:**
+**Corrected naming conventions per open-source standards:**
 
-1. **`CONTRIBUTING.md` → `contributing.md`**
+1. **`contributing.md` → `CONTRIBUTING.md`** (corrected to follow standard convention)
    - Updated all references in:
      - `README.md`
      - `docs/README.md`
@@ -24,7 +24,7 @@
 ```
 Project Documentation Structure:
 ├── README.md (main project documentation)
-├── contributing.md (developer guidelines)
+├── CONTRIBUTING.md (developer guidelines)
 ├── CLAUDE.md (AI assistant configuration)
 ├── docs/ (11 files)
 │   ├── README.md (documentation index)
@@ -51,7 +51,7 @@ Project Documentation Structure:
 - ✅ **Lowercase with hyphens**: `api-examples.md`, `docker-oci-labels.md`, `documentation-status.md`
 - ✅ **Lowercase with underscores**: `development_db_workflow.md`, `discogs_auth.md`
 - ✅ **Single lowercase words**: All other `.md` files
-- ✅ **Legitimate uppercase**: `README.md`, `CLAUDE.md` (standard conventions)
+- ✅ **Standard uppercase**: `README.md`, `CONTRIBUTING.md`, `CLAUDE.md`, `LICENSE` (open-source conventions)
 
 ### 🔗 Link Verification
 **All documentation properly linked from main README.md:**
@@ -77,7 +77,7 @@ Project Documentation Structure:
 All documentation files follow the established naming conventions:
 - Lowercase filenames (except legitimate exceptions)
 - Consistent hyphen/underscore usage
-- Standard README.md and CLAUDE.md uppercase
+- Standard uppercase: README.md, CONTRIBUTING.md, CLAUDE.md, LICENSE
 
 ### ✅ Link Integrity: VERIFIED
 All documentation is properly linked and discoverable:
@@ -95,7 +95,8 @@ Documentation structure follows best practices:
 
 ## 🎯 Compliance Checklist
 
-- ✅ All docs except READMEs and CLAUDE.md are lowercase
+- ✅ All docs except standard uppercase files are lowercase
+- ✅ Standard uppercase: README.md, CONTRIBUTING.md, CLAUDE.md, LICENSE
 - ✅ All legitimate documentation linked from main README
 - ✅ No unnecessary documentation files present
 - ✅ Consistent naming convention throughout
@@ -106,10 +107,11 @@ Documentation structure follows best practices:
 
 **For future documentation:**
 1. Use lowercase filenames with hyphens for multi-word files
-2. Link all new documentation from main README.md
-3. Update documentation index in `docs/README.md`
-4. Maintain the established file organization structure
-5. Remove any temporary or generated documentation files
+2. Keep standard uppercase: README.md, CONTRIBUTING.md, LICENSE files
+3. Link all new documentation from main README.md
+4. Update documentation index in `docs/README.md`
+5. Maintain the established file organization structure
+6. Remove any temporary or generated documentation files
 
 **Quality assurance:**
 - Documentation follows established patterns

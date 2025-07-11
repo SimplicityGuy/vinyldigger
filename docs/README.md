@@ -6,7 +6,7 @@ Welcome to the VinylDigger documentation! This index provides quick access to al
 
 ### Getting Started
 - **[Main README](../README.md)** - Project overview, features, and quick start guide
-- **[Contributing Guide](../contributing.md)** - How to contribute to the project
+- **[Contributing Guide](../CONTRIBUTING.md)** - How to contribute to the project
 - **[Project Context](../CLAUDE.md)** - Technical context and AI assistant configuration
 
 ### Technical Documentation
@@ -36,7 +36,7 @@ Welcome to the VinylDigger documentation! This index provides quick access to al
 3. Review the [Deployment Guide](deployment.md) for production setup
 
 ### For Developers
-1. Read the [Contributing Guide](../contributing.md) first
+1. Read the [Contributing Guide](../CONTRIBUTING.md) first
 2. Understand the [Architecture](architecture.md)
 3. Learn about [Testing](testing.md)
 4. Reference [Project Context](../CLAUDE.md) for development patterns
