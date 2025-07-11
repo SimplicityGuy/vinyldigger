@@ -91,7 +91,7 @@ frontend/
 # Install all dependencies
 just install
 
-# Run pre-commit checks
+# Run pre-commit checks (ALWAYS run before committing)
 just lint
 
 # Format code
@@ -100,9 +100,18 @@ just format
 # Type check
 just typecheck
 
+# Run tests locally
+just test-local
+
 # Update dependencies
 just update-pre-commit
 ```
+
+### Platform Naming Conventions
+- **In code**: Always use lowercase (e.g., `"discogs"`, `"ebay"`)
+- **In UI**: Use proper capitalization (e.g., "Discogs", "eBay")
+- **In database**: Store as lowercase for consistency
+- **Common mistake**: Using `"DISCOGS"` or `"Discogs"` in backend code
 
 ### Database Development Workflow
 During development, we use a simplified approach:
@@ -143,12 +152,26 @@ See `backend/docs/development_db_workflow.md` for detailed instructions.
 - Integration tests for API endpoints
 - Mock external APIs (Discogs, eBay)
 - Use pytest fixtures for database sessions
+- **Always run lint checks before tests**: `just lint` catches issues early
+- **Platform name consistency**: Use lowercase in code (e.g., `platform="discogs"`)
 
 ### Frontend Tests
 - Unit tests with Vitest
 - Component testing with Testing Library
 - E2E tests with Playwright
 - Mock API responses for isolation
+- **TypeScript type safety**: Ensure mocks match actual API response types
+- **Mock setup patterns**: Create reusable mock factories for consistent testing
+
+### Testing Best Practices
+1. **Run lint before committing**: `just lint` catches formatting, type, and style issues
+2. **Test locally first**: Use `just test-local` for faster feedback during development
+3. **Mock external services**: Never make real API calls in tests
+4. **Use meaningful test data**: Realistic data helps catch edge cases
+5. **Test error cases**: Always test both success and failure scenarios
+6. **Keep tests isolated**: Each test should be independent and repeatable
+
+See `backend/docs/testing_guide.md` for comprehensive testing patterns and examples.
 
 ## Deployment Considerations
 
@@ -246,6 +269,9 @@ See `backend/docs/development_db_workflow.md` for detailed instructions.
 5. **GitHub Actions security**: Always pin non-GitHub/Docker actions to their SHA
 6. **Docker networking**: Services must use container names (e.g., `backend:8000`) not localhost for inter-container communication
 7. **Database migrations**: Always run migrations after model changes - backend startup runs them automatically if alembic/versions/ contains migration files
+8. **Lint before committing**: Running `just lint` before commits saves time by catching issues early
+9. **Consistent naming**: Use lowercase for platform names in code (`"discogs"`, not `"Discogs"` or `"DISCOGS"`)
+10. **Test with mocks**: All external API calls should be mocked in tests
 
 ### Quick Command Reference
 ```bash
@@ -286,6 +312,9 @@ just clean            # Clean up everything
 4. **Dependency conflicts**: Delete lock files and regenerate with `just install`
 5. **Missing database tables**: Ensure migrations exist in alembic/versions/ and run `just migrate`
 6. **Frontend proxy errors**: Verify VITE_API_URL uses container names in Docker
+7. **Test failures**: Check if mocks match actual API responses
+8. **Database schema mismatches**: Verify SQLAlchemy models match migration files exactly
+9. **Platform name errors**: Ensure using lowercase platform names in backend code
 
 # important-instruction-reminders
 Do what has been asked; nothing more, nothing less.

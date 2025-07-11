@@ -89,6 +89,59 @@ Here's how we recently added search preference columns to the SavedSearch model:
 - **Test data**: Use scripts or fixtures to reload test data after recreation
 - **Schema consistency**: Always ensure the initial migration matches your models exactly
 
+### Maintaining Schema and Model Consistency
+
+One of the most critical aspects of this workflow is keeping your SQLAlchemy models and database migrations in perfect sync. Here are key lessons learned:
+
+1. **Column Name Consistency**:
+   - Ensure column names in migrations match exactly with model attribute names
+   - Common pitfall: Using underscores in migration but camelCase in models (or vice versa)
+   - Example: `seller_location_preference` in both model and migration, not `sellerLocationPreference`
+
+2. **Verification Steps**:
+   ```bash
+   # After updating models and migrations, verify consistency:
+
+   # 1. Check the actual database schema
+   docker-compose exec postgres psql -U postgres -d vinyldigger -c "\d+ table_name"
+
+   # 2. Compare with your SQLAlchemy model
+   # Look for mismatches in:
+   # - Column names
+   # - Data types
+   # - Nullable constraints
+   # - Default values
+
+   # 3. Test model operations
+   # Create a simple test that creates/reads/updates the model
+   ```
+
+3. **Common Pitfalls to Avoid**:
+   - **Forgetting to update the migration**: Always update the initial migration when changing models
+   - **Type mismatches**: Ensure SQLAlchemy types match migration column types
+   - **Enum handling**: If using enums, define them consistently in both places
+   - **Foreign key naming**: Use consistent naming for foreign key columns (e.g., `user_id` not `userId`)
+   - **Index definitions**: Add indexes in migrations if defined in models
+
+4. **Debugging Schema Mismatches**:
+   ```bash
+   # If you suspect a mismatch:
+
+   # 1. Generate a fresh migration to see differences
+   cd backend
+   uv run alembic revision --autogenerate -m "Check differences"
+
+   # 2. Review the generated file - it will show what Alembic thinks needs changing
+   # 3. Use this to identify mismatches, then update your initial migration
+   # 4. Delete the generated migration file (we don't keep it in development)
+   ```
+
+5. **Best Practices**:
+   - Always test model CRUD operations after schema changes
+   - Use the same naming conventions throughout (snake_case for database)
+   - Document any complex column relationships or constraints
+   - Keep the initial migration file well-organized and commented
+
 ## Production Workflow (Future)
 
 When moving to production:
