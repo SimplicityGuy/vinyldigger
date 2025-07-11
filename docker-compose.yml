@@ -22,6 +22,7 @@ services:
     command: redis-server --save 60 1 --loglevel warning
     sysctls:
       - net.core.somaxconn=511
+      - vm.overcommit_memory=1
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
       interval: 5s

@@ -242,13 +242,14 @@ class SyncCollectionTask(AsyncTask):
 
                         for item in collection_items:
                             release_id = item["basic_information"]["id"]
+                            instance_id = item["instance_id"]
                             basic_info = item["basic_information"]
 
-                            # Check if already in collection
+                            # Check if already in collection (use instance_id for unique identification)
                             existing = await db.execute(
                                 select(CollectionItem).where(
                                     CollectionItem.collection_id == collection.id,
-                                    CollectionItem.platform_item_id == str(release_id),
+                                    CollectionItem.platform_item_id == str(instance_id),
                                 )
                             )
                             existing_item = existing.scalar_one_or_none()
@@ -278,7 +279,7 @@ class SyncCollectionTask(AsyncTask):
                                 # Add new
                                 collection_item = CollectionItem(
                                     collection_id=collection.id,
-                                    platform_item_id=str(release_id),
+                                    platform_item_id=str(instance_id),
                                     title=basic_info.get("title", "Unknown"),
                                     artist=", ".join([a["name"] for a in basic_info.get("artists", [])]),
                                     year=basic_info.get("year"),

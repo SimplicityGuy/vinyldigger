@@ -1,6 +1,6 @@
 import { memo, useState, useEffect } from 'react'
 import { useQuery, useMutation } from '@tanstack/react-query'
-import { AlertCircle, Package, Heart, RefreshCw, Check, Loader2 } from 'lucide-react'
+import { AlertCircle, Package, Heart, RefreshCw, Check, Loader2, Minus } from 'lucide-react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { collectionApi, oauthApi, searchApi } from '@/lib/api'
@@ -35,15 +35,21 @@ export const DashboardPage = memo(function DashboardPage() {
   })
 
   // Track completion status
+  const collectionItemCount = collectionStatus?.item_count || 0
+  const wantListItemCount = wantListStatus?.item_count || 0
+
   const completionStatus = {
     discogsConnected: discogsOAuthStatus?.is_authorized || false,
-    collectionSynced: (collectionStatus?.item_count || 0) > 0 || (wantListStatus?.item_count || 0) > 0,
+    collectionSynced: collectionItemCount > 0,
+    wantListSynced: wantListItemCount > 0,
+    bothSynced: collectionItemCount > 0 && wantListItemCount > 0,
+    eitherSynced: collectionItemCount > 0 || wantListItemCount > 0,
     searchCreated: searches.length > 0,
   }
 
   const allTasksCompleted =
     completionStatus.discogsConnected &&
-    completionStatus.collectionSynced &&
+    completionStatus.bothSynced &&
     completionStatus.searchCreated
 
   const syncAllMutation = useMutation({
@@ -295,13 +301,26 @@ export const DashboardPage = memo(function DashboardPage() {
                 </span>
               </div>
               <div className="flex items-center gap-2 text-sm">
-                {completionStatus.collectionSynced ? (
+                {completionStatus.bothSynced ? (
                   <Check className="h-4 w-4 text-green-600" />
+                ) : completionStatus.eitherSynced ? (
+                  <Minus className="h-4 w-4 text-yellow-600" />
                 ) : (
                   <div className="h-4 w-4 rounded-full border-2 border-gray-300" />
                 )}
-                <span className={completionStatus.collectionSynced ? 'text-green-700 line-through' : ''}>
+                <span className={
+                  completionStatus.bothSynced ?
+                    'text-green-700 line-through' :
+                    completionStatus.eitherSynced ?
+                      'text-yellow-700' :
+                      ''
+                }>
                   Sync your collection and want list using the button above
+                  {completionStatus.eitherSynced && !completionStatus.bothSynced && (
+                    <span className="text-xs ml-1">
+                      ({completionStatus.collectionSynced ? 'collection' : 'want list'} synced)
+                    </span>
+                  )}
                 </span>
               </div>
               <div className="flex items-center gap-2 text-sm">
