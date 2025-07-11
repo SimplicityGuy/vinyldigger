@@ -144,7 +144,7 @@ def upgrade() -> None:
             postgresql.ENUM("DISCOGS", "EBAY", "BOTH", name="searchplatform", create_type=False),
             nullable=False,
         ),
-        sa.Column("platform_item_id", sa.String(length=255), nullable=False),
+        sa.Column("item_id", sa.String(length=255), nullable=False),
         sa.Column("title", sa.String(length=500), nullable=False),
         sa.Column("artist", sa.String(length=255), nullable=True),
         sa.Column("price", sa.Numeric(precision=10, scale=2), nullable=False),
@@ -168,7 +168,7 @@ def upgrade() -> None:
             ["saved_searches.id"],
         ),
         sa.PrimaryKeyConstraint("id"),
-        sa.UniqueConstraint("search_id", "platform", "platform_item_id"),
+        sa.UniqueConstraint("search_id", "platform", "item_id"),
     )
     op.create_index(op.f("ix_search_results_found_at"), "search_results", ["found_at"], unique=False)
     op.create_index(op.f("ix_search_results_price"), "search_results", ["price"], unique=False)
@@ -226,7 +226,7 @@ def upgrade() -> None:
         "collection_items",
         sa.Column("id", postgresql.UUID(as_uuid=True), nullable=False),
         sa.Column("collection_id", postgresql.UUID(as_uuid=True), nullable=False),
-        sa.Column("platform_item_id", sa.String(length=255), nullable=False),
+        sa.Column("item_id", sa.String(length=255), nullable=False),
         sa.Column("title", sa.String(length=500), nullable=False),
         sa.Column("artist", sa.String(length=255), nullable=True),
         sa.Column("year", sa.Integer(), nullable=True),
@@ -242,7 +242,7 @@ def upgrade() -> None:
             ["collections.id"],
         ),
         sa.PrimaryKeyConstraint("id"),
-        sa.UniqueConstraint("collection_id", "platform_item_id"),
+        sa.UniqueConstraint("collection_id", "item_id"),
     )
     op.create_index(op.f("ix_collection_items_collection_id"), "collection_items", ["collection_id"], unique=False)
 
@@ -273,7 +273,7 @@ def upgrade() -> None:
         "want_list_items",
         sa.Column("id", postgresql.UUID(as_uuid=True), nullable=False),
         sa.Column("want_list_id", postgresql.UUID(as_uuid=True), nullable=False),
-        sa.Column("platform_item_id", sa.String(length=255), nullable=False),
+        sa.Column("item_id", sa.String(length=255), nullable=False),
         sa.Column("title", sa.String(length=500), nullable=False),
         sa.Column("artist", sa.String(length=255), nullable=True),
         sa.Column("year", sa.Integer(), nullable=True),
@@ -288,7 +288,7 @@ def upgrade() -> None:
             ["want_lists.id"],
         ),
         sa.PrimaryKeyConstraint("id"),
-        sa.UniqueConstraint("want_list_id", "platform_item_id"),
+        sa.UniqueConstraint("want_list_id", "item_id"),
     )
     op.create_index(op.f("ix_want_list_items_want_list_id"), "want_list_items", ["want_list_id"], unique=False)
 

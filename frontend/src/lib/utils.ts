@@ -6,10 +6,13 @@ export function cn(...inputs: ClassValue[]) {
 }
 
 export function formatProvider(provider: string): string {
-  const normalized = provider.toLowerCase()
   const providerMap: Record<string, string> = {
+    'DISCOGS': 'Discogs',
+    'EBAY': 'eBay',
     'discogs': 'Discogs',
-    'ebay': 'eBay'
+    'ebay': 'eBay',
+    'BOTH': 'Both',
+    'both': 'Both'
   }
-  return providerMap[normalized] || provider
+  return providerMap[provider] || provider
 }

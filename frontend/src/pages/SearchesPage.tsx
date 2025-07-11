@@ -17,6 +17,7 @@ import { Label } from '@/components/ui/label'
 import { Select } from '@/components/ui/select'
 import { searchApi } from '@/lib/api'
 import { useToast } from '@/hooks/useToast'
+import { formatProvider } from '@/lib/utils'
 import type { Search } from '@/types/api'
 
 interface SearchFormData {
@@ -144,7 +145,7 @@ function SearchesPageComponent() {
                     <div>
                       <CardTitle>{search.name}</CardTitle>
                       <CardDescription>
-                        {search.query} • {search.platform} • Every {search.check_interval_hours}{' '}
+                        {search.query} • {formatProvider(search.platform)} • Every {search.check_interval_hours}{' '}
                         hours
                       </CardDescription>
                     </div>
