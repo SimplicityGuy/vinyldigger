@@ -37,7 +37,8 @@ A powerful web application that automates vinyl record discovery and comparison 
 - **Automated Monitoring**: Schedule searches to run periodically
 
 ### 🔐 Security & Privacy
-- **Encrypted API Keys**: Your external API credentials are encrypted at rest
+- **OAuth Authentication**: Secure OAuth integration for both Discogs (OAuth 1.0a) and eBay (OAuth 2.0)
+- **Encrypted API Keys**: Legacy API credentials are encrypted at rest
 - **JWT Authentication**: Secure token-based authentication
 - **User Isolation**: Each user's data is completely isolated
 
@@ -88,6 +89,7 @@ A powerful web application that automates vinyl record discovery and comparison 
    ```bash
    cp backend/.env.example backend/.env
    # Edit backend/.env with your configuration
+   # Note: API keys for Discogs/eBay are now optional - OAuth is preferred
    ```
 
 3. **Start the application**
@@ -184,9 +186,10 @@ See the [Testing Guide](docs/testing.md) for detailed testing instructions.
 - [E2E Testing Guide](frontend/tests/e2e/README.md) - End-to-end testing documentation
 
 ### Additional Documentation
+- [OAuth Setup Guide](docs/oauth-setup.md) - Complete OAuth setup for Discogs and eBay
 - [Troubleshooting Guide](docs/troubleshooting.md) - Common issues and solutions
 - [Database Development Workflow](backend/docs/development_db_workflow.md) - Database management during development
-- [Discogs OAuth Authentication](backend/docs/discogs_auth.md) - How to set up Discogs OAuth
+- [Discogs OAuth Authentication](backend/docs/discogs_auth.md) - Technical implementation details
 - [Docker OCI Labels](docs/docker-oci-labels.md) - Container labeling standards
 - [Project Context](CLAUDE.md) - AI assistant configuration and project guidelines
 

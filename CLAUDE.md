@@ -59,10 +59,17 @@ frontend/
 3. Refresh token for obtaining new access tokens
 4. Tokens stored in localStorage (frontend)
 
+### OAuth Authentication
+1. **Discogs OAuth 1.0a**: Request token → User authorization → Access token
+2. **eBay OAuth 2.0**: Authorization code → Exchange for access token
+3. Both support manual code entry for environments without redirects
+4. OAuth tokens stored encrypted in database
+
 ### API Key Security
-- User API keys are encrypted using Fernet symmetric encryption
+- User API keys are encrypted using Fernet symmetric encryption (legacy)
 - Keys are never logged or exposed in responses
 - Separate encryption for each service (Discogs, eBay)
+- OAuth is preferred over API keys for security
 
 ### Background Task Architecture
 1. **Celery Workers**: Handle search execution and collection sync
@@ -252,12 +259,13 @@ See `backend/docs/testing_guide.md` for comprehensive testing patterns and examp
 - API testing: Use /api/docs Swagger UI
 
 ## Future Enhancements
-- OAuth2 integration for Discogs
 - Real-time notifications (WebSockets)
 - Advanced search filters
 - Price prediction ML model
 - Mobile app
 - Multi-language support
+- Batch operations for saved searches
+- Export functionality for search results
 
 ## Development Best Practices
 
