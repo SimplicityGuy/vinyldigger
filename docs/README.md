@@ -23,10 +23,16 @@ Welcome to the VinylDigger documentation! This index provides quick access to al
 - **[Documentation Cleanup Summary](documentation-cleanup-summary.md)** - Recent standardization actions and results
 
 ### Specialized Guides
+- **[OAuth Setup Guide](oauth-setup.md)** - General OAuth authentication setup
 - **[E2E Testing Guide](../frontend/tests/e2e/README.md)** - End-to-end testing with Playwright
-- **[Database Development Workflow](../backend/docs/development_db_workflow.md)** - Database management during development
-- **[Discogs OAuth Authentication](../backend/docs/discogs_auth.md)** - Setting up and using Discogs OAuth
 - **[Docker OCI Labels](docker-oci-labels.md)** - Container labeling standards and best practices
+
+### Backend-Specific Documentation
+- **[Database Development Workflow](backend/development_db_workflow.md)** - Database management during development
+- **[Discogs OAuth Authentication](backend/discogs_auth.md)** - Setting up and using Discogs OAuth
+- **[eBay Developer Setup Guide](backend/ebay_developer_setup.md)** - Complete eBay OAuth setup and troubleshooting
+- **[OAuth Authentication Fixes](backend/oauth-authentication-fixes.md)** - Recent critical OAuth fixes and improvements
+- **[Testing Guide](backend/testing_guide.md)** - Backend-specific testing patterns and examples
 
 ## 🗺️ Quick Navigation
 
@@ -44,7 +50,8 @@ Welcome to the VinylDigger documentation! This index provides quick access to al
 ### For DevOps
 1. Follow the [Deployment Guide](deployment.md)
 2. Review [Docker OCI Labels](docker-oci-labels.md)
-3. Understand the [Database Development Workflow](../backend/docs/development_db_workflow.md)
+3. Understand the [Database Development Workflow](backend/development_db_workflow.md)
+4. Configure [OAuth Authentication](oauth-setup.md) for external APIs
 
 ## 📋 Documentation Standards
 
@@ -57,21 +64,24 @@ Welcome to the VinylDigger documentation! This index provides quick access to al
 ### Documentation Structure
 ```
 docs/
-├── README.md              # This file - documentation index
-├── api.md                 # API reference documentation
-├── api-examples.md       # API client examples in multiple languages
-├── architecture.md        # System architecture and design
-├── deployment.md          # Deployment and operations guide
-├── testing.md            # Testing strategies and guides
-├── performance.md        # Performance tuning guide
-├── security.md           # Security best practices
-├── monitoring.md         # Monitoring and observability guide
-├── troubleshooting.md    # Common issues and solutions
-└── docker-oci-labels.md  # Docker standards documentation
-
-backend/docs/
-├── development_db_workflow.md  # Database development workflow
-└── discogs_auth.md            # Discogs OAuth authentication guide
+├── README.md                    # This file - documentation index
+├── api.md                       # API reference documentation
+├── api-examples.md             # API client examples in multiple languages
+├── architecture.md              # System architecture and design
+├── deployment.md                # Deployment and operations guide
+├── testing.md                  # Testing strategies and guides
+├── performance.md              # Performance tuning guide
+├── security.md                 # Security best practices
+├── monitoring.md               # Monitoring and observability guide
+├── troubleshooting.md          # Common issues and solutions
+├── oauth-setup.md              # General OAuth authentication setup
+├── docker-oci-labels.md        # Docker standards documentation
+└── backend/                    # Backend-specific documentation
+    ├── development_db_workflow.md    # Database development workflow
+    ├── discogs_auth.md              # Discogs OAuth authentication guide
+    ├── ebay_developer_setup.md      # eBay OAuth setup and troubleshooting
+    ├── oauth-authentication-fixes.md # Recent OAuth fixes documentation
+    └── testing_guide.md             # Backend testing patterns and examples
 ```
 
 ### Updating Documentation

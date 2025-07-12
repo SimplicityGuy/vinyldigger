@@ -30,11 +30,11 @@ class OAuthToken(Base):
     provider: Mapped[OAuthProvider] = mapped_column(SQLEnum(OAuthProvider, create_type=False), nullable=False)
 
     # OAuth 1.0a tokens (Discogs)
-    access_token: Mapped[str] = mapped_column(String(500), nullable=False)
-    access_token_secret: Mapped[str | None] = mapped_column(String(500), nullable=True)
+    access_token: Mapped[str] = mapped_column(String(5000), nullable=False)
+    access_token_secret: Mapped[str | None] = mapped_column(String(5000), nullable=True)
 
     # OAuth 2.0 tokens (eBay, future use)
-    refresh_token: Mapped[str | None] = mapped_column(String(500), nullable=True)
+    refresh_token: Mapped[str | None] = mapped_column(String(5000), nullable=True)
     expires_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
 
     # Additional user info from the provider

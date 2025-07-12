@@ -308,6 +308,59 @@ frontend:
    SELECT * FROM users WHERE email = 'user@example.com';
    ```
 
+### eBay OAuth Issues
+
+**Problem**: eBay authentication failing with various errors.
+
+**Common Issues & Solutions**:
+
+#### "401 Unauthorized" from eBay API
+- **Cause**: Environment mismatch (sandbox credentials with production URLs)
+- **Solution**: VinylDigger now auto-detects environment from App ID:
+  - Sandbox App IDs contain `SBX` → uses sandbox endpoints
+  - Production App IDs contain `PRD` → uses production endpoints
+- **Check**: Verify your App ID matches the intended environment
+
+#### "unauthorized_client" Error
+- **Cause**: Redirect URI mismatch between eBay Developer App and VinylDigger config
+- **Solution**: Ensure exact match (including HTTPS and trailing slashes):
+  ```
+  eBay Developer App: https://your-domain.com/api/v1/oauth/redirect/ebay
+  VinylDigger Config:  https://your-domain.com/api/v1/oauth/redirect/ebay
+  ```
+
+#### "Invalid redirect_uri" Error
+- **Cause**: eBay requires HTTPS public URLs (no localhost/HTTP)
+- **Solutions**:
+  1. Use ngrok: `ngrok http 8000` → `https://abc123.ngrok-free.app`
+  2. Deploy static HTML redirect page (see [eBay Setup Guide](backend/ebay_developer_setup.md))
+  3. Use cloud tunneling service
+
+#### OAuth Token Too Long Error
+- **Cause**: eBay tokens exceed database field limits
+- **Solution**: Database now supports 5000-character tokens (auto-migrated)
+- **Manual Fix**: If migration failed, run:
+  ```sql
+  ALTER TABLE oauth_tokens
+  ALTER COLUMN access_token TYPE VARCHAR(5000),
+  ALTER COLUMN access_token_secret TYPE VARCHAR(5000),
+  ALTER COLUMN refresh_token TYPE VARCHAR(5000);
+  ```
+
+#### Scheduler Timezone Errors
+- **Cause**: Mixing timezone-naive and timezone-aware datetime objects
+- **Solution**: Fixed in latest version (uses UTC consistently)
+- **Symptom**: `can't subtract offset-naive and offset-aware datetimes`
+
+### Discogs OAuth Issues
+
+**Problem**: Discogs authentication not working.
+
+**Solutions**:
+1. Verify Discogs app callback URL matches VinylDigger redirect URI
+2. Check if using correct consumer key/secret pair
+3. Ensure callback URL uses HTTPS in production
+
 ## Performance Issues
 
 ### Slow API Responses

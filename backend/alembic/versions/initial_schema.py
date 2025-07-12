@@ -24,6 +24,7 @@ def upgrade() -> None:
     # Create enum types
     op.execute("CREATE TYPE apiservice AS ENUM ('DISCOGS', 'EBAY')")
     op.execute("CREATE TYPE oauthprovider AS ENUM ('DISCOGS', 'EBAY')")
+    op.execute("CREATE TYPE oauthenvironment AS ENUM ('PRODUCTION', 'SANDBOX')")
     op.execute("CREATE TYPE searchplatform AS ENUM ('DISCOGS', 'EBAY', 'BOTH')")
     op.execute("CREATE TYPE searchstatus AS ENUM ('PENDING', 'RUNNING', 'COMPLETED', 'FAILED')")
 
@@ -48,6 +49,12 @@ def upgrade() -> None:
         sa.Column(
             "provider", postgresql.ENUM("DISCOGS", "EBAY", name="oauthprovider", create_type=False), nullable=False
         ),
+        sa.Column(
+            "environment",
+            postgresql.ENUM("PRODUCTION", "SANDBOX", name="oauthenvironment", create_type=False),
+            nullable=False,
+            server_default="PRODUCTION",
+        ),
         sa.Column("consumer_key", sa.String(length=500), nullable=False),
         sa.Column("consumer_secret", sa.String(length=500), nullable=False),
         sa.Column("callback_url", sa.String(length=500), nullable=True),
@@ -56,7 +63,7 @@ def upgrade() -> None:
         sa.Column("created_at", sa.DateTime(timezone=True), server_default=sa.text("now()"), nullable=False),
         sa.Column("updated_at", sa.DateTime(timezone=True), server_default=sa.text("now()"), nullable=False),
         sa.PrimaryKeyConstraint("id"),
-        sa.UniqueConstraint("provider"),
+        sa.UniqueConstraint("provider", "environment", name="uq_app_config_provider_environment"),
     )
 
     # Create api_keys table
@@ -85,9 +92,9 @@ def upgrade() -> None:
         sa.Column(
             "provider", postgresql.ENUM("DISCOGS", "EBAY", name="oauthprovider", create_type=False), nullable=False
         ),
-        sa.Column("access_token", sa.String(length=500), nullable=False),
-        sa.Column("access_token_secret", sa.String(length=500), nullable=True),
-        sa.Column("refresh_token", sa.String(length=500), nullable=True),
+        sa.Column("access_token", sa.String(length=5000), nullable=False),
+        sa.Column("access_token_secret", sa.String(length=5000), nullable=True),
+        sa.Column("refresh_token", sa.String(length=5000), nullable=True),
         sa.Column("expires_at", sa.DateTime(timezone=True), nullable=True),
         sa.Column("provider_user_id", sa.String(length=255), nullable=True),
         sa.Column("provider_username", sa.String(length=255), nullable=True),

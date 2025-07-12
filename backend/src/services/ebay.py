@@ -15,13 +15,21 @@ class EbayService:
     SANDBOX_URL = "https://api.sandbox.ebay.com"
     PRODUCTION_URL = "https://api.ebay.com"
 
-    def __init__(self, use_sandbox: bool = False) -> None:
+    def __init__(self, use_sandbox: bool | None = None) -> None:
         self.logger = get_logger(__name__)
-        self.base_url = self.SANDBOX_URL if use_sandbox else self.PRODUCTION_URL
+        self.use_sandbox = use_sandbox  # Will be determined from app config if None
+        self.base_url = ""  # Will be set after determining environment
         self.client: AsyncClient | None = None
         self.access_token: str | None = None
 
     async def __aenter__(self) -> "EbayService":
+        # If environment not explicitly set, we'll determine it from app config later
+        if self.use_sandbox is not None:
+            self.base_url = self.SANDBOX_URL if self.use_sandbox else self.PRODUCTION_URL
+        else:
+            # Default to production, will be updated when we check app config
+            self.base_url = self.PRODUCTION_URL
+
         self.client = AsyncClient(
             base_url=self.base_url,
             headers={"Content-Type": "application/json"},
@@ -32,6 +40,51 @@ class EbayService:
     async def __aexit__(self, exc_type: Any, exc_val: Any, exc_tb: Any) -> None:
         if self.client:
             await self.client.aclose()
+
+    async def _determine_environment(self, db: AsyncSession) -> bool:
+        """Determine if we should use sandbox based on app config."""
+        if self.use_sandbox is not None:
+            return self.use_sandbox
+
+        # Get app configuration to determine environment
+        result = await db.execute(select(AppConfig).where(AppConfig.provider == OAuthProvider.EBAY))
+        app_config = result.scalar_one_or_none()
+
+        if not app_config:
+            # Default to production if no config
+            return False
+
+        # Auto-detect environment from App ID
+        is_sandbox = False
+        if "SBX" in app_config.consumer_key.upper():
+            is_sandbox = True
+        elif "PRD" in app_config.consumer_key.upper():
+            is_sandbox = False
+        else:
+            # Fall back to the configured environment
+            from src.models.app_config import OAuthEnvironment
+
+            is_sandbox = app_config.environment == OAuthEnvironment.SANDBOX
+
+        return is_sandbox
+
+    async def _update_base_url_if_needed(self, db: AsyncSession) -> None:
+        """Update base URL if environment wasn't explicitly set."""
+        if self.use_sandbox is None:
+            is_sandbox = await self._determine_environment(db)
+            new_base_url = self.SANDBOX_URL if is_sandbox else self.PRODUCTION_URL
+
+            if new_base_url != self.base_url:
+                self.base_url = new_base_url
+                # Update client with new base URL
+                if self.client:
+                    await self.client.aclose()
+                    self.client = AsyncClient(
+                        base_url=self.base_url,
+                        headers={"Content-Type": "application/json"},
+                        timeout=30.0,
+                    )
+                self.logger.info(f"Updated eBay service to use {'sandbox' if is_sandbox else 'production'} environment")
 
     async def get_oauth_token(self, db: AsyncSession, user_id: UUID) -> str | None:
         """Get user's OAuth access token for eBay."""
@@ -54,6 +107,9 @@ class EbayService:
         if not self.client:
             raise RuntimeError("Service not initialized. Use async with context.")
 
+        # Ensure we're using the correct environment
+        await self._update_base_url_if_needed(db)
+
         # Get app configuration
         result = await db.execute(select(AppConfig).where(AppConfig.provider == OAuthProvider.EBAY))
         app_config = result.scalar_one_or_none()
@@ -68,6 +124,12 @@ class EbayService:
             auth_bytes = auth_string.encode("ascii")
             auth_b64 = base64.b64encode(auth_bytes).decode("ascii")
 
+            # Determine the correct scope based on environment
+            is_sandbox = await self._determine_environment(db)
+            default_scope = (
+                "https://api.sandbox.ebay.com/oauth/api_scope" if is_sandbox else "https://api.ebay.com/oauth/api_scope"
+            )
+
             response = await self.client.post(
                 "/identity/v1/oauth2/token",
                 headers={
@@ -76,7 +138,7 @@ class EbayService:
                 },
                 data={
                     "grant_type": "client_credentials",
-                    "scope": app_config.scope or "https://api.ebay.com/oauth/api_scope",
+                    "scope": app_config.scope or default_scope,
                 },
             )
             response.raise_for_status()
@@ -94,6 +156,9 @@ class EbayService:
     ) -> list[dict[str, Any]]:
         if not self.client:
             raise RuntimeError("Service not initialized. Use async with context.")
+
+        # Ensure we're using the correct environment
+        await self._update_base_url_if_needed(db)
 
         # Get access token if not cached
         if not self.access_token:
@@ -193,6 +258,9 @@ class EbayService:
     ) -> dict[str, Any] | None:
         if not self.client:
             raise RuntimeError("Service not initialized. Use async with context.")
+
+        # Ensure we're using the correct environment
+        await self._update_base_url_if_needed(db)
 
         # Get access token if not cached
         if not self.access_token:

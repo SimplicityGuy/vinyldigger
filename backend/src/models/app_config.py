@@ -5,7 +5,7 @@ from enum import Enum
 from typing import TYPE_CHECKING
 from uuid import UUID, uuid4
 
-from sqlalchemy import DateTime, String, func
+from sqlalchemy import DateTime, String, UniqueConstraint, func
 from sqlalchemy import Enum as SQLEnum
 from sqlalchemy.dialects.postgresql import UUID as PGUUID
 from sqlalchemy.orm import Mapped, mapped_column
@@ -21,6 +21,11 @@ class OAuthProvider(str, Enum):
     EBAY = "EBAY"
 
 
+class OAuthEnvironment(str, Enum):
+    PRODUCTION = "PRODUCTION"
+    SANDBOX = "SANDBOX"
+
+
 class AppConfig(Base):
     """Application-wide configuration for OAuth providers.
 
@@ -31,8 +36,9 @@ class AppConfig(Base):
     __tablename__ = "app_config"
 
     id: Mapped[UUID] = mapped_column(PGUUID(as_uuid=True), primary_key=True, default=uuid4)
-    provider: Mapped[OAuthProvider] = mapped_column(
-        SQLEnum(OAuthProvider, create_type=False), unique=True, nullable=False
+    provider: Mapped[OAuthProvider] = mapped_column(SQLEnum(OAuthProvider, create_type=False), nullable=False)
+    environment: Mapped[OAuthEnvironment] = mapped_column(
+        SQLEnum(OAuthEnvironment, create_type=False), nullable=False, default=OAuthEnvironment.PRODUCTION
     )
     consumer_key: Mapped[str] = mapped_column(String(500), nullable=False)
     consumer_secret: Mapped[str] = mapped_column(String(500), nullable=False)
@@ -48,3 +54,5 @@ class AppConfig(Base):
     updated_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), onupdate=func.now()
     )
+
+    __table_args__ = (UniqueConstraint("provider", "environment", name="uq_app_config_provider_environment"),)

@@ -1,5 +1,5 @@
 from src.models.api_key import APIKey
-from src.models.app_config import AppConfig, OAuthProvider
+from src.models.app_config import AppConfig, OAuthEnvironment, OAuthProvider
 from src.models.collection import Collection, WantList
 from src.models.collection_item import CollectionItem, WantListItem
 from src.models.oauth_token import OAuthToken
@@ -11,6 +11,7 @@ __all__ = [
     "User",
     "APIKey",
     "AppConfig",
+    "OAuthEnvironment",
     "OAuthProvider",
     "OAuthToken",
     "SavedSearch",

@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>eBay OAuth - VinylDigger</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            max-width: 600px;
+            margin: 50px auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        h1 { color: #333; }
+        .success { color: #4CAF50; }
+        .error { color: #f44336; }
+        .code-box {
+            background: #f5f5f5;
+            border: 2px dashed #ddd;
+            padding: 15px;
+            margin: 20px 0;
+            font-family: monospace;
+            word-break: break-all;
+            border-radius: 4px;
+        }
+        button {
+            background: #2196F3;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+            margin-right: 10px;
+        }
+        button:hover { background: #1976D2; }
+        .instructions {
+            background: #E3F2FD;
+            padding: 15px;
+            border-radius: 4px;
+            margin-top: 20px;
+        }
+        .hidden { display: none; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>VinylDigger - eBay Authorization</h1>
+
+        <div id="loading">
+            <p>Processing authorization...</p>
+        </div>
+
+        <div id="success" class="hidden">
+            <p class="success">✅ Authorization successful!</p>
+
+            <h3>Authorization Code:</h3>
+            <div class="code-box" id="authCode"></div>
+            <button onclick="copyToClipboard('authCode', 'copyCodeBtn')">Copy Code</button>
+
+            <h3>State (for verification):</h3>
+            <div class="code-box" id="stateValue"></div>
+            <button onclick="copyToClipboard('stateValue', 'copyStateBtn')">Copy State</button>
+
+            <div class="instructions">
+                <h4>Next Steps:</h4>
+                <ol>
+                    <li>Copy both the authorization code and state above</li>
+                    <li>Return to VinylDigger</li>
+                    <li>Paste the values in the verification form</li>
+                </ol>
+                <p><strong>Note:</strong> The authorization code expires quickly, so complete this process promptly.</p>
+            </div>
+        </div>
+
+        <div id="error" class="hidden">
+            <p class="error">❌ Authorization failed</p>
+            <p id="errorMessage"></p>
+            <p>Please close this window and try again.</p>
+        </div>
+    </div>
+
+    <script>
+        // Parse URL parameters
+        const urlParams = new URLSearchParams(window.location.search);
+        const code = urlParams.get('code');
+        const state = urlParams.get('state');
+        const error = urlParams.get('error');
+        const errorDescription = urlParams.get('error_description');
+
+        // Hide loading
+        document.getElementById('loading').classList.add('hidden');
+
+        if (error) {
+            // Show error
+            document.getElementById('error').classList.remove('hidden');
+            document.getElementById('errorMessage').textContent =
+                `Error: ${error}${errorDescription ? ' - ' + errorDescription : ''}`;
+        } else if (code && state) {
+            // Show success
+            document.getElementById('success').classList.remove('hidden');
+            document.getElementById('authCode').textContent = code;
+            document.getElementById('stateValue').textContent = state;
+        } else {
+            // No parameters
+            document.getElementById('error').classList.remove('hidden');
+            document.getElementById('errorMessage').textContent =
+                'No authorization code received. Please ensure you came here from eBay.';
+        }
+
+        function copyToClipboard(elementId, buttonId) {
+            const text = document.getElementById(elementId).textContent;
+            navigator.clipboard.writeText(text).then(() => {
+                const button = event.target;
+                const originalText = button.textContent;
+                button.textContent = 'Copied!';
+                setTimeout(() => {
+                    button.textContent = originalText;
+                }, 2000);
+            }).catch(() => {
+                // Fallback for older browsers
+                const textArea = document.createElement('textarea');
+                textArea.value = text;
+                document.body.appendChild(textArea);
+                textArea.select();
+                document.execCommand('copy');
+                document.body.removeChild(textArea);
+
+                const button = event.target;
+                const originalText = button.textContent;
+                button.textContent = 'Copied!';
+                setTimeout(() => {
+                    button.textContent = originalText;
+                }, 2000);
+            });
+        }
+    </script>
+</body>
+</html>

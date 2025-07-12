@@ -11,10 +11,38 @@ from src.api.v1.endpoints.auth import get_current_user
 from src.core.database import get_db
 from src.core.logging import get_logger
 from src.core.redis_client import OAuthTokenStore, get_redis
-from src.models import AppConfig, OAuthProvider, OAuthToken, User
+from src.models import AppConfig, OAuthEnvironment, OAuthProvider, OAuthToken, User
 
 router = APIRouter()
 logger = get_logger(__name__)
+
+
+def get_ebay_urls(app_config: AppConfig) -> dict[str, str]:
+    """Determine the correct eBay URLs based on the configuration environment."""
+    # First, try to detect environment from App ID
+    is_sandbox = False
+    if "SBX" in app_config.consumer_key.upper():
+        is_sandbox = True
+    elif "PRD" in app_config.consumer_key.upper():
+        is_sandbox = False
+    else:
+        # Fall back to environment field (if available)
+        is_sandbox = hasattr(app_config, "environment") and app_config.environment == OAuthEnvironment.SANDBOX
+
+    if is_sandbox:
+        return {
+            "auth_url": "https://auth.sandbox.ebay.com/oauth2/authorize",
+            "token_url": "https://api.sandbox.ebay.com/identity/v1/oauth2/token",
+            "user_info_url": "https://apiz.sandbox.ebay.com/commerce/identity/v1/user",
+            "default_scope": "https://api.ebay.com/oauth/api_scope",  # Scope is same for both
+        }
+    else:
+        return {
+            "auth_url": "https://auth.ebay.com/oauth2/authorize",
+            "token_url": "https://api.ebay.com/identity/v1/oauth2/token",
+            "user_info_url": "https://apiz.ebay.com/commerce/identity/v1/user",
+            "default_scope": "https://api.ebay.com/oauth/api_scope",
+        }
 
 
 class OAuthStatusResponse(BaseModel):
@@ -157,19 +185,21 @@ async def initiate_oauth_flow(
             provider=provider_enum.value,
         )
 
+        # Get correct URLs for this environment
+        ebay_urls = get_ebay_urls(app_config)
+
         # Build authorization URL
-        base_url = "https://auth.ebay.com/oauth2/authorize"
         params = {
             "client_id": app_config.consumer_key,
             "response_type": "code",
             "redirect_uri": app_config.redirect_uri or "urn:ietf:wg:oauth:2.0:oob",
-            "scope": app_config.scope or "https://api.ebay.com/oauth/api_scope",
+            "scope": app_config.scope or ebay_urls["default_scope"],
             "state": state,
         }
 
         # Build query string
         query_string = "&".join(f"{k}={v}" for k, v in params.items())
-        authorization_url = f"{base_url}?{query_string}"
+        authorization_url = f"{ebay_urls['auth_url']}?{query_string}"
 
         return {
             "authorization_url": authorization_url,
@@ -451,6 +481,9 @@ async def ebay_oauth_callback(
         )
 
     try:
+        # Get correct URLs for this environment
+        ebay_urls = get_ebay_urls(app_config)
+
         # Exchange authorization code for access token
         import base64
 
@@ -463,7 +496,7 @@ async def ebay_oauth_callback(
 
         async with httpx.AsyncClient() as client:
             response = await client.post(
-                "https://api.ebay.com/identity/v1/oauth2/token",
+                ebay_urls["token_url"],
                 headers={
                     "Authorization": f"Basic {auth_b64}",
                     "Content-Type": "application/x-www-form-urlencoded",
@@ -480,16 +513,21 @@ async def ebay_oauth_callback(
             access_token = token_data_response.get("access_token")
             refresh_token = token_data_response.get("refresh_token")
 
-            # Get user information from eBay
-            user_response = await client.get(
-                "https://apiz.ebay.com/commerce/identity/v1/user",
-                headers={"Authorization": f"Bearer {access_token}"},
-            )
-            user_response.raise_for_status()
-
-            user_data = user_response.json()
-            ebay_user_id = user_data.get("userId", "")
-            ebay_username = user_data.get("username", "")
+            # Get user information from eBay (optional - may fail in sandbox or with limited scope)
+            ebay_user_id = ""
+            ebay_username = ""
+            try:
+                user_response = await client.get(
+                    ebay_urls["user_info_url"],
+                    headers={"Authorization": f"Bearer {access_token}"},
+                )
+                user_response.raise_for_status()
+                user_data = user_response.json()
+                ebay_user_id = user_data.get("userId", "")
+                ebay_username = user_data.get("username", "")
+            except Exception as user_info_error:
+                logger.warning(f"Could not retrieve eBay user info (continuing without it): {str(user_info_error)}")
+                # Continue without user info - this is common in sandbox or with limited scopes
 
         # Store the access token in the database
         user_id = token_data["user_id"]
@@ -527,17 +565,26 @@ async def ebay_oauth_callback(
 
         return EbayCallbackResponse(
             message="Successfully authorized eBay access!",
-            username=ebay_username,
+            username=ebay_username or "eBay User",
         )
 
     except Exception as e:
         logger.error(f"Failed to complete eBay OAuth flow: {str(e)}")
-        # Clean up temporary storage
-        await token_store.delete_request_token(state)
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Failed to complete OAuth flow. Please try again.",
-        ) from e
+        # Only clean up state for token exchange errors, not user info errors
+        error_message = str(e).lower()
+        if "token" in error_message or "authorization_code" in error_message or "invalid_grant" in error_message:
+            # Token exchange failed - authorization code is invalid/expired
+            await token_store.delete_request_token(state)
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Authorization code is invalid or expired. Please restart the authorization process.",
+            ) from e
+        else:
+            # Other errors (user info, database, etc.) - don't clean up state, user can retry
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail="Failed to complete authorization. Please try again.",
+            ) from e
 
 
 class EbayVerifyRequest(BaseModel):
@@ -581,6 +628,9 @@ async def verify_ebay_oauth(
         )
 
     try:
+        # Get correct URLs for this environment
+        ebay_urls = get_ebay_urls(app_config)
+
         # Exchange authorization code for access token
         import base64
 
@@ -593,7 +643,7 @@ async def verify_ebay_oauth(
 
         async with httpx.AsyncClient() as client:
             response = await client.post(
-                "https://api.ebay.com/identity/v1/oauth2/token",
+                ebay_urls["token_url"],
                 headers={
                     "Authorization": f"Basic {auth_b64}",
                     "Content-Type": "application/x-www-form-urlencoded",
@@ -610,16 +660,21 @@ async def verify_ebay_oauth(
             access_token = token_data_response.get("access_token")
             refresh_token = token_data_response.get("refresh_token")
 
-            # Get user information from eBay
-            user_response = await client.get(
-                "https://apiz.ebay.com/commerce/identity/v1/user",
-                headers={"Authorization": f"Bearer {access_token}"},
-            )
-            user_response.raise_for_status()
-
-            user_data = user_response.json()
-            ebay_user_id = user_data.get("userId", "")
-            ebay_username = user_data.get("username", "")
+            # Get user information from eBay (optional - may fail in sandbox or with limited scope)
+            ebay_user_id = ""
+            ebay_username = ""
+            try:
+                user_response = await client.get(
+                    ebay_urls["user_info_url"],
+                    headers={"Authorization": f"Bearer {access_token}"},
+                )
+                user_response.raise_for_status()
+                user_data = user_response.json()
+                ebay_user_id = user_data.get("userId", "")
+                ebay_username = user_data.get("username", "")
+            except Exception as user_info_error:
+                logger.warning(f"Could not retrieve eBay user info (continuing without it): {str(user_info_error)}")
+                # Continue without user info - this is common in sandbox or with limited scopes
 
         # Store the access token in the database
         stmt = select(OAuthToken).where(
@@ -654,17 +709,26 @@ async def verify_ebay_oauth(
 
         return EbayCallbackResponse(
             message="Successfully authorized eBay access!",
-            username=ebay_username,
+            username=ebay_username or "eBay User",
         )
 
     except Exception as e:
         logger.error(f"Failed to complete eBay OAuth verification: {str(e)}")
-        # Clean up on error
-        await token_store.delete_request_token(verify_data.state)
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Failed to verify authorization code. Please try again.",
-        ) from e
+        # Only clean up state for token exchange errors, not user info errors
+        error_message = str(e).lower()
+        if "token" in error_message or "authorization_code" in error_message or "invalid_grant" in error_message:
+            # Token exchange failed - authorization code is invalid/expired
+            await token_store.delete_request_token(verify_data.state)
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Authorization code is invalid or expired. Please restart the authorization process.",
+            ) from e
+        else:
+            # Other errors (user info, database, etc.) - don't clean up state, user can retry
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail="Failed to complete authorization. Please try again.",
+            ) from e
 
 
 @router.delete("/revoke/{provider}")

@@ -36,7 +36,11 @@ COPY . .
 # Expose port
 EXPOSE 3000
 
-# The dev command is provided by docker-compose
+# Use dumb-init as entrypoint for proper signal handling
+ENTRYPOINT ["/usr/bin/dumb-init", "--"]
+
+# Default command (can be overridden by docker-compose)
+CMD ["npm", "run", "dev"]
 
 # Dependencies stage
 FROM base AS deps

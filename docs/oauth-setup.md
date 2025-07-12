@@ -113,7 +113,7 @@ For developers implementing or debugging OAuth:
 ### Local Development
 For local development, the redirect URLs are:
 - **Discogs**: `http://localhost:8000/api/v1/oauth/callback/discogs`
-- **eBay**: `http://localhost:8000/api/v1/oauth/callback/ebay`
+- **eBay**: `http://localhost:8000/api/v1/oauth/redirect/ebay`
 
 ### Environment Variables
 OAuth functionality requires these to be set by the admin:
@@ -126,6 +126,26 @@ DISCOGS_CONSUMER_SECRET=your_consumer_secret
 EBAY_CLIENT_ID=your_client_id
 EBAY_CLIENT_SECRET=your_client_secret
 ```
+
+### Recent Updates (July 2025)
+
+#### eBay OAuth Environment Detection
+VinylDigger now automatically detects eBay environment based on App ID:
+- **Sandbox**: App IDs containing `SBX` automatically use sandbox endpoints
+- **Production**: App IDs containing `PRD` automatically use production endpoints
+- **Legacy**: Manual environment configuration still supported
+
+#### Enhanced Error Handling
+- Better error messages for OAuth failures
+- Automatic token refresh attempts
+- Improved debugging information in logs
+
+#### Token Storage Improvements
+- Increased token field lengths to 5000 characters
+- Support for larger OAuth tokens from eBay
+- Backward compatibility with existing tokens
+
+For detailed technical information about recent OAuth fixes, see [OAuth Authentication Fixes](backend/oauth-authentication-fixes.md).
 
 ## Need Help?
 

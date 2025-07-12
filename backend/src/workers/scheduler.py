@@ -1,5 +1,5 @@
 import asyncio
-from datetime import datetime, timedelta
+from datetime import UTC, datetime, timedelta
 
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from sqlalchemy import select
@@ -17,7 +17,7 @@ async def check_scheduled_searches() -> None:
     async with AsyncSessionLocal() as db:
         try:
             # Find searches that need to be run
-            now = datetime.utcnow()
+            now = datetime.now(UTC)
             result = await db.execute(
                 select(SavedSearch).where(
                     SavedSearch.is_active,
