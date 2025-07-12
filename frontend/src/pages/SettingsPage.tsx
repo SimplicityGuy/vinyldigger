@@ -12,7 +12,10 @@ function SettingsPage() {
   const { toast } = useToast()
   const [discogsVerificationCode, setDiscogsVerificationCode] = useState('')
   const [discogsState, setDiscogsState] = useState('')
-  const [showVerificationInput, setShowVerificationInput] = useState(false)
+  const [showDiscogsVerificationInput, setShowDiscogsVerificationInput] = useState(false)
+  const [ebayAuthorizationCode, setEbayAuthorizationCode] = useState('')
+  const [ebayState, setEbayState] = useState('')
+  const [showEbayVerificationInput, setShowEbayVerificationInput] = useState(false)
   const [emailNotifications, setEmailNotifications] = useState(true)
 
   // Query OAuth status
@@ -21,11 +24,11 @@ function SettingsPage() {
     queryFn: () => api.getOAuthStatus('discogs'),
   })
 
-  // eBay OAuth will be added later
-  // const { data: ebayOAuthStatus, refetch: refetchEbayStatus } = useQuery({
-  //   queryKey: ['oauth-status', 'ebay'],
-  //   queryFn: () => api.getOAuthStatus('ebay'),
-  // })
+  // eBay OAuth status
+  const { data: ebayOAuthStatus, refetch: refetchEbayStatus } = useQuery({
+    queryKey: ['oauth-status', 'ebay'],
+    queryFn: () => api.getOAuthStatus('ebay'),
+  })
 
   // OAuth authorization mutations
   const authorizeDiscogsMutation = useMutation({
@@ -35,7 +38,7 @@ function SettingsPage() {
       window.open(data.authorization_url, '_blank', 'width=600,height=800')
       // Store state and show verification input
       setDiscogsState(data.state)
-      setShowVerificationInput(true)
+      setShowDiscogsVerificationInput(true)
     },
   })
 
@@ -43,7 +46,7 @@ function SettingsPage() {
     mutationFn: () => api.revokeOAuth('discogs'),
     onSuccess: () => {
       refetchDiscogsStatus()
-      setShowVerificationInput(false)
+      setShowDiscogsVerificationInput(false)
       setDiscogsVerificationCode('')
       setDiscogsState('')
     },
@@ -57,9 +60,52 @@ function SettingsPage() {
         description: `Connected to Discogs as ${data.username}`,
       })
       refetchDiscogsStatus()
-      setShowVerificationInput(false)
+      setShowDiscogsVerificationInput(false)
       setDiscogsVerificationCode('')
       setDiscogsState('')
+    },
+    onError: () => {
+      toast({
+        title: 'Verification failed',
+        description: 'Please check the code and try again.',
+        variant: 'destructive',
+      })
+    },
+  })
+
+  // eBay OAuth mutations
+  const authorizeEbayMutation = useMutation({
+    mutationFn: () => api.initiateOAuth('ebay'),
+    onSuccess: (data) => {
+      // Open authorization URL in new window
+      window.open(data.authorization_url, '_blank', 'width=600,height=800')
+      // Store state and show verification input
+      setEbayState(data.state)
+      setShowEbayVerificationInput(true)
+    },
+  })
+
+  const revokeEbayMutation = useMutation({
+    mutationFn: () => api.revokeOAuth('ebay'),
+    onSuccess: () => {
+      refetchEbayStatus()
+      setShowEbayVerificationInput(false)
+      setEbayAuthorizationCode('')
+      setEbayState('')
+    },
+  })
+
+  const verifyEbayMutation = useMutation({
+    mutationFn: () => api.verifyEbay(ebayState, ebayAuthorizationCode),
+    onSuccess: (data) => {
+      toast({
+        title: 'Success!',
+        description: `Connected to eBay as ${data.username}`,
+      })
+      refetchEbayStatus()
+      setShowEbayVerificationInput(false)
+      setEbayAuthorizationCode('')
+      setEbayState('')
     },
     onError: () => {
       toast({
@@ -77,6 +123,16 @@ function SettingsPage() {
   const handleRevokeDiscogs = () => {
     if (confirm('Are you sure you want to revoke Discogs access?')) {
       revokeDiscogsMutation.mutate()
+    }
+  }
+
+  const handleAuthorizeEbay = () => {
+    authorizeEbayMutation.mutate()
+  }
+
+  const handleRevokeEbay = () => {
+    if (confirm('Are you sure you want to revoke eBay access?')) {
+      revokeEbayMutation.mutate()
     }
   }
 
@@ -141,7 +197,7 @@ function SettingsPage() {
                     Failed to start authorization. Please try again.
                   </p>
                 )}
-                {showVerificationInput && (
+                {showDiscogsVerificationInput && (
                   <div className="mt-4 p-4 border rounded-lg space-y-3 bg-muted/50">
                     <p className="text-sm font-medium">Enter Verification Code</p>
                     <p className="text-sm text-muted-foreground">
@@ -165,7 +221,7 @@ function SettingsPage() {
                       <Button
                         variant="outline"
                         onClick={() => {
-                          setShowVerificationInput(false)
+                          setShowDiscogsVerificationInput(false)
                           setDiscogsVerificationCode('')
                           setDiscogsState('')
                         }}
@@ -184,18 +240,91 @@ function SettingsPage() {
             )}
           </div>
 
-          {/* eBay OAuth - Coming Soon */}
-          <div className="space-y-2 opacity-50">
+          {/* eBay OAuth */}
+          <div className="space-y-2">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <Key className="h-4 w-4" />
                 <h3 className="font-medium">eBay</h3>
-                <span className="text-sm text-muted-foreground">(Coming Soon)</span>
+                {ebayOAuthStatus?.is_authorized && (
+                  <span className="flex items-center gap-1 text-sm text-green-600">
+                    <CheckCircle className="h-4 w-4" />
+                    Connected as {ebayOAuthStatus.username}
+                  </span>
+                )}
               </div>
             </div>
-            <p className="text-sm text-muted-foreground">
-              eBay integration will be available soon.
-            </p>
+
+            {ebayOAuthStatus?.is_authorized ? (
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleRevokeEbay}
+                  disabled={revokeEbayMutation.isPending}
+                >
+                  Revoke Access
+                </Button>
+              </div>
+            ) : (
+              <div className="space-y-2">
+                <p className="text-sm text-muted-foreground">
+                  Connect your eBay account to search their marketplace for vinyl records.
+                </p>
+                <Button
+                  onClick={handleAuthorizeEbay}
+                  disabled={authorizeEbayMutation.isPending}
+                  className="gap-2"
+                >
+                  <ExternalLink className="h-4 w-4" />
+                  Connect eBay Account
+                </Button>
+                {authorizeEbayMutation.isError && (
+                  <p className="text-sm text-red-600 flex items-center gap-1">
+                    <AlertCircle className="h-4 w-4" />
+                    Failed to start authorization. Please try again.
+                  </p>
+                )}
+                {showEbayVerificationInput && (
+                  <div className="mt-4 p-4 border rounded-lg space-y-3 bg-muted/50">
+                    <p className="text-sm font-medium">Enter Authorization Code</p>
+                    <p className="text-sm text-muted-foreground">
+                      After authorizing VinylDigger on eBay, enter the authorization code shown.
+                    </p>
+                    <div className="flex gap-2">
+                      <Input
+                        type="text"
+                        placeholder="Enter authorization code"
+                        value={ebayAuthorizationCode}
+                        onChange={(e) => setEbayAuthorizationCode(e.target.value)}
+                        className="flex-1"
+                      />
+                      <Button
+                        onClick={() => verifyEbayMutation.mutate()}
+                        disabled={!ebayAuthorizationCode || verifyEbayMutation.isPending}
+                      >
+                        {verifyEbayMutation.isPending ? 'Verifying...' : 'Verify'}
+                      </Button>
+                      <Button
+                        variant="outline"
+                        onClick={() => {
+                          setShowEbayVerificationInput(false)
+                          setEbayAuthorizationCode('')
+                          setEbayState('')
+                        }}
+                      >
+                        Cancel
+                      </Button>
+                    </div>
+                    {verifyEbayMutation.isError && (
+                      <p className="text-sm text-red-600">
+                        Verification failed. Please check the code and try again.
+                      </p>
+                    )}
+                  </div>
+                )}
+              </div>
+            )}
           </div>
         </CardContent>
       </Card>
