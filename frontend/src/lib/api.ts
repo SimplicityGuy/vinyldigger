@@ -284,6 +284,26 @@ export const oauthApi = {
     })
     return response.json()
   },
+
+  async ebayCallback(params: { code: string; state: string }) {
+    const queryParams = new URLSearchParams(params).toString()
+    const response = await fetchApi(`/oauth/callback/ebay?${queryParams}`)
+    return response.json()
+  },
+
+  async verifyEbay(state: string, authorizationCode: string) {
+    const response = await fetchApi('/oauth/verify/ebay', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        state,
+        authorization_code: authorizationCode,
+      }),
+    })
+    return response.json()
+  },
 }
 
 // Default export for convenience

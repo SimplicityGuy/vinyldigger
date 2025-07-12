@@ -15,6 +15,7 @@ function OAuthCallbackPage() {
     // Extract OAuth parameters from URL
     const oauthToken = searchParams.get('oauth_token')
     const oauthVerifier = searchParams.get('oauth_verifier')
+    const code = searchParams.get('code') // OAuth 2.0 authorization code
     const state = searchParams.get('state')
     const error = searchParams.get('error')
 
@@ -24,7 +25,11 @@ function OAuthCallbackPage() {
       return
     }
 
-    if (!oauthToken || !oauthVerifier || !state) {
+    // Determine which OAuth flow we're handling
+    const isDiscogs = oauthToken && oauthVerifier && state
+    const isEbay = code && state
+
+    if (!isDiscogs && !isEbay) {
       setStatus('error')
       setMessage('Invalid OAuth callback parameters.')
       return
@@ -33,14 +38,28 @@ function OAuthCallbackPage() {
     // Call the backend callback endpoint
     const completeOAuth = async () => {
       try {
-        const response = await oauthApi.discogsCallback({
-          oauth_token: oauthToken,
-          oauth_verifier: oauthVerifier,
-          state: state,
-        })
+        let response
+        let provider = ''
+
+        if (isDiscogs) {
+          // Discogs OAuth 1.0a callback
+          response = await oauthApi.discogsCallback({
+            oauth_token: oauthToken!,
+            oauth_verifier: oauthVerifier!,
+            state: state!,
+          })
+          provider = 'Discogs'
+        } else if (isEbay) {
+          // eBay OAuth 2.0 callback
+          response = await oauthApi.ebayCallback({
+            code: code!,
+            state: state!,
+          })
+          provider = 'eBay'
+        }
 
         setStatus('success')
-        setMessage(`Successfully authorized Discogs access for user: ${response.username}`)
+        setMessage(`Successfully authorized ${provider} access for user: ${response.username}`)
 
         // Redirect back to settings after a delay
         setTimeout(() => {

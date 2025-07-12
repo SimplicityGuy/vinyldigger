@@ -177,4 +177,101 @@ describe('api', () => {
       )
     })
   })
+
+  describe('oauth methods', () => {
+    it('should get OAuth status', async () => {
+      const mockStatus = { is_authorized: true, username: 'testuser' }
+      vi.mocked(global.fetch).mockResolvedValueOnce({
+        ok: true,
+        json: async () => mockStatus,
+      })
+      vi.mocked(tokenService.getAccessToken).mockReturnValue('test-token')
+
+      const result = await api.getOAuthStatus('discogs')
+
+      expect(result).toEqual(mockStatus)
+      expect(global.fetch).toHaveBeenCalledWith(
+        expect.stringContaining('/api/v1/oauth/status/discogs'),
+        expect.any(Object)
+      )
+    })
+
+    it('should initiate OAuth', async () => {
+      const mockResponse = { authorization_url: 'https://auth.ebay.com/...', state: 'abc123' }
+      vi.mocked(global.fetch).mockResolvedValueOnce({
+        ok: true,
+        json: async () => mockResponse,
+      })
+      vi.mocked(tokenService.getAccessToken).mockReturnValue('test-token')
+
+      const result = await api.initiateOAuth('ebay')
+
+      expect(result).toEqual(mockResponse)
+      expect(global.fetch).toHaveBeenCalledWith(
+        expect.stringContaining('/api/v1/oauth/authorize/ebay'),
+        expect.objectContaining({
+          method: 'POST',
+        })
+      )
+    })
+
+    it('should handle eBay callback', async () => {
+      const mockResponse = { message: 'Success', username: 'ebayuser' }
+      vi.mocked(global.fetch).mockResolvedValueOnce({
+        ok: true,
+        json: async () => mockResponse,
+      })
+      vi.mocked(tokenService.getAccessToken).mockReturnValue('test-token')
+
+      const result = await api.ebayCallback({ code: 'auth_code', state: 'state123' })
+
+      expect(result).toEqual(mockResponse)
+      expect(global.fetch).toHaveBeenCalledWith(
+        expect.stringContaining('/api/v1/oauth/callback/ebay?code=auth_code&state=state123'),
+        expect.any(Object)
+      )
+    })
+
+    it('should verify eBay authorization code', async () => {
+      const mockResponse = { message: 'Success', username: 'ebayuser' }
+      vi.mocked(global.fetch).mockResolvedValueOnce({
+        ok: true,
+        json: async () => mockResponse,
+      })
+      vi.mocked(tokenService.getAccessToken).mockReturnValue('test-token')
+
+      const result = await api.verifyEbay('state123', 'auth_code_123')
+
+      expect(result).toEqual(mockResponse)
+      expect(global.fetch).toHaveBeenCalledWith(
+        expect.stringContaining('/api/v1/oauth/verify/ebay'),
+        expect.objectContaining({
+          method: 'POST',
+          body: JSON.stringify({
+            state: 'state123',
+            authorization_code: 'auth_code_123',
+          }),
+        })
+      )
+    })
+
+    it('should revoke OAuth access', async () => {
+      const mockResponse = { message: 'Successfully revoked EBAY access.' }
+      vi.mocked(global.fetch).mockResolvedValueOnce({
+        ok: true,
+        json: async () => mockResponse,
+      })
+      vi.mocked(tokenService.getAccessToken).mockReturnValue('test-token')
+
+      const result = await api.revokeOAuth('ebay')
+
+      expect(result).toEqual(mockResponse)
+      expect(global.fetch).toHaveBeenCalledWith(
+        expect.stringContaining('/api/v1/oauth/revoke/ebay'),
+        expect.objectContaining({
+          method: 'DELETE',
+        })
+      )
+    })
+  })
 })
