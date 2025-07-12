@@ -55,7 +55,7 @@ test-e2e-ui:
 test-services-up:
     {{docker_compose}} -f docker-compose.test.yml up -d
     @echo "Waiting for PostgreSQL..."
-    @timeout 120 bash -c 'until {{docker_compose}} -f docker-compose.test.yml exec -T postgres pg_isready -U postgres; do echo "PostgreSQL not ready, waiting..."; sleep 2; done'
+    @timeout 120 bash -c 'until {{docker_compose}} -f docker-compose.test.yml exec -T postgres pg_isready -U test; do echo "PostgreSQL not ready, waiting..."; sleep 2; done'
     @echo "✓ PostgreSQL is ready"
     @echo "Waiting for Redis..."
     @timeout 120 bash -c 'until {{docker_compose}} -f docker-compose.test.yml exec -T redis redis-cli ping; do echo "Redis not ready, waiting..."; sleep 2; done'
