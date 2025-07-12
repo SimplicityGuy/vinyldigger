@@ -32,12 +32,13 @@ export VCS_REF
 export VERSION
 
 # Build specific service or all services
+# Use only docker-compose.yml to ensure we build production images with labels
 if [ $# -eq 0 ]; then
     echo "Building all services..."
-    docker-compose build
+    BUILD_DATE="$BUILD_DATE" VCS_REF="$VCS_REF" VERSION="$VERSION" docker-compose -f docker-compose.yml build
 else
     echo "Building service: $1"
-    docker-compose build "$1"
+    BUILD_DATE="$BUILD_DATE" VCS_REF="$VCS_REF" VERSION="$VERSION" docker-compose -f docker-compose.yml build "$1"
 fi
 
 echo "Build complete!"
@@ -48,7 +49,13 @@ if command -v jq &> /dev/null; then
     for service in backend frontend; do
         if docker image inspect "virtualdigger-$service:latest" &>/dev/null; then
             echo -e "\n$service:"
-            docker inspect "virtualdigger-$service:latest" 2>/dev/null | jq -r '.[0].Config.Labels | to_entries | .[] | "\(.key): \(.value)"' | grep "org.opencontainers" || true
+            # Check if labels exist and are not null
+            LABELS=$(docker inspect "virtualdigger-$service:latest" 2>/dev/null | jq -r '.[0].Config.Labels')
+            if [ "$LABELS" != "null" ] && [ -n "$LABELS" ]; then
+                docker inspect "virtualdigger-$service:latest" 2>/dev/null | jq -r '.[0].Config.Labels | to_entries | .[] | "\(.key): \(.value)"' | grep "org.opencontainers" || true
+            else
+                echo "No labels found (labels are null or empty)"
+            fi
         fi
     done
 fi
@@ -57,11 +64,17 @@ fi
 echo -e "\nValidating OCI compliance..."
 for service in backend frontend; do
     if docker image inspect "virtualdigger-$service:latest" &>/dev/null; then
-        LABELS=$(docker inspect "virtualdigger-$service:latest" 2>/dev/null | jq -r '.[0].Config.Labels | keys[]' | grep "org.opencontainers" | wc -l)
-        if [ "$LABELS" -ge 8 ]; then
-            echo "✓ $service: OCI compliant (found $LABELS OCI labels)"
+        # Check if labels exist and are not null
+        LABELS_JSON=$(docker inspect "virtualdigger-$service:latest" 2>/dev/null | jq -r '.[0].Config.Labels')
+        if [ "$LABELS_JSON" != "null" ] && [ -n "$LABELS_JSON" ]; then
+            LABELS=$(echo "$LABELS_JSON" | jq -r 'keys[]' | grep "org.opencontainers" | wc -l)
+            if [ "$LABELS" -ge 8 ]; then
+                echo "✓ $service: OCI compliant (found $LABELS OCI labels)"
+            else
+                echo "✗ $service: Missing OCI labels (found only $LABELS)"
+            fi
         else
-            echo "✗ $service: Missing OCI labels (found only $LABELS)"
+            echo "✗ $service: No labels found (build may have failed to set labels)"
         fi
     fi
 done
