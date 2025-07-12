@@ -56,16 +56,11 @@ services:
         condition: service_healthy
       redis:
         condition: service_healthy
-    user: root
-    command: >
-      sh -c "uv pip install --system -e . &&
-             alembic upgrade head &&
-             su -c 'uvicorn src.main:app --host 0.0.0.0 --port 8000 --reload' appuser"
     volumes:
       - ./backend:/app
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
-      interval: 5s
+      interval: 10s
       timeout: 5s
       retries: 15
       start_period: 30s
@@ -75,6 +70,8 @@ services:
     build:
       context: ./backend
       dockerfile: Dockerfile
+      args:
+        INSTALL_DEV: "true"
     environment:
       DATABASE_URL: postgresql+asyncpg://test:test@postgres:5432/vinyldigger_test
       REDIS_URL: redis://redis:6379
@@ -87,9 +84,7 @@ services:
         condition: service_healthy
       redis:
         condition: service_healthy
-    user: root
-    command: >
-      sh -c "uv pip install --system -e '.[dev]' && su -c 'pytest -v --tb=short --cov=src --cov-report=term --cov-report=html' appuser"
+    command: pytest -v --tb=short --cov=src --cov-report=term --cov-report=html
     volumes:
       - ./backend:/app
 
@@ -110,14 +105,12 @@ services:
         condition: service_healthy
       backend:
         condition: service_healthy
-    user: root
-    command: >
-      sh -c "uv pip install --system -e . && su -c 'celery -A src.workers.celery_app worker --loglevel=info' appuser"
+    command: celery -A src.workers.celery_app worker --loglevel=info
     volumes:
       - ./backend:/app
     healthcheck:
       test: ["CMD-SHELL", "celery -A src.workers.celery_app inspect ping -d celery@$$HOSTNAME"]
-      interval: 5s
+      interval: 10s
       timeout: 10s
       retries: 10
       start_period: 20s
