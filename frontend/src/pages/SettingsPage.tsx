@@ -4,12 +4,15 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button'
 import { Label } from '@/components/ui/label'
 import { Input } from '@/components/ui/input'
-import { Key, Settings2, User, AlertCircle, CheckCircle, ExternalLink } from 'lucide-react'
+import { Key, Settings2, User, AlertCircle, CheckCircle, ExternalLink, Calendar } from 'lucide-react'
+import { Skeleton } from '@/components/ui/skeleton'
 import api from '@/lib/api'
 import { useToast } from '@/hooks/useToast'
+import { useAuth } from '@/hooks/useAuth'
 
 function SettingsPage() {
   const { toast } = useToast()
+  const { user, isLoading: isUserLoading } = useAuth()
   const [discogsVerificationCode, setDiscogsVerificationCode] = useState('')
   const [discogsState, setDiscogsState] = useState('')
   const [showDiscogsVerificationInput, setShowDiscogsVerificationInput] = useState(false)
@@ -358,13 +361,63 @@ function SettingsPage() {
       <Card>
         <CardHeader>
           <CardTitle>Account Information</CardTitle>
+          <CardDescription>Your account details and registration information</CardDescription>
         </CardHeader>
-        <CardContent className="space-y-2">
-          <div className="flex items-center gap-2 text-sm">
-            <User className="h-4 w-4" />
-            <span className="text-muted-foreground">Email:</span>
-            <span className="font-medium">{/* User email will go here */}</span>
-          </div>
+        <CardContent className="space-y-4">
+          {!isUserLoading && !user ? (
+            <div className="text-center py-4">
+              <AlertCircle className="h-8 w-8 text-muted-foreground mx-auto mb-2" />
+              <p className="text-sm text-muted-foreground">Unable to load account information</p>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <User className="h-4 w-4 text-muted-foreground" />
+                  <span className="text-sm text-muted-foreground">Email</span>
+                </div>
+                {isUserLoading ? (
+                  <Skeleton className="h-4 w-32" />
+                ) : (
+                  <span className="text-sm font-medium">{user?.email || 'Not available'}</span>
+                )}
+              </div>
+
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <Settings2 className="h-4 w-4 text-muted-foreground" />
+                  <span className="text-sm text-muted-foreground">Account ID</span>
+                </div>
+                {isUserLoading ? (
+                  <Skeleton className="h-3 w-16" />
+                ) : user?.id ? (
+                  <span className="text-xs font-mono text-muted-foreground">{user.id.slice(0, 8)}</span>
+                ) : (
+                  <span className="text-xs text-muted-foreground">-</span>
+                )}
+              </div>
+
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <Calendar className="h-4 w-4 text-muted-foreground" />
+                  <span className="text-sm text-muted-foreground">Member Since</span>
+                </div>
+                {isUserLoading ? (
+                  <Skeleton className="h-4 w-20" />
+                ) : user?.created_at ? (
+                  <span className="text-sm text-muted-foreground">
+                    {new Date(user.created_at).toLocaleDateString('en-US', {
+                      year: 'numeric',
+                      month: 'short',
+                      day: 'numeric'
+                    })}
+                  </span>
+                ) : (
+                  <span className="text-sm text-muted-foreground">-</span>
+                )}
+              </div>
+            </div>
+          )}
         </CardContent>
       </Card>
     </div>
