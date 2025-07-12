@@ -1,19 +1,22 @@
 import base64
 from typing import Any
+from uuid import UUID
 
 import httpx
 from httpx import AsyncClient
+from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
 
-from src.models.api_key import APIService
-from src.services.base import BaseAPIService
+from src.core.logging import get_logger
+from src.models import AppConfig, OAuthProvider, OAuthToken
 
 
-class EbayService(BaseAPIService):
+class EbayService:
     SANDBOX_URL = "https://api.sandbox.ebay.com"
     PRODUCTION_URL = "https://api.ebay.com"
 
     def __init__(self, use_sandbox: bool = False) -> None:
-        super().__init__(APIService.EBAY)
+        self.logger = get_logger(__name__)
         self.base_url = self.SANDBOX_URL if use_sandbox else self.PRODUCTION_URL
         self.client: AsyncClient | None = None
         self.access_token: str | None = None
@@ -30,13 +33,38 @@ class EbayService(BaseAPIService):
         if self.client:
             await self.client.aclose()
 
-    async def _get_access_token(self, credentials: dict[str, str]) -> str | None:
+    async def get_oauth_token(self, db: AsyncSession, user_id: UUID) -> str | None:
+        """Get user's OAuth access token for eBay."""
+        result = await db.execute(
+            select(OAuthToken).where(
+                OAuthToken.user_id == user_id,
+                OAuthToken.provider == OAuthProvider.EBAY,
+            )
+        )
+        token = result.scalar_one_or_none()
+
+        if not token:
+            return None
+
+        # TODO: Check if token is expired and refresh if needed
+        return token.access_token
+
+    async def _get_app_access_token(self, db: AsyncSession) -> str | None:
+        """Get application access token using client credentials flow."""
         if not self.client:
             raise RuntimeError("Service not initialized. Use async with context.")
 
+        # Get app configuration
+        result = await db.execute(select(AppConfig).where(AppConfig.provider == OAuthProvider.EBAY))
+        app_config = result.scalar_one_or_none()
+
+        if not app_config:
+            self.logger.error("eBay OAuth is not configured")
+            return None
+
         try:
             # Create Basic auth header
-            auth_string = f"{credentials['key']}:{credentials['secret']}"
+            auth_string = f"{app_config.consumer_key}:{app_config.consumer_secret}"
             auth_bytes = auth_string.encode("ascii")
             auth_b64 = base64.b64encode(auth_bytes).decode("ascii")
 
@@ -48,7 +76,7 @@ class EbayService(BaseAPIService):
                 },
                 data={
                     "grant_type": "client_credentials",
-                    "scope": "https://api.ebay.com/oauth/api_scope",
+                    "scope": app_config.scope or "https://api.ebay.com/oauth/api_scope",
                 },
             )
             response.raise_for_status()
@@ -61,13 +89,22 @@ class EbayService(BaseAPIService):
             self.logger.error(f"eBay auth error: {str(e)}")
             return None
 
-    async def search(self, query: str, filters: dict[str, Any], credentials: dict[str, str]) -> list[dict[str, Any]]:
+    async def search(
+        self, query: str, filters: dict[str, Any], db: AsyncSession, user_id: UUID | None = None
+    ) -> list[dict[str, Any]]:
         if not self.client:
             raise RuntimeError("Service not initialized. Use async with context.")
 
         # Get access token if not cached
         if not self.access_token:
-            self.access_token = await self._get_access_token(credentials)
+            # Try user OAuth token first if user_id provided
+            if user_id:
+                self.access_token = await self.get_oauth_token(db, user_id)
+
+            # Fall back to app token if no user token
+            if not self.access_token:
+                self.access_token = await self._get_app_access_token(db)
+
             if not self.access_token:
                 self.logger.error("Failed to get eBay access token")
                 return []
@@ -151,13 +188,22 @@ class EbayService(BaseAPIService):
                 self.access_token = None
             return []
 
-    async def get_item_details(self, item_id: str, credentials: dict[str, str]) -> dict[str, Any] | None:
+    async def get_item_details(
+        self, item_id: str, db: AsyncSession, user_id: UUID | None = None
+    ) -> dict[str, Any] | None:
         if not self.client:
             raise RuntimeError("Service not initialized. Use async with context.")
 
         # Get access token if not cached
         if not self.access_token:
-            self.access_token = await self._get_access_token(credentials)
+            # Try user OAuth token first if user_id provided
+            if user_id:
+                self.access_token = await self.get_oauth_token(db, user_id)
+
+            # Fall back to app token if no user token
+            if not self.access_token:
+                self.access_token = await self._get_app_access_token(db)
+
             if not self.access_token:
                 self.logger.error("Failed to get eBay access token")
                 return None

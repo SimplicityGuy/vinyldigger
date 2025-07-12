@@ -147,12 +147,8 @@ class RunSearchTask(AsyncTask):
 
         try:
             async with EbayService() as service:
-                credentials = await service.get_api_credentials(db, UUID(user_id))
-                if not credentials:
-                    logger.warning(f"No eBay credentials for user {user_id}")
-                    return 0
-
-                items = await service.search(search.query, search.filters, credentials)
+                # Search using OAuth token or app token
+                items = await service.search(search.query, search.filters, db, UUID(user_id))
 
                 for item in items:
                     # Check if we already have this result
