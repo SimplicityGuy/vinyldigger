@@ -19,3 +19,22 @@ ignored:
 trustedRegistries:
   - docker.io
   - ghcr.io
+
+# Enforce strict labeling - warn against labels not in schema
+strict-labels: true
+
+# Required OCI standard labels for container metadata
+# Based on https://github.com/opencontainers/image-spec/blob/main/annotations.md
+# Note: Using 'text' for version and revision since they use build-time variables
+label-schema:
+  org.opencontainers.image.created: text
+  org.opencontainers.image.title: text
+  org.opencontainers.image.description: text
+  org.opencontainers.image.authors: text
+  org.opencontainers.image.vendor: text
+  org.opencontainers.image.version: text
+  org.opencontainers.image.revision: text
+  org.opencontainers.image.source: url
+  org.opencontainers.image.documentation: url
+  org.opencontainers.image.licenses: text
+  org.opencontainers.image.base.name: text

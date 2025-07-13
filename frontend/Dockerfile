@@ -6,11 +6,47 @@ ARG VERSION=0.1.0
 # Pin specific version for reproducibility
 FROM node:22.12-alpine3.21 AS base
 
+# Re-declare build arguments for use in this stage
+ARG BUILD_DATE
+ARG VCS_REF
+ARG VERSION=0.1.0
+
+# OCI standard labels - https://github.com/opencontainers/image-spec/blob/main/annotations.md
+LABEL org.opencontainers.image.created="${BUILD_DATE}" \
+      org.opencontainers.image.title="VinylDigger Frontend Base" \
+      org.opencontainers.image.description="Base image for VinylDigger frontend - vinyl record discovery tool" \
+      org.opencontainers.image.authors="VinylDigger" \
+      org.opencontainers.image.vendor="VinylDigger" \
+      org.opencontainers.image.version="${VERSION}" \
+      org.opencontainers.image.revision="${VCS_REF}" \
+      org.opencontainers.image.source="https://github.com/SimplicityGuy/vinyldigger" \
+      org.opencontainers.image.documentation="https://github.com/SimplicityGuy/vinyldigger/blob/main/README.md" \
+      org.opencontainers.image.licenses="MIT" \
+      org.opencontainers.image.base.name="docker.io/library/node:22.12-alpine3.21"
+
 # Set environment variables
 ENV NODE_ENV=production
 
 # Development stage for running dev server
 FROM base AS development
+
+# Re-declare build arguments for use in this stage
+ARG BUILD_DATE
+ARG VCS_REF
+ARG VERSION=0.1.0
+
+# OCI standard labels - https://github.com/opencontainers/image-spec/blob/main/annotations.md
+LABEL org.opencontainers.image.created="${BUILD_DATE}" \
+      org.opencontainers.image.title="VinylDigger Frontend Development" \
+      org.opencontainers.image.description="Development environment for VinylDigger frontend - vinyl record discovery tool" \
+      org.opencontainers.image.authors="VinylDigger" \
+      org.opencontainers.image.vendor="VinylDigger" \
+      org.opencontainers.image.version="${VERSION}" \
+      org.opencontainers.image.revision="${VCS_REF}" \
+      org.opencontainers.image.source="https://github.com/SimplicityGuy/vinyldigger" \
+      org.opencontainers.image.documentation="https://github.com/SimplicityGuy/vinyldigger/blob/main/README.md" \
+      org.opencontainers.image.licenses="MIT" \
+      org.opencontainers.image.base.name="docker.io/library/node:22.12-alpine3.21"
 
 # Set environment variables
 ENV NODE_ENV=development
@@ -59,6 +95,24 @@ CMD ["npm", "run", "dev"]
 # Dependencies stage
 FROM base AS deps
 
+# Re-declare build arguments for use in this stage
+ARG BUILD_DATE
+ARG VCS_REF
+ARG VERSION=0.1.0
+
+# OCI standard labels - https://github.com/opencontainers/image-spec/blob/main/annotations.md
+LABEL org.opencontainers.image.created="${BUILD_DATE}" \
+      org.opencontainers.image.title="VinylDigger Frontend Dependencies" \
+      org.opencontainers.image.description="Dependencies layer for VinylDigger frontend - vinyl record discovery tool" \
+      org.opencontainers.image.authors="VinylDigger" \
+      org.opencontainers.image.vendor="VinylDigger" \
+      org.opencontainers.image.version="${VERSION}" \
+      org.opencontainers.image.revision="${VCS_REF}" \
+      org.opencontainers.image.source="https://github.com/SimplicityGuy/vinyldigger" \
+      org.opencontainers.image.documentation="https://github.com/SimplicityGuy/vinyldigger/blob/main/README.md" \
+      org.opencontainers.image.licenses="MIT" \
+      org.opencontainers.image.base.name="docker.io/library/node:22.12-alpine3.21"
+
 # Set working directory
 WORKDIR /app
 
@@ -70,6 +124,24 @@ RUN npm ci --omit=dev
 
 # Build stage
 FROM base AS builder
+
+# Re-declare build arguments for use in this stage
+ARG BUILD_DATE
+ARG VCS_REF
+ARG VERSION=0.1.0
+
+# OCI standard labels - https://github.com/opencontainers/image-spec/blob/main/annotations.md
+LABEL org.opencontainers.image.created="${BUILD_DATE}" \
+      org.opencontainers.image.title="VinylDigger Frontend Builder" \
+      org.opencontainers.image.description="Build stage for VinylDigger frontend - vinyl record discovery tool" \
+      org.opencontainers.image.authors="VinylDigger" \
+      org.opencontainers.image.vendor="VinylDigger" \
+      org.opencontainers.image.version="${VERSION}" \
+      org.opencontainers.image.revision="${VCS_REF}" \
+      org.opencontainers.image.source="https://github.com/SimplicityGuy/vinyldigger" \
+      org.opencontainers.image.documentation="https://github.com/SimplicityGuy/vinyldigger/blob/main/README.md" \
+      org.opencontainers.image.licenses="MIT" \
+      org.opencontainers.image.base.name="docker.io/library/node:22.12-alpine3.21"
 
 # Set working directory
 WORKDIR /app
