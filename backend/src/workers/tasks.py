@@ -1,6 +1,7 @@
 import asyncio
 import threading
 from datetime import datetime
+from decimal import Decimal
 from typing import Any
 from uuid import UUID
 
@@ -16,6 +17,9 @@ from src.models.price_history import PriceHistory
 from src.models.search import SavedSearch, SearchPlatform, SearchResult
 from src.services.discogs import DiscogsService
 from src.services.ebay import EbayService
+from src.services.item_matcher import ItemMatchingService
+from src.services.recommendation_engine import RecommendationEngine
+from src.services.seller_analyzer import SellerAnalysisService
 from src.workers.celery_app import celery_app
 
 logger = get_logger(__name__)
@@ -30,8 +34,14 @@ class AsyncTask(Task):  # type: ignore[misc]
 
 
 class RunSearchTask(AsyncTask):
+    def __init__(self):
+        super().__init__()
+        self.item_matcher = ItemMatchingService()
+        self.seller_analyzer = SellerAnalysisService()
+        self.recommendation_engine = RecommendationEngine()
+
     async def async_run(self, search_id: str, user_id: str) -> None:
-        logger.info(f"Running search {search_id} for user {user_id}")
+        logger.info(f"Running enhanced search {search_id} for user {user_id}")
         async with AsyncSessionLocal() as db:
             try:
                 # Get search details
@@ -82,6 +92,23 @@ class RunSearchTask(AsyncTask):
                         db, search, user_id, collection_releases, wantlist_releases
                     )
 
+                # Commit search results before analysis
+                await db.commit()
+
+                # Run enhanced analysis if we have new results
+                if results_added > 0:
+                    logger.info(f"Running analysis for {results_added} new results in search {search_id}")
+
+                    # Perform item matching and seller analysis
+                    await self._perform_item_matching(db, search_id)
+                    await self._perform_seller_analysis(db, search_id)
+
+                    # Generate recommendations
+                    await self._generate_recommendations(db, search_id, user_id)
+
+                    await db.commit()
+                    logger.info(f"Analysis completed for search {search_id}")
+
                 # Update last_run_at
                 search.last_run_at = datetime.utcnow()
                 await db.commit()
@@ -118,7 +145,14 @@ class RunSearchTask(AsyncTask):
                     if existing.scalar():
                         continue
 
-                    # Create search result
+                    # Extract seller information and create/update seller
+                    seller_info = await self.seller_analyzer.extract_seller_info(item, SearchPlatform.DISCOGS)
+                    seller = await self.seller_analyzer.find_or_create_seller(db, SearchPlatform.DISCOGS, seller_info)
+
+                    # Extract item information for pricing and condition
+                    item_info = self.item_matcher.extract_item_info(item, "discogs")
+
+                    # Create search result with enhanced data
                     result = SearchResult(
                         search_id=search.id,
                         platform=SearchPlatform.DISCOGS,
@@ -126,6 +160,9 @@ class RunSearchTask(AsyncTask):
                         item_data=item,
                         is_in_collection=item.get("id") in collection_releases,
                         is_in_wantlist=item.get("id") in wantlist_releases,
+                        seller_id=seller.id,
+                        item_price=Decimal(str(item_info.get("price", 0))) if item_info.get("price") else None,
+                        item_condition=item_info.get("condition"),
                     )
                     db.add(result)
                     results_added += 1
@@ -174,15 +211,25 @@ class RunSearchTask(AsyncTask):
                             existing_result.item_data = item
                         continue
 
-                    # Create search result
+                    # Extract seller information and create/update seller
+                    seller_info = await self.seller_analyzer.extract_seller_info(item, SearchPlatform.EBAY)
+                    seller = await self.seller_analyzer.find_or_create_seller(db, SearchPlatform.EBAY, seller_info)
+
+                    # Extract item information for pricing and condition
+                    item_info = self.item_matcher.extract_item_info(item, "ebay")
+
+                    # Create search result with enhanced data
                     result = SearchResult(
                         search_id=search.id,
                         platform=SearchPlatform.EBAY,
                         item_id=str(item["id"]),
                         item_data=item,
-                        # eBay items won't match Discogs collection
+                        # eBay items won't match Discogs collection directly
                         is_in_collection=False,
                         is_in_wantlist=False,
+                        seller_id=seller.id,
+                        item_price=Decimal(str(item_info.get("price", 0))) if item_info.get("price") else None,
+                        item_condition=item_info.get("condition"),
                     )
                     db.add(result)
 
@@ -201,6 +248,91 @@ class RunSearchTask(AsyncTask):
             logger.error(f"eBay search error: {str(e)}")
 
         return results_added
+
+    async def _perform_item_matching(self, db: AsyncSession, search_id: str) -> None:
+        """Perform item matching for search results."""
+        logger.info(f"Performing item matching for search {search_id}")
+
+        # Get all search results that don't have item matches yet
+        results_query = await db.execute(
+            select(SearchResult).where(SearchResult.search_id == search_id, SearchResult.item_match_id.is_(None))
+        )
+        search_results = results_query.scalars().all()
+
+        for result in search_results:
+            try:
+                # Perform item matching
+                match_result = await self.item_matcher.match_search_result(
+                    db, str(result.id), result.item_data, result.platform.value.lower()
+                )
+
+                if match_result:
+                    # Update search result with item match
+                    result.item_match_id = match_result.item_match_id
+
+            except Exception as e:
+                logger.error(f"Error matching item {result.id}: {str(e)}")
+                continue
+
+    async def _perform_seller_analysis(self, db: AsyncSession, search_id: str) -> None:
+        """Perform seller inventory analysis for search results."""
+        logger.info(f"Performing seller analysis for search {search_id}")
+
+        # Get all sellers in this search
+        sellers_query = await db.execute(
+            select(SearchResult.seller_id)
+            .where(SearchResult.search_id == search_id, SearchResult.seller_id.is_not(None))
+            .distinct()
+        )
+        seller_ids = [row[0] for row in sellers_query.all()]
+
+        for seller_id in seller_ids:
+            try:
+                # Create seller inventory entries
+                seller_results_query = await db.execute(
+                    select(SearchResult).where(SearchResult.search_id == search_id, SearchResult.seller_id == seller_id)
+                )
+                seller_results = seller_results_query.scalars().all()
+
+                from src.models.seller import SellerInventory
+
+                for result in seller_results:
+                    # Check if inventory entry already exists
+                    existing_inventory = await db.execute(
+                        select(SellerInventory).where(
+                            SellerInventory.seller_id == seller_id, SellerInventory.search_result_id == result.id
+                        )
+                    )
+
+                    if not existing_inventory.scalar():
+                        # Create inventory entry
+                        inventory_item = SellerInventory(
+                            seller_id=seller_id,
+                            search_result_id=result.id,
+                            item_title=result.item_data.get("title", "Unknown"),
+                            item_price=result.item_price or Decimal("0.00"),
+                            item_condition=result.item_condition,
+                            is_in_wantlist=result.is_in_wantlist,
+                            wantlist_priority=5 if result.is_in_wantlist else None,  # Default priority
+                        )
+                        db.add(inventory_item)
+
+            except Exception as e:
+                logger.error(f"Error analyzing seller {seller_id}: {str(e)}")
+                continue
+
+    async def _generate_recommendations(self, db: AsyncSession, search_id: str, user_id: str) -> None:
+        """Generate deal recommendations for search results."""
+        logger.info(f"Generating recommendations for search {search_id}")
+
+        try:
+            # Use recommendation engine to analyze results and generate recommendations
+            analysis = await self.recommendation_engine.analyze_search_results(db, search_id, user_id)
+
+            logger.info(f"Generated {len(analysis.recommendations)} recommendations for search {search_id}")
+
+        except Exception as e:
+            logger.error(f"Error generating recommendations for search {search_id}: {str(e)}")
 
 
 class SyncCollectionTask(AsyncTask):

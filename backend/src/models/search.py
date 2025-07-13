@@ -14,6 +14,8 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 from src.core.database import Base
 
 if TYPE_CHECKING:
+    from src.models.item_match import ItemMatch
+    from src.models.seller import Seller
     from src.models.user import User
 
 
@@ -66,7 +68,21 @@ class SearchResult(Base):
     item_data: Mapped[dict[str, Any]] = mapped_column(JSON, nullable=False)
     is_in_collection: Mapped[bool] = mapped_column(default=False)
     is_in_wantlist: Mapped[bool] = mapped_column(default=False)
+
+    # Enhanced analysis fields
+    seller_id: Mapped[UUID | None] = mapped_column(PGUUID(as_uuid=True), ForeignKey("sellers.id"), nullable=True)
+    item_match_id: Mapped[UUID | None] = mapped_column(
+        PGUUID(as_uuid=True), ForeignKey("item_matches.id"), nullable=True
+    )
+
+    # Quick access fields for analysis
+    item_price: Mapped[Decimal | None] = mapped_column(Numeric(10, 2), nullable=True)
+    item_condition: Mapped[str | None] = mapped_column(String(50), nullable=True)
+    matching_score: Mapped[Decimal | None] = mapped_column(Numeric(5, 2), nullable=True)  # 0-100 overall item appeal
+
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
     # Relationships
     search: Mapped[SavedSearch] = relationship("SavedSearch", back_populates="results")
+    seller: Mapped[Seller | None] = relationship("Seller", back_populates="search_results")
+    item_match: Mapped[ItemMatch | None] = relationship("ItemMatch", back_populates="search_results")

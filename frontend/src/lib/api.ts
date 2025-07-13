@@ -212,6 +212,23 @@ export const searchApi = {
   },
 }
 
+export const searchAnalysisApi = {
+  async getSearchAnalysis(searchId: string) {
+    const response = await fetchApi(`/analysis/search/${searchId}/analysis`)
+    return response.json()
+  },
+
+  async getMultiItemDeals(searchId: string) {
+    const response = await fetchApi(`/analysis/search/${searchId}/multi-item-deals`)
+    return response.json()
+  },
+
+  async getPriceComparison(searchId: string) {
+    const response = await fetchApi(`/analysis/search/${searchId}/price-comparison`)
+    return response.json()
+  },
+}
+
 export const collectionApi = {
   async syncCollection(): Promise<{ message: string }> {
     const response = await fetchApi('/collections/sync', {
@@ -311,6 +328,7 @@ const api = {
   ...authApi,
   ...configApi,
   ...searchApi,
+  ...searchAnalysisApi,
   ...collectionApi,
   ...oauthApi,
 }
