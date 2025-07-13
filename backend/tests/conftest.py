@@ -13,6 +13,8 @@ os.environ.setdefault("SECRET_KEY", "test-secret-key-for-testing-only")
 os.environ.setdefault("CELERY_BROKER_URL", "redis://localhost:6379/1")
 os.environ.setdefault("CELERY_RESULT_BACKEND", "redis://localhost:6379/2")
 
+# Import UUID for proper handling
+
 from src.core.database import Base, get_db
 from src.main import app
 
@@ -60,7 +62,11 @@ async def db_session() -> AsyncGenerator[AsyncSession, None]:
 
 @pytest.fixture(scope="function")
 async def client(db_session: AsyncSession) -> AsyncGenerator[AsyncClient, None]:
-    app.dependency_overrides[get_db] = override_get_db
+    # Override get_db to return our test session
+    async def get_test_db():
+        yield db_session
+
+    app.dependency_overrides[get_db] = get_test_db
 
     transport = ASGITransport(app=app)
     async with AsyncClient(transport=transport, base_url="http://test") as ac:

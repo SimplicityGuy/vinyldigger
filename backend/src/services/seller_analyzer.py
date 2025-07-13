@@ -3,7 +3,7 @@
 from decimal import Decimal
 from typing import Any
 
-from sqlalchemy import func, select
+from sqlalchemy import case, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.core.logging import get_logger
@@ -63,12 +63,20 @@ class SellerAnalysisService:
 
         location_upper = location.upper()
 
+        # Check for US state abbreviations first (to avoid CA confusion)
+        # Only match if it ends with state abbreviation or has space after
+        import re
+
+        us_state_pattern = r"(, (CA|NY|TX|FL|IL|PA|OH|GA|NC|MI|MA|WA|VA|NJ|AZ|CO|OR|MD|MN|WI))(\s|$)"
+        if re.search(us_state_pattern, location_upper):
+            return "US"
+
         # US variations
         if any(term in location_upper for term in ["US", "USA", "UNITED STATES", "AMERICA"]):
             return "US"
 
-        # Canada variations
-        if any(term in location_upper for term in ["CA", "CANADA", "CANADIAN"]):
+        # Canada variations (check after US states to avoid CA state confusion)
+        if any(term in location_upper for term in ["CANADA", "CANADIAN", "ONTARIO", "QUEBEC", "BRITISH COLUMBIA"]):
             return "CA"
 
         # UK variations
@@ -356,7 +364,7 @@ class SellerAnalysisService:
                 SearchResult.seller_id,
                 func.count(SearchResult.id).label("item_count"),
                 func.sum(SearchResult.item_price).label("total_value"),
-                func.sum(func.case((SearchResult.is_in_wantlist.is_(True), 1), else_=0)).label("wantlist_count"),
+                func.sum(case((SearchResult.is_in_wantlist.is_(True), 1), else_=0)).label("wantlist_count"),
             )
             .where(SearchResult.search_id == search_id, SearchResult.seller_id.is_not(None))
             .group_by(SearchResult.seller_id)

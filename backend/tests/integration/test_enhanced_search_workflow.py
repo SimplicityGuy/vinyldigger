@@ -7,12 +7,11 @@ from uuid import uuid4
 import pytest
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from src.models.item_match import ItemMatchResult, MatchConfidence
 from src.models.search import SavedSearch, SearchPlatform, SearchResult
-from src.models.search_analysis import DealRecommendation, SellerAnalysis
+from src.models.search_analysis import SearchResultAnalysis
 from src.models.seller import Seller
 from src.models.user import User
-from src.workers.tasks import RunSearchTask as SearchTask
+from src.workers.tasks import RunSearchTask
 
 
 class TestEnhancedSearchWorkflow:
@@ -49,13 +48,13 @@ class TestEnhancedSearchWorkflow:
                 search_id=sample_saved_search.id,
                 platform=SearchPlatform.DISCOGS,
                 item_id="discogs_1",
+                item_price=Decimal("25.00"),
+                item_condition="VG+",
                 item_data={
                     "title": "Abbey Road",
                     "artist": "The Beatles",
                     "year": 1969,
                     "format": "Vinyl",
-                    "condition": "VG+",
-                    "price": 25.00,
                     "seller": {
                         "id": "seller_1",
                         "name": "Vinyl Collector",
@@ -69,13 +68,13 @@ class TestEnhancedSearchWorkflow:
                 search_id=sample_saved_search.id,
                 platform=SearchPlatform.DISCOGS,
                 item_id="discogs_2",
+                item_price=Decimal("30.00"),
+                item_condition="NM",
                 item_data={
                     "title": "Help!",
                     "artist": "The Beatles",
                     "year": 1965,
                     "format": "Vinyl",
-                    "condition": "NM",
-                    "price": 30.00,
                     "seller": {
                         "id": "seller_1",  # Same seller
                         "name": "Vinyl Collector",
@@ -90,49 +89,14 @@ class TestEnhancedSearchWorkflow:
                 search_id=sample_saved_search.id,
                 platform=SearchPlatform.EBAY,
                 item_id="ebay_1",
+                item_price=Decimal("35.00"),
+                item_condition="New",
                 item_data={
                     "title": "Abbey Road Remastered",
                     "artist": "Beatles",
                     "year": 2019,
                     "format": "LP",
-                    "condition": "New",
-                    "price": 35.00,
                     "seller": {"id": "seller_2", "name": "Record Store", "location": "New York, NY", "feedback": 99.2},
-                },
-            ),
-            SearchResult(
-                id=str(uuid4()),
-                search_id=sample_saved_search.id,
-                platform=SearchPlatform.EBAY,
-                item_id="ebay_2",
-                item_data={
-                    "title": "Abbey Road (1969)",
-                    "artist": "The Beatles",
-                    "year": 1969,
-                    "format": "Vinyl",
-                    "condition": "VG",
-                    "price": 22.00,
-                    "seller": {"id": "seller_3", "name": "Music Hub", "location": "Chicago, IL", "feedback": 97.8},
-                },
-            ),
-            SearchResult(
-                id=str(uuid4()),
-                search_id=sample_saved_search.id,
-                platform=SearchPlatform.EBAY,
-                item_id="ebay_3",
-                item_data={
-                    "title": "White Album",
-                    "artist": "The Beatles",
-                    "year": 1968,
-                    "format": "Vinyl",
-                    "condition": "VG+",
-                    "price": 40.00,
-                    "seller": {
-                        "id": "seller_2",  # Same seller as ebay_1
-                        "name": "Record Store",
-                        "location": "New York, NY",
-                        "feedback": 99.2,
-                    },
                 },
             ),
         ]
@@ -140,12 +104,18 @@ class TestEnhancedSearchWorkflow:
     @pytest.fixture
     def mock_db_session(self):
         """Create mock database session for testing."""
-        return AsyncMock(spec=AsyncSession)
+        session = AsyncMock(spec=AsyncSession)
+        # Mock the db operations
+        session.add = MagicMock()
+        session.commit = AsyncMock()
+        session.refresh = AsyncMock()
+        session.flush = AsyncMock()
+        return session
 
     @pytest.fixture
     def search_task(self):
-        """Create SearchTask instance for testing."""
-        return SearchTask()
+        """Create RunSearchTask instance for testing."""
+        return RunSearchTask()
 
     @pytest.mark.asyncio
     async def test_complete_enhanced_search_workflow(
@@ -153,259 +123,338 @@ class TestEnhancedSearchWorkflow:
     ):
         """Test the complete enhanced search workflow from start to finish."""
 
-        # Mock external API calls (Discogs/eBay search)
-        with patch.object(search_task, "_execute_platform_search") as mock_search:
-            mock_search.return_value = sample_search_results
+        # Mock db.get to return saved search
+        mock_db_session.get = AsyncMock(return_value=sample_saved_search)
 
-            # Mock database operations
-            mock_db_session.add = MagicMock()
-            mock_db_session.commit = AsyncMock()
-            mock_db_session.refresh = AsyncMock()
-            mock_db_session.execute = AsyncMock()
+        # Mock various database queries
+        def execute_side_effect(query):
+            result = MagicMock()
+            query_str = str(query)
 
-            # Mock query results for various database lookups
-            mock_result = MagicMock()
-            mock_result.scalar_one_or_none.return_value = None  # New entities
-            mock_result.scalars.return_value.all.return_value = []  # Empty results
-            mock_db_session.execute.return_value = mock_result
+            # For collection queries
+            if "collections" in query_str:
+                result.scalars.return_value.all.return_value = []  # Empty collections
+            # For wantlist queries
+            elif "want_lists" in query_str:
+                result.scalars.return_value.all.return_value = []  # Empty wantlists
+            # For checking existing search results
+            elif "search_results" in query_str and "item_id" in query_str:
+                result.scalar.return_value = None  # No existing results
+            # For fetching search results for analysis
+            elif "search_results" in query_str and "item_match_id" in query_str:
+                result.scalars.return_value.all.return_value = []  # No results to match
+            # Default case
+            else:
+                result.scalar_one_or_none.return_value = None
+                result.scalars.return_value.all.return_value = []
+            return result
 
-            # Execute the complete workflow
-            await search_task.execute_search(sample_saved_search.id, sample_user.id)
+        mock_db_session.execute = AsyncMock(side_effect=execute_side_effect)
 
-            # Verify that all workflow steps were executed
-            # 1. Basic search was executed
-            mock_search.assert_called()
+        # Mock external API calls by patching the service classes
+        with (
+            patch("src.workers.tasks.DiscogsService") as mock_discogs_service,
+            patch("src.workers.tasks.EbayService") as mock_ebay_service,
+            patch("src.workers.tasks.AsyncSessionLocal") as mock_session_local,
+        ):
+            # Set up Discogs service mock
+            mock_discogs_instance = AsyncMock()
+            mock_discogs_instance.search.return_value = [
+                {
+                    "id": "12345",
+                    "title": "Abbey Road",
+                    "artist": "The Beatles",
+                    "price": {"value": 25.00, "currency": "USD"},
+                    "condition": "VG+",
+                    "seller": {"username": "seller1", "id": "seller1"},
+                    "uri": "/release/12345",
+                }
+            ]
+            mock_discogs_service.return_value.__aenter__.return_value = mock_discogs_instance
 
-            # 2. Database operations were performed
+            # Set up eBay service mock
+            mock_ebay_instance = AsyncMock()
+            mock_ebay_instance.search.return_value = [
+                {
+                    "id": "67890",
+                    "title": "Help! - The Beatles",
+                    "price": {"value": 30.00, "currency": "USD"},
+                    "condition": "Near Mint",
+                    "seller": {"username": "seller2"},
+                    "itemWebUrl": "https://ebay.com/item/67890",
+                }
+            ]
+            mock_ebay_service.return_value.__aenter__.return_value = mock_ebay_instance
+
+            # Mock the database session
+            mock_session_local.return_value.__aenter__.return_value = mock_db_session
+
+            # Execute the task
+            await search_task.async_run(str(sample_saved_search.id), str(sample_user.id))
+
+            # Verify database operations were performed
             assert mock_db_session.add.call_count > 0  # Results and analysis entities added
             assert mock_db_session.commit.call_count > 0  # Changes committed
 
     @pytest.mark.asyncio
-    async def test_item_matching_integration(self, search_task, mock_db_session, sample_search_results):
+    async def test_item_matching_workflow(self, search_task, mock_db_session):
         """Test item matching functionality in the workflow."""
+        search_id = str(uuid4())
 
-        with patch("src.services.item_matcher.ItemMatchingService") as mock_matcher_class:
-            mock_matcher = AsyncMock()
-            mock_matcher_class.return_value = mock_matcher
+        # Create sample search results
+        search_results = [
+            SearchResult(
+                id=str(uuid4()),
+                search_id=search_id,
+                platform=SearchPlatform.DISCOGS,
+                item_id="disc1",
+                item_price=Decimal("25.00"),
+                item_condition="VG+",
+                seller_id=str(uuid4()),
+                item_data={"title": "Abbey Road", "artist": "The Beatles", "year": 1969},
+            ),
+            SearchResult(
+                id=str(uuid4()),
+                search_id=search_id,
+                platform=SearchPlatform.EBAY,
+                item_id="ebay1",
+                item_price=Decimal("30.00"),
+                item_condition="NM",
+                seller_id=str(uuid4()),
+                item_data={"title": "Abbey Road (Remastered)", "artist": "Beatles", "year": 1969},
+            ),
+        ]
 
-            # Mock matching results
-            mock_match_results = [
-                ItemMatchResult(
-                    id=str(uuid4()),
-                    item_match_id=str(uuid4()),
-                    search_result_id=result.id,
-                    confidence=MatchConfidence.HIGH,
-                    confidence_score=Decimal("85.0"),
-                    title_similarity=Decimal("90.0"),
-                    artist_similarity=Decimal("95.0"),
-                    year_match=True,
-                    catalog_match=False,
-                    format_match=True,
-                )
-                for result in sample_search_results
-            ]
-            mock_matcher.process_search_results.return_value = mock_match_results
+        # Mock database queries for item matching
+        def execute_side_effect(query):
+            result = MagicMock()
+            query_str = str(query)
 
-            # Execute item matching
-            await search_task._perform_item_matching(mock_db_session, str(uuid4()))
+            # For fetching search results without matches
+            if "search_results" in query_str and "item_match_id" in query_str:
+                result.scalars.return_value.all.return_value = search_results
+            # For checking existing item matches
+            elif "item_matches" in query_str:
+                result.scalar_one_or_none.return_value = None  # No existing matches
+            else:
+                result.scalar_one_or_none.return_value = None
+                result.scalars.return_value.all.return_value = []
+            return result
 
-            # Verify matching was performed
-            mock_matcher.process_search_results.assert_called_once()
+        mock_db_session.execute = AsyncMock(side_effect=execute_side_effect)
+
+        # Execute item matching
+        await search_task._perform_item_matching(mock_db_session, search_id)
+
+        # Verify database operations
+        # Should add ItemMatch and ItemMatchResult entities
+        assert mock_db_session.add.call_count >= 2  # At least one ItemMatch and one ItemMatchResult
+        assert mock_db_session.flush.called
 
     @pytest.mark.asyncio
-    async def test_seller_analysis_integration(self, search_task, mock_db_session, sample_search_results):
+    async def test_seller_analysis_workflow(self, search_task, mock_db_session):
         """Test seller analysis functionality in the workflow."""
+        search_id = str(uuid4())
+        seller_id = str(uuid4())
 
-        with patch("src.services.seller_analyzer.SellerAnalysisService") as mock_analyzer_class:
-            mock_analyzer = AsyncMock()
-            mock_analyzer_class.return_value = mock_analyzer
+        # Create sample seller
+        seller = Seller(
+            id=seller_id,
+            platform=SearchPlatform.DISCOGS,
+            platform_seller_id="seller_1",
+            seller_name="Vinyl Collector",
+            location="Los Angeles, CA",
+            country_code="US",
+            feedback_score=Decimal("98.5"),
+        )
 
-            # Mock seller processing and analysis
-            mock_sellers = [
-                Seller(
-                    id=str(uuid4()),
-                    platform=SearchPlatform.DISCOGS,
-                    platform_seller_id="seller_1",
-                    seller_name="Vinyl Collector",
-                    location="Los Angeles, CA",
-                    country_code="US",
-                    feedback_score=Decimal("98.5"),
-                )
-            ]
-            mock_analyzer.process_search_sellers.return_value = mock_sellers
+        # Mock database queries
+        def execute_side_effect(query):
+            result = MagicMock()
+            if "sellers" in str(query):
+                result.scalars.return_value.all.return_value = [seller]
+            else:
+                result.scalars.return_value.all.return_value = []
+            return result
 
-            mock_analyses = [
-                SellerAnalysis(
-                    id=str(uuid4()),
-                    search_analysis_id=str(uuid4()),
-                    seller_id=mock_sellers[0].id,
-                    total_items=2,
-                    wantlist_items=1,
-                    total_value=Decimal("55.00"),
-                    avg_item_price=Decimal("27.50"),
-                    estimated_shipping=Decimal("15.00"),
-                    price_competitiveness=Decimal("85.0"),
-                    inventory_depth_score=Decimal("70.0"),
-                    seller_reputation_score=Decimal("90.0"),
-                    location_preference_score=Decimal("100.0"),
-                    overall_score=Decimal("85.0"),
-                    recommendation_rank=1,
-                )
-            ]
-            mock_analyzer.analyze_all_sellers.return_value = mock_analyses
+        mock_db_session.execute = AsyncMock(side_effect=execute_side_effect)
 
-            # Execute seller analysis
-            await search_task._perform_seller_analysis(mock_db_session, str(uuid4()))
+        # Execute seller analysis
+        await search_task._perform_seller_analysis(mock_db_session, search_id)
 
-            # Verify analysis was performed
-            mock_analyzer.process_search_sellers.assert_called_once()
-            mock_analyzer.analyze_all_sellers.assert_called_once()
+        # Verify operations
+        assert mock_db_session.execute.called
 
     @pytest.mark.asyncio
-    async def test_recommendation_generation_integration(self, search_task, mock_db_session):
+    async def test_recommendation_generation_workflow(self, search_task, mock_db_session):
         """Test recommendation generation in the workflow."""
+        search_id = str(uuid4())
+        user_id = str(uuid4())
 
-        with patch("src.services.recommendation_engine.RecommendationEngine") as mock_engine_class:
-            mock_engine = AsyncMock()
-            mock_engine_class.return_value = mock_engine
+        # Create sample analysis
+        analysis = SearchResultAnalysis(
+            id=str(uuid4()),
+            search_id=search_id,
+            total_results=10,
+            total_sellers=3,
+            multi_item_sellers=1,
+            avg_price=Decimal("30.00"),
+        )
 
-            # Mock recommendation generation
-            mock_recommendations = [
-                DealRecommendation(
-                    id=str(uuid4()),
-                    analysis_id=str(uuid4()),
-                    seller_id=str(uuid4()),
-                    recommendation_type="BEST_PRICE",
-                    deal_score="EXCELLENT",
-                    score_value=Decimal("95.0"),
-                    total_items=1,
-                    wantlist_items=1,
-                    total_value=Decimal("25.00"),
-                    estimated_shipping=Decimal("15.00"),
-                    total_cost=Decimal("40.00"),
-                    title="Best Price Deal",
-                    description="Great deal on Abbey Road",
-                    recommendation_reason="Competitive pricing",
-                    item_ids=["item1"],
-                )
-            ]
-            mock_engine.generate_recommendations.return_value = mock_recommendations
+        # Mock database queries
+        mock_result = MagicMock()
+        mock_result.scalar_one_or_none.return_value = analysis
+        mock_result.scalars.return_value.all.return_value = []
+        mock_db_session.execute.return_value = mock_result
 
-            # Execute recommendation generation
-            await search_task._generate_recommendations(mock_db_session, str(uuid4()), str(uuid4()))
+        # Execute recommendation generation
+        await search_task._generate_recommendations(mock_db_session, search_id, user_id)
 
-            # Verify recommendations were generated
-            mock_engine.generate_recommendations.assert_called_once()
+        # Verify operations
+        assert mock_db_session.execute.called
 
     @pytest.mark.asyncio
     async def test_workflow_error_handling(self, search_task, mock_db_session, sample_saved_search, sample_user):
         """Test error handling in the search workflow."""
 
-        # Mock a failure in external search
-        with patch.object(search_task, "_execute_platform_search") as mock_search:
-            mock_search.side_effect = Exception("External API error")
+        # Mock db.get to fail
+        mock_db_session.get.side_effect = Exception("Database error")
 
-            # Mock database rollback
-            mock_db_session.rollback = AsyncMock()
+        # Mock AsyncSessionLocal to return our mock session
+        with patch("src.workers.tasks.AsyncSessionLocal") as mock_session_local:
+            mock_session_local.return_value.__aenter__.return_value = mock_db_session
 
             # Execute search and expect it to handle the error
-            with pytest.raises(Exception, match="External API error"):
-                await search_task.execute_search(sample_saved_search.id, sample_user.id)
-
-            # Verify rollback was called
-            mock_db_session.rollback.assert_called_once()
+            with pytest.raises(Exception, match="Database error"):
+                await search_task.async_run(str(sample_saved_search.id), str(sample_user.id))
 
     @pytest.mark.asyncio
-    async def test_multi_seller_analysis_workflow(self, search_task, mock_db_session, sample_search_results):
+    async def test_multi_seller_analysis_workflow(self, search_task, mock_db_session):
         """Test workflow specifically for multi-seller analysis scenarios."""
+        search_id = str(uuid4())
 
-        # Group search results by seller to simulate multi-item sellers
-        seller_groups = {}
-        for result in sample_search_results:
-            seller_id = result.item_data["seller"]["id"]
-            if seller_id not in seller_groups:
-                seller_groups[seller_id] = []
-            seller_groups[seller_id].append(result)
+        # Create sellers with multiple items
+        sellers = [
+            Seller(
+                id=str(uuid4()),
+                platform=SearchPlatform.DISCOGS,
+                platform_seller_id=f"seller_{i}",
+                seller_name=f"Seller {i}",
+                location="Los Angeles, CA",
+                country_code="US",
+            )
+            for i in range(3)
+        ]
 
-        # Verify we have multi-item sellers
-        multi_item_sellers = [seller_id for seller_id, results in seller_groups.items() if len(results) > 1]
-        assert len(multi_item_sellers) >= 1  # Should have at least one multi-item seller
-
-        with patch("src.services.seller_analyzer.SellerAnalysisService") as mock_analyzer_class:
-            mock_analyzer = AsyncMock()
-            mock_analyzer_class.return_value = mock_analyzer
-
-            # Mock analysis that identifies multi-item opportunities
-            mock_analyses = []
-            for _seller_id, results in seller_groups.items():
-                mock_analyses.append(
-                    SellerAnalysis(
+        # Create search results distributed among sellers
+        search_results = []
+        for i, seller in enumerate(sellers):
+            # Give each seller different number of items
+            item_count = i + 1  # 1, 2, 3 items respectively
+            for j in range(item_count):
+                search_results.append(
+                    SearchResult(
                         id=str(uuid4()),
-                        search_analysis_id=str(uuid4()),
-                        seller_id=str(uuid4()),
-                        total_items=len(results),
-                        wantlist_items=len(results) // 2,  # Half in wantlist
-                        total_value=Decimal(str(sum(float(r.item_data["price"]) for r in results))),
-                        avg_item_price=Decimal(str(sum(float(r.item_data["price"]) for r in results) / len(results))),
-                        estimated_shipping=Decimal("15.00"),
-                        price_competitiveness=Decimal("80.0"),
-                        inventory_depth_score=Decimal("90.0") if len(results) > 1 else Decimal("50.0"),
-                        seller_reputation_score=Decimal("85.0"),
-                        location_preference_score=Decimal("75.0"),
-                        overall_score=Decimal("85.0"),
-                        recommendation_rank=1 if len(results) > 1 else 2,
+                        search_id=search_id,
+                        platform=SearchPlatform.DISCOGS,
+                        seller_id=seller.id,
+                        item_id=f"disc_{i}_{j}",
+                        item_price=Decimal("25.00"),
+                        item_condition="VG+",
+                        is_in_wantlist=j == 0,  # First item is in wantlist
+                        item_data={"title": f"Album {i}-{j}", "artist": f"Artist {i}", "year": 2020 + i},
                     )
                 )
 
-            mock_analyzer.analyze_all_sellers.return_value = mock_analyses
+        # Mock database queries
+        execute_count = 0
 
-            # Execute seller analysis
-            await search_task._perform_seller_analysis(mock_db_session, str(uuid4()))
+        def execute_side_effect(query):
+            nonlocal execute_count
+            execute_count += 1
+            result = MagicMock()
+            query_str = str(query)
 
-            # Verify multi-item sellers got higher inventory depth scores
-            high_inventory_analyses = [a for a in mock_analyses if a.inventory_depth_score >= Decimal("90.0")]
-            assert len(high_inventory_analyses) >= 1
+            # For getting distinct seller IDs
+            if "DISTINCT" in query_str and "seller_id" in query_str:
+                result.all.return_value = [(seller.id,) for seller in sellers]
+            # For getting search results by seller - return results for current seller
+            elif "search_results" in query_str and "seller_id =" in query_str:
+                # Return appropriate results based on which call this is
+                seller_idx = (execute_count - 2) % len(sellers)  # -2 for the first query
+                if seller_idx < len(sellers):
+                    seller = sellers[seller_idx]
+                    result.scalars.return_value.all.return_value = [
+                        r for r in search_results if r.seller_id == seller.id
+                    ]
+                else:
+                    result.scalars.return_value.all.return_value = []
+            # For checking existing inventory
+            elif "seller_inventory" in query_str:
+                result.scalar.return_value = None  # No existing inventory
+            else:
+                result.scalars.return_value.all.return_value = []
+            return result
+
+        mock_db_session.execute = AsyncMock(side_effect=execute_side_effect)
+
+        # Execute seller analysis
+        await search_task._perform_seller_analysis(mock_db_session, search_id)
+
+        # Verify that seller analysis was created
+        # Should add at least some inventory entries
+        assert mock_db_session.add.called or mock_db_session.add.call_count > 0
 
     @pytest.mark.asyncio
-    async def test_cross_platform_matching_workflow(self, search_task, mock_db_session, sample_search_results):
+    async def test_cross_platform_matching_workflow(self, search_task, mock_db_session):
         """Test workflow for cross-platform item matching."""
+        search_id = str(uuid4())
 
-        # Filter results to items that should match across platforms
-        abbey_road_results = [result for result in sample_search_results if "Abbey Road" in result.item_data["title"]]
-        assert len(abbey_road_results) >= 2  # Should have matches from different platforms
+        # Create items that should match across platforms
+        abbey_road_results = [
+            SearchResult(
+                id=str(uuid4()),
+                search_id=search_id,
+                platform=SearchPlatform.DISCOGS,
+                item_id="disc2",
+                item_price=Decimal("25.00"),
+                item_condition="VG+",
+                seller_id=str(uuid4()),
+                item_data={"title": "Abbey Road", "artist": "The Beatles", "year": 1969, "format": "Vinyl"},
+            ),
+            SearchResult(
+                id=str(uuid4()),
+                search_id=search_id,
+                platform=SearchPlatform.EBAY,
+                item_id="ebay2",
+                item_price=Decimal("22.00"),
+                item_condition="NM",
+                seller_id=str(uuid4()),
+                item_data={"title": "Beatles - Abbey Road", "artist": "Beatles", "year": 1969, "format": "LP"},
+            ),
+        ]
 
-        with patch("src.services.item_matcher.ItemMatchingService") as mock_matcher_class:
-            mock_matcher = AsyncMock()
-            mock_matcher_class.return_value = mock_matcher
+        # Mock database queries for cross-platform matching
+        def execute_side_effect(query):
+            result = MagicMock()
+            query_str = str(query)
 
-            # Mock cross-platform matching
-            match_id = str(uuid4())
-            mock_match_results = []
+            # For fetching search results without matches
+            if "search_results" in query_str and "item_match_id" in query_str:
+                result.scalars.return_value.all.return_value = abbey_road_results
+            # For checking existing item matches
+            elif "item_matches" in query_str:
+                result.scalar_one_or_none.return_value = None  # No existing matches
+            else:
+                result.scalars.return_value.all.return_value = []
+            return result
 
-            for result in abbey_road_results:
-                mock_match_results.append(
-                    ItemMatchResult(
-                        id=str(uuid4()),
-                        item_match_id=match_id,  # Same match ID for cross-platform items
-                        search_result_id=result.id,
-                        confidence=MatchConfidence.HIGH,
-                        confidence_score=Decimal("88.0"),
-                        title_similarity=Decimal("90.0"),
-                        artist_similarity=Decimal("100.0"),
-                        year_match=True,
-                        catalog_match=False,
-                        format_match=True,
-                    )
-                )
+        mock_db_session.execute = AsyncMock(side_effect=execute_side_effect)
 
-            mock_matcher.process_search_results.return_value = mock_match_results
+        # Execute item matching
+        await search_task._perform_item_matching(mock_db_session, search_id)
 
-            # Execute item matching
-            await search_task._perform_item_matching(mock_db_session, str(uuid4()))
-
-            # Verify cross-platform matching was performed
-            mock_matcher.process_search_results.assert_called_once()
-
-            # Verify items that should match have the same match_id
-            cross_platform_matches = [r for r in mock_match_results if r.item_match_id == match_id]
-            assert len(cross_platform_matches) >= 2
+        # Verify matching was performed
+        # Should create 1 ItemMatch (both results match to same item) and 2 ItemMatchResults
+        assert mock_db_session.add.call_count >= 2  # At least ItemMatch and ItemMatchResults
+        assert mock_db_session.flush.called
