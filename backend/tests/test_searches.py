@@ -187,41 +187,50 @@ async def test_delete_search(client: AsyncClient, db_session: AsyncSession):
 
 @pytest.mark.asyncio
 async def test_run_search(client: AsyncClient, db_session: AsyncSession):
-    # Create a test user
-    user = User(
-        email="test@example.com",
-        hashed_password=get_password_hash("testpassword123"),
-    )
-    db_session.add(user)
-    await db_session.commit()
+    from unittest.mock import patch
 
-    # Login
-    login_response = await client.post(
-        "/api/v1/auth/login",
-        data={
-            "username": "test@example.com",
-            "password": "testpassword123",
-        },
-    )
-    token = login_response.json()["access_token"]
-    headers = {"Authorization": f"Bearer {token}"}
+    # Mock the Celery task to avoid Redis connection
+    with patch("src.services.search.run_search_task") as mock_task:
+        mock_task.delay.return_value = "task-id-123"
 
-    # Create a search
-    create_response = await client.post(
-        "/api/v1/searches",
-        json={
-            "name": "Test Run",
-            "query": "test query",
-            "platform": "DISCOGS",
-        },
-        headers=headers,
-    )
-    search_id = create_response.json()["id"]
+        # Create a test user
+        user = User(
+            email="test@example.com",
+            hashed_password=get_password_hash("testpassword123"),
+        )
+        db_session.add(user)
+        await db_session.commit()
 
-    # Run the search
-    run_response = await client.post(f"/api/v1/searches/{search_id}/run", headers=headers)
-    assert run_response.status_code == 200
-    assert "message" in run_response.json()
+        # Login
+        login_response = await client.post(
+            "/api/v1/auth/login",
+            data={
+                "username": "test@example.com",
+                "password": "testpassword123",
+            },
+        )
+        token = login_response.json()["access_token"]
+        headers = {"Authorization": f"Bearer {token}"}
+
+        # Create a search
+        create_response = await client.post(
+            "/api/v1/searches",
+            json={
+                "name": "Test Run",
+                "query": "test query",
+                "platform": "DISCOGS",
+            },
+            headers=headers,
+        )
+        search_id = create_response.json()["id"]
+
+        # Run the search
+        run_response = await client.post(f"/api/v1/searches/{search_id}/run", headers=headers)
+        assert run_response.status_code == 200
+        assert "message" in run_response.json()
+
+        # Verify the Celery task was called
+        mock_task.delay.assert_called_once()
 
 
 @pytest.mark.asyncio
@@ -261,3 +270,150 @@ async def test_get_search_results(client: AsyncClient, db_session: AsyncSession)
     results_response = await client.get(f"/api/v1/searches/{search_id}/results", headers=headers)
     assert results_response.status_code == 200
     assert results_response.json() == []
+
+
+@pytest.mark.asyncio
+async def test_update_search(client: AsyncClient, db_session: AsyncSession):
+    """Test updating a saved search with partial data."""
+    # Create a test user
+    user = User(
+        email="test@example.com",
+        hashed_password=get_password_hash("testpassword123"),
+    )
+    db_session.add(user)
+    await db_session.commit()
+
+    # Login
+    login_response = await client.post(
+        "/api/v1/auth/login",
+        data={
+            "username": "test@example.com",
+            "password": "testpassword123",
+        },
+    )
+    token = login_response.json()["access_token"]
+    headers = {"Authorization": f"Bearer {token}"}
+
+    # Create a search
+    create_response = await client.post(
+        "/api/v1/searches",
+        json={
+            "name": "Original Search",
+            "query": "original query",
+            "platform": "DISCOGS",
+            "check_interval_hours": 24,
+        },
+        headers=headers,
+    )
+    assert create_response.status_code == 200
+    search_data = create_response.json()
+    search_id = search_data["id"]
+
+    # Update with partial data
+    update_response = await client.put(
+        f"/api/v1/searches/{search_id}",
+        json={
+            "name": "Updated Search",
+            "check_interval_hours": 12,
+        },
+        headers=headers,
+    )
+    assert update_response.status_code == 200
+    updated_data = update_response.json()
+
+    # Verify changes
+    assert updated_data["name"] == "Updated Search"
+    assert updated_data["check_interval_hours"] == 12
+    assert updated_data["query"] == "original query"  # Should remain unchanged
+    assert updated_data["platform"] == "DISCOGS"  # Should remain unchanged
+
+
+@pytest.mark.asyncio
+async def test_update_search_not_found(client: AsyncClient, db_session: AsyncSession):
+    """Test updating a non-existent search."""
+    # Create a test user
+    user = User(
+        email="test@example.com",
+        hashed_password=get_password_hash("testpassword123"),
+    )
+    db_session.add(user)
+    await db_session.commit()
+
+    # Login
+    login_response = await client.post(
+        "/api/v1/auth/login",
+        data={
+            "username": "test@example.com",
+            "password": "testpassword123",
+        },
+    )
+    token = login_response.json()["access_token"]
+    headers = {"Authorization": f"Bearer {token}"}
+
+    # Try to update non-existent search
+    from uuid import uuid4
+
+    fake_id = uuid4()
+    update_response = await client.put(
+        f"/api/v1/searches/{fake_id}",
+        json={"name": "Updated Search"},
+        headers=headers,
+    )
+    assert update_response.status_code == 404
+
+
+@pytest.mark.asyncio
+async def test_update_search_unauthorized(client: AsyncClient, db_session: AsyncSession):
+    """Test updating another user's search."""
+    # Create two test users
+    user1 = User(
+        email="user1@example.com",
+        hashed_password=get_password_hash("testpassword123"),
+    )
+    user2 = User(
+        email="user2@example.com",
+        hashed_password=get_password_hash("testpassword123"),
+    )
+    db_session.add(user1)
+    db_session.add(user2)
+    await db_session.commit()
+
+    # Login as user1 and create a search
+    login_response = await client.post(
+        "/api/v1/auth/login",
+        data={
+            "username": "user1@example.com",
+            "password": "testpassword123",
+        },
+    )
+    token1 = login_response.json()["access_token"]
+    headers1 = {"Authorization": f"Bearer {token1}"}
+
+    create_response = await client.post(
+        "/api/v1/searches",
+        json={
+            "name": "User1 Search",
+            "query": "user1 query",
+            "platform": "DISCOGS",
+        },
+        headers=headers1,
+    )
+    search_id = create_response.json()["id"]
+
+    # Login as user2 and try to update user1's search
+    login_response = await client.post(
+        "/api/v1/auth/login",
+        data={
+            "username": "user2@example.com",
+            "password": "testpassword123",
+        },
+    )
+    token2 = login_response.json()["access_token"]
+    headers2 = {"Authorization": f"Bearer {token2}"}
+
+    update_response = await client.put(
+        f"/api/v1/searches/{search_id}",
+        json={"name": "Hijacked Search"},
+        headers=headers2,
+    )
+    assert update_response.status_code == 404  # Should appear as not found for security

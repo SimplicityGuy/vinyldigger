@@ -296,7 +296,7 @@ class TestRecommendationEngine:
             for i in range(3)
         ]
 
-        rec = await engine._create_multi_item_recommendation(analysis, seller, seller_analysis, seller_items)
+        rec = engine._create_multi_item_recommendation(analysis, seller, seller_analysis, seller_items)
 
         assert rec.recommendation_type == RecommendationType.MULTI_ITEM_DEAL
         assert rec.total_items == 5
@@ -342,7 +342,7 @@ class TestRecommendationEngine:
             )
         ]
 
-        rec = await engine._create_best_price_recommendation(analysis, seller, seller_analysis, seller_items)
+        rec = engine._create_best_price_recommendation(analysis, seller, seller_analysis, seller_items)
 
         assert rec.recommendation_type == RecommendationType.BEST_PRICE
         assert rec.total_items == 1

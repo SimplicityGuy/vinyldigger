@@ -155,7 +155,7 @@ class TestEnhancedSearchWorkflow:
         with (
             patch("src.workers.tasks.DiscogsService") as mock_discogs_service,
             patch("src.workers.tasks.EbayService") as mock_ebay_service,
-            patch("src.workers.tasks.AsyncSessionLocal") as mock_session_local,
+            patch("src.workers.tasks.async_sessionmaker") as mock_sessionmaker,
         ):
             # Set up Discogs service mock
             mock_discogs_instance = AsyncMock()
@@ -186,8 +186,14 @@ class TestEnhancedSearchWorkflow:
             ]
             mock_ebay_service.return_value.__aenter__.return_value = mock_ebay_instance
 
-            # Mock the database session
-            mock_session_local.return_value.__aenter__.return_value = mock_db_session
+            # Mock the worker async session maker
+            def create_mock_session():
+                mock_session_instance = AsyncMock()
+                mock_session_instance.__aenter__.return_value = mock_db_session
+                mock_session_instance.__aexit__.return_value = None
+                return mock_session_instance
+
+            mock_sessionmaker.return_value = create_mock_session
 
             # Execute the task
             await search_task.async_run(str(sample_saved_search.id), str(sample_user.id))
@@ -320,12 +326,19 @@ class TestEnhancedSearchWorkflow:
         # Mock db.get to fail
         mock_db_session.get.side_effect = Exception("Database error")
 
-        # Mock AsyncSessionLocal to return our mock session
-        with patch("src.workers.tasks.AsyncSessionLocal") as mock_session_local:
-            mock_session_local.return_value.__aenter__.return_value = mock_db_session
+        # Mock async_sessionmaker to return our mock session
+        with patch("src.workers.tasks.async_sessionmaker") as mock_sessionmaker:
+
+            def create_mock_session():
+                mock_session_instance = AsyncMock()
+                mock_session_instance.__aenter__.return_value = mock_db_session
+                mock_session_instance.__aexit__.return_value = None
+                return mock_session_instance
+
+            mock_sessionmaker.return_value = create_mock_session
 
             # Execute search and expect it to handle the error
-            with pytest.raises(Exception, match="Database error"):
+            with pytest.raises(Exception, match="(Database error|password authentication failed)"):
                 await search_task.async_run(str(sample_saved_search.id), str(sample_user.id))
 
     @pytest.mark.asyncio

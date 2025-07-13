@@ -396,45 +396,58 @@ async def test_ebay_oauth_status_fully_authorized(client: AsyncClient, db_sessio
 @pytest.mark.asyncio
 async def test_ebay_oauth_authorize_returns_url(client: AsyncClient, db_session: AsyncSession):
     """Test initiating eBay OAuth returns authorization URL."""
-    # Add app config
-    app_config = AppConfig(
-        provider=OAuthProvider.EBAY,
-        consumer_key="test_ebay_client_id",
-        consumer_secret="encrypted_ebay_secret",
-        redirect_uri="http://localhost:3000/oauth/callback/ebay",
-        scope="https://api.ebay.com/oauth/api_scope",
-    )
-    db_session.add(app_config)
-    await db_session.commit()
+    from unittest.mock import AsyncMock, patch
 
-    # Register and login
-    await client.post(
-        "/api/v1/auth/register",
-        json={
-            "email": "test@example.com",
-            "password": "testpassword123",
-        },
-    )
-    login_response = await client.post(
-        "/api/v1/auth/login",
-        data={
-            "username": "test@example.com",
-            "password": "testpassword123",
-        },
-    )
-    token = login_response.json()["access_token"]
+    # Mock Redis to avoid connection issues
+    with patch("src.api.v1.endpoints.oauth.get_redis") as mock_get_redis:
+        mock_redis = AsyncMock()
+        mock_get_redis.return_value = mock_redis
 
-    # Initiate OAuth
-    response = await client.post(
-        "/api/v1/oauth/authorize/ebay",
-        headers={"Authorization": f"Bearer {token}"},
-    )
-    assert response.status_code == 200
-    data = response.json()
-    assert "authorization_url" in data
-    assert "https://auth.ebay.com/oauth2/authorize" in data["authorization_url"]
-    assert "state" in data
-    assert len(data["state"]) > 0
+        # Mock OAuthTokenStore
+        with patch("src.api.v1.endpoints.oauth.OAuthTokenStore") as mock_token_store_class:
+            mock_token_store = AsyncMock()
+            mock_token_store.store_request_token = AsyncMock()
+            mock_token_store_class.return_value = mock_token_store
+
+            # Add app config
+            app_config = AppConfig(
+                provider=OAuthProvider.EBAY,
+                consumer_key="test_ebay_client_id",
+                consumer_secret="encrypted_ebay_secret",
+                redirect_uri="http://localhost:3000/oauth/callback/ebay",
+                scope="https://api.ebay.com/oauth/api_scope",
+            )
+            db_session.add(app_config)
+            await db_session.commit()
+
+            # Register and login
+            await client.post(
+                "/api/v1/auth/register",
+                json={
+                    "email": "test@example.com",
+                    "password": "testpassword123",
+                },
+            )
+            login_response = await client.post(
+                "/api/v1/auth/login",
+                data={
+                    "username": "test@example.com",
+                    "password": "testpassword123",
+                },
+            )
+            token = login_response.json()["access_token"]
+
+            # Initiate OAuth
+            response = await client.post(
+                "/api/v1/oauth/authorize/ebay",
+                headers={"Authorization": f"Bearer {token}"},
+            )
+            assert response.status_code == 200
+            data = response.json()
+            assert "authorization_url" in data
+            assert "https://auth.ebay.com/oauth2/authorize" in data["authorization_url"]
+            assert "state" in data
+            assert len(data["state"]) > 0
 
 
 @pytest.mark.asyncio
