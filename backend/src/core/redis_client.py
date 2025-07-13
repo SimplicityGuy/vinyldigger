@@ -1,5 +1,7 @@
 """Redis client for caching and temporary storage."""
 
+from __future__ import annotations
+
 import json
 from typing import Any
 
