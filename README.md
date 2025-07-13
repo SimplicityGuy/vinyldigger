@@ -28,13 +28,17 @@ A powerful web application that automates vinyl record discovery and comparison 
 - **Collection Awareness**: Skip items you already own
 - **Intelligent Item Matching**: Advanced algorithms match identical items across platforms
 - **Flexible Sync Options**: Sync collection and want list together or separately
+- **Editable Searches**: Modify saved search parameters including query, platform, and preferences
+- **Real-time Sync Status**: Live dashboard updates with intelligent completion detection
 
 ### 📊 Advanced Analysis & Recommendations
 - **Multi-Seller Analysis**: Identify sellers with multiple items to maximize shipping savings
 - **Smart Deal Recommendations**: AI-powered recommendations for best deals and multi-item purchases
 - **Seller Scoring**: Comprehensive seller evaluation based on reputation, location, and pricing
-- **Price Comparison**: Compare prices across platforms for identical items
+- **Enhanced Price Comparison**: Expandable album groupings with detailed seller listings
+- **Direct Listing Links**: One-click access to eBay listings and Discogs release pages
 - **Deal Score System**: Automated scoring (Excellent, Very Good, Good, Fair, Poor) for all recommendations
+- **Improved UI**: Collapsible interface showing best prices with detailed view on demand
 
 ### 🎯 Advanced Filtering & Search
 - **Per-Search Preferences**: Set condition and location preferences for each search
@@ -49,6 +53,7 @@ A powerful web application that automates vinyl record discovery and comparison 
 - **Encrypted API Keys**: Legacy API credentials are encrypted at rest
 - **JWT Authentication**: Secure token-based authentication
 - **User Isolation**: Each user's data is completely isolated
+- **Editable User Profile**: Update email address with validation and uniqueness checking
 
 ## 🛠️ Tech Stack
 
@@ -110,6 +115,30 @@ A powerful web application that automates vinyl record discovery and comparison 
    - Frontend: http://localhost:3000
    - Backend API: http://localhost:8000
    - API Documentation: http://localhost:8000/api/docs
+
+## ✨ Recent Improvements (January 2025)
+
+VinylDigger has received major UX and functionality improvements:
+
+### 🎯 Enhanced User Experience
+- **Editable Saved Searches**: Modify all search parameters including query, platform, and preferences
+- **Improved Price Comparison UI**: Expandable album groupings with clean, organized listings
+- **Direct Links**: One-click access to eBay listings and Discogs release pages
+- **Better Dashboard**: Enhanced stats, recent activity feed, and real-time sync status
+- **Profile Management**: Editable email addresses with validation
+- **Fixed Member Since**: Proper account creation date display
+
+### 🔄 Dashboard Enhancements
+- **4-card Stats Grid**: Collection, Want List, Searches, and Setup Progress
+- **Recent Activity Feed**: Quick access to latest searches with analysis links
+- **Intelligent Sync Detection**: Automatic completion detection with success notifications
+- **Enhanced Visual Design**: Better spacing, icons, and information hierarchy
+
+### 🎨 UI/UX Improvements
+- **Collapsible Price Comparisons**: Clean overview with expandable detailed views
+- **Search Management**: Full CRUD operations for saved searches
+- **Real-time Updates**: Live status updates without manual page refreshes
+- **Consistent Navigation**: Improved links and quick actions throughout
 
 ## 🔧 Development Setup
 

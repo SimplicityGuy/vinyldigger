@@ -1,10 +1,10 @@
 import { useState } from 'react'
-import { useQuery, useMutation } from '@tanstack/react-query'
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Label } from '@/components/ui/label'
 import { Input } from '@/components/ui/input'
-import { Key, Settings2, User, AlertCircle, CheckCircle, ExternalLink, Calendar } from 'lucide-react'
+import { Key, Settings2, User, AlertCircle, CheckCircle, ExternalLink, Calendar, Edit, Save, X } from 'lucide-react'
 import { Skeleton } from '@/components/ui/skeleton'
 import api from '@/lib/api'
 import { useToast } from '@/hooks/useToast'
@@ -13,6 +13,7 @@ import { useAuth } from '@/hooks/useAuth'
 function SettingsPage() {
   const { toast } = useToast()
   const { user, isLoading: isUserLoading } = useAuth()
+  const queryClient = useQueryClient()
   const [discogsVerificationCode, setDiscogsVerificationCode] = useState('')
   const [discogsState, setDiscogsState] = useState('')
   const [showDiscogsVerificationInput, setShowDiscogsVerificationInput] = useState(false)
@@ -20,6 +21,8 @@ function SettingsPage() {
   const [ebayState, setEbayState] = useState('')
   const [showEbayVerificationInput, setShowEbayVerificationInput] = useState(false)
   const [emailNotifications, setEmailNotifications] = useState(true)
+  const [isEditingEmail, setIsEditingEmail] = useState(false)
+  const [editEmailValue, setEditEmailValue] = useState('')
 
   // Query OAuth status
   const { data: discogsOAuthStatus, refetch: refetchDiscogsStatus } = useQuery({
@@ -136,6 +139,44 @@ function SettingsPage() {
   const handleRevokeEbay = () => {
     if (confirm('Are you sure you want to revoke eBay access?')) {
       revokeEbayMutation.mutate()
+    }
+  }
+
+  // User update mutation
+  const updateUserMutation = useMutation({
+    mutationFn: api.updateUser,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['user'] })
+      toast({
+        title: 'Email updated',
+        description: 'Your email address has been updated successfully.',
+      })
+      setIsEditingEmail(false)
+    },
+    onError: () => {
+      toast({
+        title: 'Update failed',
+        description: 'Failed to update email address. Please try again.',
+        variant: 'destructive',
+      })
+    },
+  })
+
+  const startEditEmail = () => {
+    setEditEmailValue(user?.email || '')
+    setIsEditingEmail(true)
+  }
+
+  const cancelEditEmail = () => {
+    setIsEditingEmail(false)
+    setEditEmailValue('')
+  }
+
+  const saveEmail = () => {
+    if (editEmailValue.trim() && editEmailValue !== user?.email) {
+      updateUserMutation.mutate({ email: editEmailValue.trim() })
+    } else {
+      setIsEditingEmail(false)
     }
   }
 
@@ -378,8 +419,47 @@ function SettingsPage() {
                 </div>
                 {isUserLoading ? (
                   <Skeleton className="h-4 w-32" />
+                ) : isEditingEmail ? (
+                  <div className="flex items-center gap-2">
+                    <Input
+                      value={editEmailValue}
+                      onChange={(e) => setEditEmailValue(e.target.value)}
+                      type="email"
+                      className="h-8 w-48 text-sm"
+                      placeholder="Enter email"
+                    />
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      onClick={saveEmail}
+                      disabled={updateUserMutation.isPending}
+                      className="h-8 w-8 p-0"
+                    >
+                      <Save className="h-3 w-3" />
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      onClick={cancelEditEmail}
+                      className="h-8 w-8 p-0"
+                    >
+                      <X className="h-3 w-3" />
+                    </Button>
+                  </div>
                 ) : (
-                  <span className="text-sm font-medium">{user?.email || 'Not available'}</span>
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm font-medium">{user?.email || 'Not available'}</span>
+                    {user?.email && (
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        onClick={startEditEmail}
+                        className="h-8 w-8 p-0"
+                      >
+                        <Edit className="h-3 w-3" />
+                      </Button>
+                    )}
+                  </div>
                 )}
               </div>
 

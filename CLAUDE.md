@@ -3,6 +3,22 @@
 ## Project Overview
 VinylDigger is a web application that automates vinyl record discovery across Discogs and eBay. It helps record collectors find the best deals by monitoring both platforms, matching against their want list, and identifying sellers with multiple desired items to optimize shipping costs.
 
+## Recent Improvements (January 2025)
+
+### User Experience Enhancements
+1. **Editable Saved Searches**: Complete CRUD functionality for saved searches
+2. **Enhanced Price Comparison UI**: Expandable album groupings with clean organization
+3. **Direct Links**: One-click access to eBay listings and Discogs release pages
+4. **Dashboard Improvements**: 4-card stats grid, recent activity feed, and real-time sync status
+5. **Profile Management**: Editable email addresses with proper validation
+6. **Member Since Fix**: Proper account creation date display in settings
+
+### Technical Improvements
+- **Backend API Enhancements**: New PUT endpoint for search updates with partial update support
+- **Frontend State Management**: Improved React Query usage with better invalidation patterns
+- **Real-time Updates**: Intelligent sync completion detection without manual page refreshes
+- **Enhanced Error Handling**: Better user feedback and error states throughout the application
+
 ## Key Technical Decisions
 
 ### Architecture
@@ -364,6 +380,32 @@ just clean            # Clean up everything
 7. **Test failures**: Check if mocks match actual API responses
 8. **Database schema mismatches**: Verify SQLAlchemy models match migration files exactly
 9. **Platform name errors**: Ensure using lowercase platform names in backend code
+
+## UI/UX Design Patterns
+
+### Component Architecture
+- **Atomic Design**: Build reusable components with consistent patterns
+- **Accessibility**: Use semantic HTML and ARIA labels throughout
+- **Responsive Design**: Mobile-first approach with Tailwind breakpoints
+- **Loading States**: Skeleton screens and loading indicators for all async operations
+
+### User Feedback Patterns
+- **Toast Notifications**: Success, error, and info messages with useToast hook
+- **Form Validation**: Real-time validation with react-hook-form
+- **Optimistic Updates**: Immediate UI updates with rollback on failure
+- **Progress Indicators**: Visual feedback for long-running operations
+
+### Navigation & Layout
+- **Consistent Header**: Navigation with user authentication state
+- **Breadcrumbs**: Clear hierarchy and navigation paths
+- **Quick Actions**: Context-appropriate buttons and shortcuts
+- **Responsive Sidebar**: Collapsible navigation for mobile devices
+
+### Data Presentation
+- **Expandable Cards**: Information hierarchy with progressive disclosure
+- **External Links**: Clear visual indicators for external navigation
+- **Status Indicators**: Visual feedback for sync states and operation results
+- **Real-time Updates**: Live data without manual page refreshes
 
 # important-instruction-reminders
 Do what has been asked; nothing more, nothing less.

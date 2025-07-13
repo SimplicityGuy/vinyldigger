@@ -22,6 +22,7 @@ Welcome to the VinylDigger documentation! This index provides quick access to al
 - **[Troubleshooting Guide](troubleshooting.md)** - Common issues and their solutions
 - **[Documentation Status Report](documentation-status.md)** - Comprehensive documentation audit and verification
 - **[Documentation Cleanup Summary](documentation-cleanup-summary.md)** - Recent standardization actions and results
+- **[UI/UX Improvements Summary](ui-improvements-summary.md)** - January 2025 user experience enhancements
 
 ### Specialized Guides
 - **[OAuth Setup Guide](oauth-setup.md)** - General OAuth authentication setup
@@ -123,4 +124,4 @@ docs/
 
 ---
 
-*Last updated: January 2025*
+*Last updated: January 2025 - Includes recent UI/UX improvements and API enhancements*

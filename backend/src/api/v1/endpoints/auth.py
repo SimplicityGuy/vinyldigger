@@ -31,12 +31,21 @@ class UserCreate(BaseModel):
 class UserResponse(BaseModel):
     id: str
     email: str
+    created_at: str
+    updated_at: str
 
     @field_validator("id", mode="before")
     @classmethod
     def convert_uuid_to_str(cls, v: UUID | str) -> str:
         if isinstance(v, UUID):
             return str(v)
+        return v
+
+    @field_validator("created_at", "updated_at", mode="before")
+    @classmethod
+    def convert_datetime_to_str(cls, v):
+        if hasattr(v, "isoformat"):
+            return v.isoformat()
         return v
 
     model_config = ConfigDict(from_attributes=True)
@@ -50,6 +59,10 @@ class Token(BaseModel):
 
 class RefreshTokenRequest(BaseModel):
     refresh_token: str
+
+
+class UserUpdateRequest(BaseModel):
+    email: EmailStr
 
 
 async def get_current_user(
@@ -187,4 +200,26 @@ async def refresh_token(
 async def get_me(
     current_user: Annotated[User, Depends(get_current_user)],
 ) -> User:
+    return current_user
+
+
+@router.put("/me", response_model=UserResponse)
+async def update_me(
+    user_data: UserUpdateRequest,
+    current_user: Annotated[User, Depends(get_current_user)],
+    db: AsyncSession = Depends(get_db),
+) -> User:
+    # Check if email is already taken by another user
+    if user_data.email != current_user.email:
+        result = await db.execute(select(User).where(User.email == user_data.email))
+        if result.scalar_one_or_none():
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Email already registered",
+            )
+
+    # Update user email
+    current_user.email = user_data.email
+    await db.commit()
+    await db.refresh(current_user)
     return current_user

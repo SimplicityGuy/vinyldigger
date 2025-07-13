@@ -4,6 +4,14 @@
 
 VinylDigger is a modern web application designed to help vinyl record collectors find the best deals across multiple marketplaces. The system employs a microservices architecture with clear separation between frontend, backend API, background workers, and scheduled tasks.
 
+### Recent Architecture Enhancements (January 2025)
+
+- **Enhanced UI/UX Layer**: Improved React components with better state management and real-time updates
+- **Extended API Surface**: Additional endpoints for complete CRUD operations on user resources
+- **Intelligent Client-Side Caching**: Optimized React Query usage with smart invalidation strategies
+- **Real-time Feedback Systems**: Enhanced user experience with live status updates and completion detection
+- **Improved Error Handling**: Better error boundaries and user feedback mechanisms throughout the application
+
 ```mermaid
 graph TB
     subgraph "Client Layer"
@@ -144,21 +152,31 @@ APScheduler runs periodic tasks based on user preferences.
 Single-page application providing the user interface.
 
 **Architecture Patterns**:
-- Component-based architecture
-- Custom hooks for business logic
+- Component-based architecture with atomic design principles
+- Custom hooks for business logic and state management
 - Context for authentication state
-- React Query for server state management
-- Lazy loading for code splitting
+- React Query for server state management with intelligent caching
+- Lazy loading for code splitting and performance
+- Progressive disclosure UI patterns with expandable components
+- Real-time updates without manual refresh requirements
+
+**Recent UI/UX Enhancements**:
+- **Editable Search Management**: Full CRUD operations with form validation
+- **Enhanced Dashboard**: 4-card statistics grid with real-time sync detection
+- **Improved Price Comparison**: Collapsible interface with expandable detailed views
+- **Direct Navigation**: One-click links to external listings and release pages
+- **Profile Management**: Inline editing with proper validation and error handling
+- **Smart Notifications**: Toast-based feedback with success/error states
 
 **Directory Structure**:
 ```
 frontend/src/
-├── components/        # Reusable UI components
-├── pages/            # Route-based page components
-├── hooks/            # Custom React hooks
-├── lib/              # Utilities and helpers
-├── services/         # API client services
-└── types/            # TypeScript type definitions
+├── components/        # Reusable UI components (cards, forms, modals)
+├── pages/            # Route-based page components (enhanced UX)
+├── hooks/            # Custom React hooks (useAuth, useToast)
+├── lib/              # Utilities and API client (enhanced error handling)
+├── services/         # API client services (optimized for React Query)
+└── types/            # TypeScript type definitions (updated schemas)
 ```
 
 ## Data Architecture

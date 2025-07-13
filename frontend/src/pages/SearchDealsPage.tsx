@@ -1,7 +1,7 @@
-import { memo } from 'react'
+import { memo, useState } from 'react'
 import { useParams } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
-import { Package, Users, TrendingDown, MapPin, Star, Award } from 'lucide-react'
+import { Package, Users, TrendingDown, MapPin, Star, Award, ChevronDown, ChevronUp, ExternalLink } from 'lucide-react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { searchAnalysisApi } from '@/lib/api'
 
@@ -22,9 +22,35 @@ interface MultiItemDeal {
   item_ids: string[];
 }
 
+// Helper function to create URLs
+const createListingUrl = (listing: any) => {
+  if (listing.platform === 'ebay' && listing.item_data?.item_web_url) {
+    return listing.item_data.item_web_url
+  }
+  return null
+}
+
+const createDiscogsReleaseUrl = (listing: any) => {
+  if (listing.platform === 'discogs' && listing.item_data?.id) {
+    return `https://www.discogs.com/release/${listing.item_data.id}`
+  }
+  return null
+}
+
 
 export const SearchDealsPage = memo(function SearchDealsPage() {
   const { searchId } = useParams<{ searchId: string }>()
+  const [expandedSections, setExpandedSections] = useState<Set<number>>(new Set())
+
+  const toggleSection = (index: number) => {
+    const newExpanded = new Set(expandedSections)
+    if (newExpanded.has(index)) {
+      newExpanded.delete(index)
+    } else {
+      newExpanded.add(index)
+    }
+    setExpandedSections(newExpanded)
+  }
 
   const { data: dealsData, isLoading: dealsLoading } = useQuery({
     queryKey: ['multi-item-deals', searchId],
@@ -188,71 +214,123 @@ export const SearchDealsPage = memo(function SearchDealsPage() {
                   } | null;
                   is_in_wantlist: boolean;
                 }>;
-              }, index: number) => (
-                <div key={index} className="border rounded-lg p-4">
-                  <div className="mb-4">
-                    <h4 className="font-medium">{comparison.item_match.canonical_title}</h4>
-                    <p className="text-sm text-muted-foreground">
-                      by {comparison.item_match.canonical_artist}
-                    </p>
-                    {comparison.item_match.total_matches > 1 && (
-                      <p className="text-xs text-blue-600 mt-1">
-                        {comparison.item_match.total_matches} listings found
-                      </p>
-                    )}
-                  </div>
+              }, index: number) => {
+                const isExpanded = expandedSections.has(index)
+                const visibleListings = isExpanded ? comparison.listings : comparison.listings.slice(0, 1)
 
-                  <div className="space-y-2">
-                    {comparison.listings.map((listing, listingIndex: number) => (
-                      <div
-                        key={listingIndex}
-                        className={`flex items-center justify-between p-3 rounded border ${
-                          listingIndex === 0 ? 'bg-green-50 border-green-200' : 'bg-gray-50'
-                        }`}
-                      >
-                        <div className="flex items-center gap-4">
-                          {listingIndex === 0 && (
-                            <div className="text-green-600 font-medium text-sm">BEST PRICE</div>
-                          )}
+                return (
+                  <div key={index} className="border rounded-lg">
+                    <div
+                      className="p-4 cursor-pointer hover:bg-gray-50"
+                      onClick={() => toggleSection(index)}
+                    >
+                      <div className="flex items-center justify-between">
+                        <div className="flex-1">
                           <div className="flex items-center gap-2">
-                            <span className="px-2 py-1 bg-white rounded text-xs font-medium">
-                              {listing.platform}
-                            </span>
-                            {listing.is_in_wantlist && (
-                              <Star className="h-3 w-3 text-yellow-500 fill-current" />
+                            <h4 className="font-medium">{comparison.item_match.canonical_title}</h4>
+                            {comparison.listings[0]?.platform === 'discogs' && (
+                              <a
+                                href={createDiscogsReleaseUrl(comparison.listings[0])}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="text-blue-600 hover:text-blue-800 flex items-center gap-1"
+                                onClick={(e) => e.stopPropagation()}
+                              >
+                                <ExternalLink className="h-3 w-3" />
+                                <span className="text-xs">Release Page</span>
+                              </a>
                             )}
                           </div>
-                          <div>
-                            <div className="text-sm">
-                              {listing.seller?.name || 'Unknown Seller'}
-                            </div>
-                            {listing.seller?.location && (
-                              <div className="text-xs text-muted-foreground">
-                                {listing.seller.location}
-                              </div>
-                            )}
+                          <p className="text-sm text-muted-foreground">
+                            by {comparison.item_match.canonical_artist}
+                          </p>
+                          <div className="flex items-center gap-4 mt-2 text-xs text-muted-foreground">
+                            <span>{comparison.item_match.total_matches} listings found</span>
+                            <span>Best price: {comparison.listings[0]?.price ? `$${comparison.listings[0].price.toFixed(2)}` : 'Price TBD'}</span>
                           </div>
-                          {listing.condition && (
-                            <div className="text-sm text-muted-foreground">
-                              Condition: {listing.condition}
-                            </div>
-                          )}
                         </div>
-                        <div className="text-right">
-                          <div className="font-medium">
-                            {listing.price ? `$${listing.price.toFixed(2)}` : 'Price TBD'}
-                          </div>
-                          {listing.seller?.feedback_score && (
-                            <div className="text-xs text-muted-foreground">
-                              {listing.seller.feedback_score.toFixed(1)}% feedback
-                            </div>
+                        <div className="flex items-center gap-2">
+                          {comparison.listings[0]?.is_in_wantlist && (
+                            <Star className="h-4 w-4 text-yellow-500 fill-current" />
+                          )}
+                          {isExpanded ? (
+                            <ChevronUp className="h-4 w-4 text-muted-foreground" />
+                          ) : (
+                            <ChevronDown className="h-4 w-4 text-muted-foreground" />
                           )}
                         </div>
                       </div>
-                    ))}
+                    </div>
+
+                    {isExpanded && (
+                      <div className="border-t">
+                        <div className="p-4 space-y-2">
+                          {comparison.listings.map((listing, listingIndex: number) => (
+                            <div
+                              key={listingIndex}
+                              className={`flex items-center justify-between p-3 rounded border ${
+                                listingIndex === 0 ? 'bg-green-50 border-green-200' : 'bg-gray-50'
+                              }`}
+                            >
+                              <div className="flex items-center gap-4">
+                                {listingIndex === 0 && (
+                                  <div className="text-green-600 font-medium text-sm">BEST PRICE</div>
+                                )}
+                                <div className="flex items-center gap-2">
+                                  <span className="px-2 py-1 bg-white rounded text-xs font-medium">
+                                    {listing.platform}
+                                  </span>
+                                  {listing.is_in_wantlist && (
+                                    <Star className="h-3 w-3 text-yellow-500 fill-current" />
+                                  )}
+                                </div>
+                                <div>
+                                  <div className="text-sm">
+                                    {listing.seller?.name || 'Unknown Seller'}
+                                  </div>
+                                  {listing.seller?.location && (
+                                    <div className="text-xs text-muted-foreground">
+                                      {listing.seller.location}
+                                    </div>
+                                  )}
+                                </div>
+                                {listing.condition && (
+                                  <div className="text-sm text-muted-foreground">
+                                    Condition: {listing.condition}
+                                  </div>
+                                )}
+                              </div>
+                              <div className="text-right flex items-center gap-2">
+                                <div>
+                                  <div className="font-medium">
+                                    {listing.price ? `$${listing.price.toFixed(2)}` : 'Price TBD'}
+                                  </div>
+                                  {listing.seller?.feedback_score && (
+                                    <div className="text-xs text-muted-foreground">
+                                      {listing.seller.feedback_score.toFixed(1)}% feedback
+                                    </div>
+                                  )}
+                                </div>
+                                {createListingUrl(listing) && (
+                                  <a
+                                    href={createListingUrl(listing)}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="text-blue-600 hover:text-blue-800 p-1"
+                                    title="View listing"
+                                  >
+                                    <ExternalLink className="h-4 w-4" />
+                                  </a>
+                                )}
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
                   </div>
-                </div>
-              ))}
+                )
+              })}
             </div>
           )}
         </CardContent>

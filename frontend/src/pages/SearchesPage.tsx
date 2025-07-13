@@ -1,6 +1,6 @@
 import { useState, memo } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { Plus, Play, Trash2, BarChart3, Users } from 'lucide-react'
+import { Plus, Play, Trash2, BarChart3, Users, Edit } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import { useForm } from 'react-hook-form'
 import { Button } from '@/components/ui/button'
@@ -35,10 +35,12 @@ function SearchesPageComponent() {
   const { toast } = useToast()
   const queryClient = useQueryClient()
   const [isCreating, setIsCreating] = useState(false)
+  const [editingSearch, setEditingSearch] = useState<Search | null>(null)
   const {
     register,
     handleSubmit,
     reset,
+    setValue,
     formState: { errors },
   } = useForm<SearchFormData>({
     defaultValues: {
@@ -96,8 +98,44 @@ function SearchesPageComponent() {
     },
   })
 
+  const updateSearchMutation = useMutation({
+    mutationFn: ({ id, data }: { id: string; data: SearchFormData }) =>
+      searchApi.updateSearch(id, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['searches'] })
+      toast({
+        title: 'Search updated',
+        description: 'Your search has been updated.',
+      })
+      setEditingSearch(null)
+      reset()
+    },
+    onError: () => {
+      toast({
+        title: 'Error',
+        description: 'Failed to update search. Please try again.',
+        variant: 'destructive',
+      })
+    },
+  })
+
+  const startEdit = (search: Search) => {
+    setEditingSearch(search)
+    setValue('name', search.name)
+    setValue('query', search.query)
+    setValue('platform', search.platform)
+    setValue('check_interval_hours', search.check_interval_hours)
+    setValue('min_record_condition', search.min_record_condition || 'VG+')
+    setValue('min_sleeve_condition', search.min_sleeve_condition || 'VG+')
+    setValue('seller_location_preference', search.seller_location_preference || 'US')
+  }
+
   const onSubmit = (data: SearchFormData) => {
-    createSearchMutation.mutate(data)
+    if (editingSearch) {
+      updateSearchMutation.mutate({ id: editingSearch.id, data })
+    } else {
+      createSearchMutation.mutate(data)
+    }
   }
 
   return (
@@ -164,6 +202,15 @@ function SearchesPageComponent() {
                       <Button
                         size="sm"
                         variant="outline"
+                        onClick={() => startEdit(search)}
+                        className="gap-2"
+                      >
+                        <Edit className="h-3 w-3" />
+                        Edit
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="outline"
                         asChild
                         className="gap-2"
                       >
@@ -226,12 +273,26 @@ function SearchesPageComponent() {
         )}
       </div>
 
-      <Dialog open={isCreating} onOpenChange={setIsCreating}>
+      <Dialog open={isCreating || !!editingSearch} onOpenChange={(open) => {
+        if (!open) {
+          setIsCreating(false)
+          setEditingSearch(null)
+          reset()
+        }
+      }}>
         <DialogContent>
-          <DialogClose onClose={() => setIsCreating(false)} />
+          <DialogClose onClose={() => {
+            setIsCreating(false)
+            setEditingSearch(null)
+            reset()
+          }} />
           <DialogHeader>
-            <DialogTitle>Create New Search</DialogTitle>
-            <DialogDescription>Set up a new search to monitor for vinyl records.</DialogDescription>
+            <DialogTitle>{editingSearch ? 'Edit Search' : 'Create New Search'}</DialogTitle>
+            <DialogDescription>
+              {editingSearch
+                ? 'Update your search settings and preferences.'
+                : 'Set up a new search to monitor for vinyl records.'}
+            </DialogDescription>
           </DialogHeader>
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
             <div>
@@ -315,11 +376,18 @@ function SearchesPageComponent() {
               </Select>
             </div>
             <div className="flex justify-end gap-3 pt-4">
-              <Button type="button" variant="outline" onClick={() => setIsCreating(false)}>
+              <Button type="button" variant="outline" onClick={() => {
+                setIsCreating(false)
+                setEditingSearch(null)
+                reset()
+              }}>
                 Cancel
               </Button>
-              <Button type="submit" disabled={createSearchMutation.isPending}>
-                {createSearchMutation.isPending ? 'Creating...' : 'Create Search'}
+              <Button type="submit" disabled={createSearchMutation.isPending || updateSearchMutation.isPending}>
+                {editingSearch
+                  ? (updateSearchMutation.isPending ? 'Updating...' : 'Update Search')
+                  : (createSearchMutation.isPending ? 'Creating...' : 'Create Search')
+                }
               </Button>
             </div>
           </form>

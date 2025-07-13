@@ -154,6 +154,14 @@ export const authApi = {
     return response.json()
   },
 
+  async updateUser(data: { email: string }): Promise<User> {
+    const response = await fetchApi('/auth/me', {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    })
+    return response.json()
+  },
+
   logout() {
     tokenService.clearTokens()
   },
@@ -204,6 +212,13 @@ export const searchApi = {
     return response.json()
   },
 
+  async updateSearch(searchId: string, data: Partial<CreateSearchData>): Promise<SavedSearch> {
+    const response = await fetchApi(`/searches/${searchId}`, {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    })
+    return response.json()
+  },
   async deleteSearch(searchId: string): Promise<{ message: string }> {
     const response = await fetchApi(`/searches/${searchId}`, {
       method: 'DELETE',

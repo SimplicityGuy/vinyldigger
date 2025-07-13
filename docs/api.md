@@ -4,6 +4,14 @@
 
 VinylDigger provides a RESTful API for automating vinyl record discovery across Discogs and eBay. The API is built with FastAPI and automatically generates OpenAPI/Swagger documentation.
 
+### Recent API Updates (January 2025)
+
+- **Enhanced User Management**: New PUT endpoint for updating user profile information
+- **Complete Search CRUD**: Full create, read, update, delete operations for saved searches
+- **Improved Response Models**: Enhanced user response including creation and update timestamps
+- **Better Error Handling**: More descriptive error responses for validation failures
+- **Extended Field Support**: Additional search configuration options for better personalization
+
 ### Base URLs
 - **API Base**: `/api/v1`
 - **Health Check**: `/health`
@@ -88,9 +96,38 @@ Authorization: Bearer <access_token>
 ```json
 {
   "id": "550e8400-e29b-41d4-a716-446655440000",
-  "email": "user@example.com"
+  "email": "user@example.com",
+  "created_at": "2024-01-15T10:30:00Z",
+  "updated_at": "2024-01-15T10:30:00Z"
 }
 ```
+
+### Update Current User
+Updates the authenticated user's profile information.
+
+```http
+PUT /api/v1/auth/me
+Authorization: Bearer <access_token>
+Content-Type: application/json
+
+{
+  "email": "newemail@example.com"
+}
+```
+
+**Response**:
+```json
+{
+  "id": "550e8400-e29b-41d4-a716-446655440000",
+  "email": "newemail@example.com",
+  "created_at": "2024-01-15T10:30:00Z",
+  "updated_at": "2024-01-15T12:45:00Z"
+}
+```
+
+**Error Responses**:
+- `400 Bad Request`: Email already registered by another user
+- `401 Unauthorized`: Invalid or missing authentication token
 
 ## OAuth Endpoints
 
@@ -332,6 +369,36 @@ Authorization: Bearer <access_token>
 
 **Path Parameters**:
 - `search_id`: UUID of the search
+
+### Update Saved Search
+Updates an existing saved search's parameters.
+
+```http
+PUT /api/v1/searches/{search_id}
+Authorization: Bearer <access_token>
+Content-Type: application/json
+
+{
+  "name": "Updated Jazz Vinyl Search",
+  "query": "blue note jazz vinyl rare",
+  "platform": "discogs",
+  "check_interval_hours": 12,
+  "min_record_condition": "NM",
+  "min_sleeve_condition": "VG+",
+  "seller_location_preference": "EU"
+}
+```
+
+**Path Parameters**:
+- `search_id`: UUID of the search
+
+**Request Body**: All fields are optional. Only provided fields will be updated.
+
+**Response**: Updated search object (same format as create response)
+
+**Error Responses**:
+- `404 Not Found`: Search not found or doesn't belong to authenticated user
+- `400 Bad Request`: Invalid request parameters
 
 ### Delete Search
 Removes a saved search and its results.

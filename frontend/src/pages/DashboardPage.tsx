@@ -1,6 +1,6 @@
-import { memo, useState, useEffect } from 'react'
-import { useQuery, useMutation } from '@tanstack/react-query'
-import { AlertCircle, Package, Heart, RefreshCw, Check, Loader2, Minus } from 'lucide-react'
+import { memo, useState, useEffect, useRef } from 'react'
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { AlertCircle, Package, Heart, RefreshCw, Check, Loader2, Minus, Search, TrendingUp, Clock, Star, ArrowRight } from 'lucide-react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { collectionApi, oauthApi, searchApi } from '@/lib/api'
@@ -9,19 +9,23 @@ import { Link } from 'react-router-dom'
 
 export const DashboardPage = memo(function DashboardPage() {
   const { toast } = useToast()
+  const queryClient = useQueryClient()
   const [isSyncing, setIsSyncing] = useState(false)
   const [syncType, setSyncType] = useState<'both' | 'collection' | 'wantlist' | null>(null)
+  const syncStartTimeRef = useRef<number | null>(null)
 
   const { data: collectionStatus } = useQuery({
     queryKey: ['collection-status'],
     queryFn: collectionApi.getCollectionStatus,
-    refetchInterval: isSyncing ? 2000 : false, // Poll every 2 seconds while syncing
+    refetchInterval: isSyncing ? 3000 : 30000, // Poll every 3 seconds while syncing, 30 seconds otherwise
+    staleTime: isSyncing ? 0 : 5000, // Consider data stale immediately while syncing
   })
 
   const { data: wantListStatus } = useQuery({
     queryKey: ['wantlist-status'],
     queryFn: collectionApi.getWantListStatus,
-    refetchInterval: isSyncing ? 2000 : false, // Poll every 2 seconds while syncing
+    refetchInterval: isSyncing ? 3000 : 30000, // Poll every 3 seconds while syncing, 30 seconds otherwise
+    staleTime: isSyncing ? 0 : 5000, // Consider data stale immediately while syncing
   })
 
   const { data: discogsOAuthStatus } = useQuery({
@@ -57,21 +61,32 @@ export const DashboardPage = memo(function DashboardPage() {
     onMutate: () => {
       setIsSyncing(true)
       setSyncType('both')
+      syncStartTimeRef.current = Date.now()
+      // Invalidate queries to get fresh data
+      queryClient.invalidateQueries({ queryKey: ['collection-status'] })
+      queryClient.invalidateQueries({ queryKey: ['wantlist-status'] })
     },
     onSuccess: () => {
       toast({
         title: 'Sync started',
         description: 'Your collection and want list are being synced with Discogs.',
       })
-      // Stop syncing indicator after 30 seconds (typical sync time)
+      // Fallback timeout in case sync completion detection fails
       setTimeout(() => {
-        setIsSyncing(false)
-        setSyncType(null)
-      }, 30000)
+        if (isSyncing) {
+          setIsSyncing(false)
+          setSyncType(null)
+          syncStartTimeRef.current = null
+          // Force a final refresh
+          queryClient.invalidateQueries({ queryKey: ['collection-status'] })
+          queryClient.invalidateQueries({ queryKey: ['wantlist-status'] })
+        }
+      }, 60000) // Extended to 60 seconds
     },
     onError: () => {
       setIsSyncing(false)
       setSyncType(null)
+      syncStartTimeRef.current = null
       toast({
         title: 'Sync failed',
         description: 'Failed to start collection and want list sync.',
@@ -85,6 +100,8 @@ export const DashboardPage = memo(function DashboardPage() {
     onMutate: () => {
       setIsSyncing(true)
       setSyncType('collection')
+      syncStartTimeRef.current = Date.now()
+      queryClient.invalidateQueries({ queryKey: ['collection-status'] })
     },
     onSuccess: () => {
       toast({
@@ -92,13 +109,18 @@ export const DashboardPage = memo(function DashboardPage() {
         description: 'Your collection is being synced with Discogs.',
       })
       setTimeout(() => {
-        setIsSyncing(false)
-        setSyncType(null)
-      }, 20000)
+        if (isSyncing) {
+          setIsSyncing(false)
+          setSyncType(null)
+          syncStartTimeRef.current = null
+          queryClient.invalidateQueries({ queryKey: ['collection-status'] })
+        }
+      }, 60000)
     },
     onError: () => {
       setIsSyncing(false)
       setSyncType(null)
+      syncStartTimeRef.current = null
       toast({
         title: 'Sync failed',
         description: 'Failed to start collection sync.',
@@ -112,6 +134,8 @@ export const DashboardPage = memo(function DashboardPage() {
     onMutate: () => {
       setIsSyncing(true)
       setSyncType('wantlist')
+      syncStartTimeRef.current = Date.now()
+      queryClient.invalidateQueries({ queryKey: ['wantlist-status'] })
     },
     onSuccess: () => {
       toast({
@@ -119,13 +143,18 @@ export const DashboardPage = memo(function DashboardPage() {
         description: 'Your want list is being synced with Discogs.',
       })
       setTimeout(() => {
-        setIsSyncing(false)
-        setSyncType(null)
-      }, 20000)
+        if (isSyncing) {
+          setIsSyncing(false)
+          setSyncType(null)
+          syncStartTimeRef.current = null
+          queryClient.invalidateQueries({ queryKey: ['wantlist-status'] })
+        }
+      }, 60000)
     },
     onError: () => {
       setIsSyncing(false)
       setSyncType(null)
+      syncStartTimeRef.current = null
       toast({
         title: 'Sync failed',
         description: 'Failed to start want list sync.',
@@ -134,19 +163,48 @@ export const DashboardPage = memo(function DashboardPage() {
     },
   })
 
-  // Stop syncing when we detect new items in collection/wantlist
+  // Improved sync completion detection
   useEffect(() => {
-    if (isSyncing && (collectionStatus?.last_sync_at || wantListStatus?.last_sync_at)) {
-      const lastSync = Math.max(
-        collectionStatus?.last_sync_at ? new Date(collectionStatus.last_sync_at).getTime() : 0,
-        wantListStatus?.last_sync_at ? new Date(wantListStatus.last_sync_at).getTime() : 0
-      )
-      // If last sync was within the last minute, stop the syncing indicator
-      if (lastSync > Date.now() - 60000) {
-        setIsSyncing(false)
-      }
+    if (!isSyncing || !syncStartTimeRef.current) return
+
+    const syncStartTime = syncStartTimeRef.current
+    const currentTime = Date.now()
+
+    // Only check for completion if sync has been running for at least 5 seconds
+    if (currentTime - syncStartTime < 5000) return
+
+    const collectionLastSync = collectionStatus?.last_sync_at ? new Date(collectionStatus.last_sync_at).getTime() : 0
+    const wantListLastSync = wantListStatus?.last_sync_at ? new Date(wantListStatus.last_sync_at).getTime() : 0
+
+    let syncCompleted = false
+
+    if (syncType === 'both') {
+      // For both sync, check if either has been synced after the start time
+      syncCompleted = collectionLastSync > syncStartTime || wantListLastSync > syncStartTime
+    } else if (syncType === 'collection') {
+      syncCompleted = collectionLastSync > syncStartTime
+    } else if (syncType === 'wantlist') {
+      syncCompleted = wantListLastSync > syncStartTime
     }
-  }, [isSyncing, collectionStatus?.last_sync_at, wantListStatus?.last_sync_at])
+
+    if (syncCompleted) {
+      setIsSyncing(false)
+      setSyncType(null)
+      syncStartTimeRef.current = null
+
+      // Show success message
+      toast({
+        title: 'Sync completed',
+        description: 'Your data has been successfully synced with Discogs.',
+      })
+
+      // Force a final refresh to ensure UI is updated
+      setTimeout(() => {
+        queryClient.invalidateQueries({ queryKey: ['collection-status'] })
+        queryClient.invalidateQueries({ queryKey: ['wantlist-status'] })
+      }, 1000)
+    }
+  }, [isSyncing, syncType, collectionStatus?.last_sync_at, wantListStatus?.last_sync_at, toast, queryClient])
 
   return (
     <div className="space-y-6">
@@ -180,8 +238,8 @@ export const DashboardPage = memo(function DashboardPage() {
         </Card>
       )}
 
-      {/* Stats Grid */}
-      <div className="grid gap-4 md:grid-cols-3">
+      {/* Enhanced Stats Grid */}
+      <div className="grid gap-4 md:grid-cols-4">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Collection</CardTitle>
@@ -189,7 +247,14 @@ export const DashboardPage = memo(function DashboardPage() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{collectionStatus?.item_count || 0}</div>
-            <p className="text-xs text-muted-foreground">Records in your collection</p>
+            <p className="text-xs text-muted-foreground">
+              Records in your collection
+              {collectionStatus?.last_sync_at && (
+                <span className="block mt-1 text-green-600">
+                  ✓ Synced {new Date(collectionStatus.last_sync_at).toLocaleDateString()}
+                </span>
+              )}
+            </p>
           </CardContent>
         </Card>
 
@@ -200,25 +265,111 @@ export const DashboardPage = memo(function DashboardPage() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{wantListStatus?.item_count || 0}</div>
-            <p className="text-xs text-muted-foreground">Records on your want list</p>
+            <p className="text-xs text-muted-foreground">
+              Records on your want list
+              {wantListStatus?.last_sync_at && (
+                <span className="block mt-1 text-green-600">
+                  ✓ Synced {new Date(wantListStatus.last_sync_at).toLocaleDateString()}
+                </span>
+              )}
+            </p>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Last Sync</CardTitle>
-            <RefreshCw className="h-4 w-4 text-muted-foreground" />
+            <CardTitle className="text-sm font-medium">Saved Searches</CardTitle>
+            <Search className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{searches.length}</div>
+            <p className="text-xs text-muted-foreground">
+              Active searches monitoring
+              {searches.length > 0 && (
+                <Link to="/searches" className="block mt-1 text-blue-600 hover:text-blue-800">
+                  View all →
+                </Link>
+              )}
+            </p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Status</CardTitle>
+            <TrendingUp className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
-              {collectionStatus?.last_sync_at
-                ? new Date(collectionStatus.last_sync_at).toLocaleDateString()
-                : 'Never'}
+              {allTasksCompleted ? '✓' : `${Object.values(completionStatus).filter(Boolean).length}/4`}
             </div>
-            <p className="text-xs text-muted-foreground">Synced with Discogs</p>
+            <p className="text-xs text-muted-foreground">
+              {allTasksCompleted ? 'All setup complete' : 'Setup progress'}
+            </p>
           </CardContent>
         </Card>
       </div>
+
+      {/* Recent Activity */}
+      {(searches.length > 0 || completionStatus.eitherSynced) && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Clock className="h-5 w-5" />
+              Recent Activity
+            </CardTitle>
+            <CardDescription>Your latest searches and sync activity</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-3">
+              {searches.slice(0, 3).map((search: any) => (
+                <div key={search.id} className="flex items-center justify-between p-3 border rounded-lg">
+                  <div className="flex items-center gap-3">
+                    <div className="flex items-center gap-2">
+                      <Search className="h-4 w-4 text-muted-foreground" />
+                      <span className="font-medium">{search.name}</span>
+                    </div>
+                    <span className="text-sm text-muted-foreground">•</span>
+                    <span className="text-sm text-muted-foreground">
+                      {search.last_run_at
+                        ? `Last run ${new Date(search.last_run_at).toLocaleDateString()}`
+                        : 'Never run'
+                      }
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Link to={`/searches/${search.id}/analysis`}>
+                      <Button size="sm" variant="outline" className="gap-1">
+                        <TrendingUp className="h-3 w-3" />
+                        View
+                      </Button>
+                    </Link>
+                  </div>
+                </div>
+              ))}
+
+              {searches.length === 0 && (
+                <div className="text-center py-6">
+                  <Search className="h-8 w-8 text-muted-foreground mx-auto mb-2" />
+                  <p className="text-sm text-muted-foreground">No searches yet</p>
+                  <Link to="/searches">
+                    <Button size="sm" className="mt-2">Create your first search</Button>
+                  </Link>
+                </div>
+              )}
+
+              {searches.length > 3 && (
+                <div className="pt-2 border-t">
+                  <Link to="/searches" className="flex items-center justify-center gap-2 text-sm text-blue-600 hover:text-blue-800">
+                    View all {searches.length} searches
+                    <ArrowRight className="h-3 w-3" />
+                  </Link>
+                </div>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Quick Actions */}
       <Card>

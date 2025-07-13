@@ -33,6 +33,24 @@ class SavedSearchCreate(BaseModel):
         return v
 
 
+class SavedSearchUpdate(BaseModel):
+    name: str | None = None
+    query: str | None = None
+    platform: SearchPlatform | None = None
+    filters: dict[str, Any] | None = None
+    check_interval_hours: int | None = None
+    min_record_condition: str | None = None
+    min_sleeve_condition: str | None = None
+    seller_location_preference: str | None = None
+    is_active: bool | None = None
+
+    @field_validator("platform", mode="before")
+    def normalize_platform(cls, v):
+        if v is not None and isinstance(v, str):
+            return v.upper()
+        return v
+
+
 class SavedSearchResponse(BaseModel):
     id: str
     name: str
@@ -125,6 +143,36 @@ async def get_search(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Search not found",
         )
+    return search
+
+
+@router.put("/{search_id}", response_model=SavedSearchResponse)
+async def update_search(
+    search_id: UUID,
+    search_data: SavedSearchUpdate,
+    current_user: Annotated[User, Depends(get_current_user)],
+    db: AsyncSession = Depends(get_db),
+) -> SavedSearch:
+    result = await db.execute(
+        select(SavedSearch).where(
+            SavedSearch.id == search_id,
+            SavedSearch.user_id == current_user.id,
+        )
+    )
+    search = result.scalar_one_or_none()
+    if not search:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Search not found",
+        )
+
+    # Update only the fields that were provided
+    update_data = search_data.model_dump(exclude_unset=True)
+    for field, value in update_data.items():
+        setattr(search, field, value)
+
+    await db.commit()
+    await db.refresh(search)
     return search
 
 
