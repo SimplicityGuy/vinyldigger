@@ -26,10 +26,17 @@ A powerful web application that automates vinyl record discovery and comparison 
 - **Cross-Platform Search**: Search both eBay and Discogs simultaneously
 - **Want List Matching**: Automatically identify items from your Discogs want list
 - **Collection Awareness**: Skip items you already own
-- **Seller Optimization**: Find sellers with multiple items to save on shipping
+- **Intelligent Item Matching**: Advanced algorithms match identical items across platforms
 - **Flexible Sync Options**: Sync collection and want list together or separately
 
-### 📊 Advanced Filtering
+### 📊 Advanced Analysis & Recommendations
+- **Multi-Seller Analysis**: Identify sellers with multiple items to maximize shipping savings
+- **Smart Deal Recommendations**: AI-powered recommendations for best deals and multi-item purchases
+- **Seller Scoring**: Comprehensive seller evaluation based on reputation, location, and pricing
+- **Price Comparison**: Compare prices across platforms for identical items
+- **Deal Score System**: Automated scoring (Excellent, Very Good, Good, Fair, Poor) for all recommendations
+
+### 🎯 Advanced Filtering & Search
 - **Per-Search Preferences**: Set condition and location preferences for each search
 - **Condition Filtering**: Minimum acceptable conditions for records and sleeves
 - **Location Preferences**: Filter by seller location (US, EU, UK, or worldwide)
@@ -204,6 +211,10 @@ Once the application is running, visit:
 - `POST /api/v1/auth/login` - User login
 - `GET /api/v1/searches` - List saved searches
 - `POST /api/v1/searches` - Create new search
+- `POST /api/v1/searches/{search_id}/run` - Run search manually
+- `GET /api/v1/analysis/search/{search_id}/analysis` - Get comprehensive search analysis
+- `GET /api/v1/analysis/search/{search_id}/multi-item-deals` - Get multi-item deals
+- `GET /api/v1/analysis/search/{search_id}/price-comparison` - Get price comparisons
 - `POST /api/v1/collections/sync` - Sync Discogs collection and want list
 - `POST /api/v1/collections/sync/collection` - Sync collection only
 - `POST /api/v1/collections/sync/wantlist` - Sync want list only

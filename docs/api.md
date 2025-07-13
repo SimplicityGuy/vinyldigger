@@ -558,6 +558,189 @@ The API uses URL versioning. The current version is `v1`. When breaking changes 
 3. **HTTPS**: Always use HTTPS in production
 4. **CORS**: Configure CORS appropriately for your frontend domain
 
+## Search Analysis Endpoints
+
+### Get Search Analysis
+Retrieves comprehensive analysis for a search including seller recommendations and deal scores.
+
+```http
+GET /api/v1/analysis/search/{search_id}/analysis
+Authorization: Bearer <access_token>
+```
+
+**Path Parameters**:
+- `search_id`: UUID of the search to analyze
+
+**Response**:
+```json
+{
+  "search_id": "550e8400-e29b-41d4-a716-446655440000",
+  "analysis_completed": true,
+  "analysis": {
+    "id": "660e8400-e29b-41d4-a716-446655440001",
+    "total_results": 45,
+    "total_sellers": 12,
+    "multi_item_sellers": 5,
+    "min_price": 25.00,
+    "max_price": 125.00,
+    "avg_price": 68.50,
+    "wantlist_matches": 18,
+    "collection_duplicates": 3,
+    "new_discoveries": 24,
+    "completed_at": "2024-01-20T15:30:00Z"
+  },
+  "recommendations": [
+    {
+      "id": "770e8400-e29b-41d4-a716-446655440002",
+      "type": "MULTI_ITEM_DEAL",
+      "deal_score": "EXCELLENT",
+      "score_value": 92.5,
+      "title": "Great Multi-Item Deal",
+      "description": "Save significantly on shipping costs",
+      "recommendation_reason": "Buy 4 items together to save $35 on shipping",
+      "total_items": 4,
+      "wantlist_items": 3,
+      "total_value": 180.00,
+      "estimated_shipping": 15.00,
+      "total_cost": 195.00,
+      "potential_savings": 35.00,
+      "seller": {
+        "id": "880e8400-e29b-41d4-a716-446655440003",
+        "name": "VinylEmporium",
+        "location": "Los Angeles, CA",
+        "feedback_score": 98.5
+      },
+      "item_ids": ["item1", "item2", "item3", "item4"]
+    }
+  ],
+  "seller_analyses": [
+    {
+      "rank": 1,
+      "total_items": 4,
+      "wantlist_items": 3,
+      "total_value": 180.00,
+      "estimated_shipping": 15.00,
+      "overall_score": 88.5,
+      "price_competitiveness": 85.0,
+      "inventory_depth_score": 90.0,
+      "seller_reputation_score": 95.0,
+      "location_preference_score": 100.0,
+      "seller": {
+        "id": "880e8400-e29b-41d4-a716-446655440003",
+        "name": "VinylEmporium",
+        "location": "Los Angeles, CA",
+        "country_code": "US",
+        "feedback_score": 98.5,
+        "total_feedback_count": 1247
+      }
+    }
+  ]
+}
+```
+
+**When analysis not completed**:
+```json
+{
+  "search_id": "550e8400-e29b-41d4-a716-446655440000",
+  "analysis_completed": false,
+  "message": "Analysis not yet completed for this search"
+}
+```
+
+### Get Multi-Item Deals
+Retrieves sellers with multiple items for potential shipping savings.
+
+```http
+GET /api/v1/analysis/search/{search_id}/multi-item-deals
+Authorization: Bearer <access_token>
+```
+
+**Path Parameters**:
+- `search_id`: UUID of the search
+
+**Response**:
+```json
+{
+  "search_id": "550e8400-e29b-41d4-a716-446655440000",
+  "multi_item_deals": [
+    {
+      "seller": {
+        "id": "880e8400-e29b-41d4-a716-446655440003",
+        "name": "VinylEmporium",
+        "location": "Los Angeles, CA",
+        "feedback_score": 98.5
+      },
+      "total_items": 4,
+      "wantlist_items": 3,
+      "total_value": 180.00,
+      "estimated_shipping": 15.00,
+      "total_cost": 195.00,
+      "potential_savings": 35.00,
+      "deal_score": "EXCELLENT",
+      "item_ids": ["item1", "item2", "item3", "item4"]
+    }
+  ]
+}
+```
+
+### Get Price Comparison
+Retrieves price comparison data across platforms and sellers for matching items.
+
+```http
+GET /api/v1/analysis/search/{search_id}/price-comparison
+Authorization: Bearer <access_token>
+```
+
+**Path Parameters**:
+- `search_id`: UUID of the search
+
+**Response**:
+```json
+{
+  "search_id": "550e8400-e29b-41d4-a716-446655440000",
+  "price_comparisons": [
+    {
+      "item_match": {
+        "id": "990e8400-e29b-41d4-a716-446655440004",
+        "canonical_title": "Kind of Blue",
+        "canonical_artist": "Miles Davis",
+        "total_matches": 3
+      },
+      "listings": [
+        {
+          "id": "aa0e8400-e29b-41d4-a716-446655440005",
+          "platform": "DISCOGS",
+          "price": 45.00,
+          "condition": "VG+",
+          "seller": {
+            "id": "bb0e8400-e29b-41d4-a716-446655440006",
+            "name": "JazzCollector99",
+            "location": "New York, NY",
+            "feedback_score": 99.2
+          },
+          "is_in_wantlist": true,
+          "is_in_collection": false
+        },
+        {
+          "id": "cc0e8400-e29b-41d4-a716-446655440007",
+          "platform": "EBAY",
+          "price": 52.00,
+          "condition": "NM",
+          "seller": {
+            "id": "dd0e8400-e29b-41d4-a716-446655440008",
+            "name": "vintagevinyl_shop",
+            "location": "Chicago, IL",
+            "feedback_score": 97.8
+          },
+          "is_in_wantlist": true,
+          "is_in_collection": false
+        }
+      ]
+    }
+  ]
+}
+```
+
 ## Examples
 
 ### Complete Authentication Flow
@@ -588,7 +771,7 @@ response = requests.get(f"{BASE_URL}/api/v1/auth/me", headers=headers)
 print(response.json())
 ```
 
-### Creating and Running a Search
+### Creating and Running a Search with Analysis
 
 ```javascript
 const API_URL = 'http://localhost:8000/api/v1';
@@ -616,12 +799,35 @@ await fetch(`${API_URL}/searches/${search.id}/run`, {
   }
 });
 
-// Check results after some time
-const results = await fetch(`${API_URL}/searches/${search.id}/results`, {
+// Wait for analysis to complete (in practice, check periodically)
+await new Promise(resolve => setTimeout(resolve, 30000));
+
+// Get comprehensive analysis
+const analysis = await fetch(`${API_URL}/analysis/search/${search.id}/analysis`, {
   headers: {
     'Authorization': `Bearer ${accessToken}`
   }
 }).then(res => res.json());
 
-console.log(`Found ${results.length} items`);
+console.log(`Analysis completed: ${analysis.analysis_completed}`);
+console.log(`Found ${analysis.analysis?.total_results || 0} items from ${analysis.analysis?.total_sellers || 0} sellers`);
+console.log(`${analysis.recommendations?.length || 0} deal recommendations found`);
+
+// Get multi-item deals specifically
+const deals = await fetch(`${API_URL}/analysis/search/${search.id}/multi-item-deals`, {
+  headers: {
+    'Authorization': `Bearer ${accessToken}`
+  }
+}).then(res => res.json());
+
+console.log(`${deals.multi_item_deals.length} multi-item deals available`);
+
+// Get price comparisons
+const priceComparison = await fetch(`${API_URL}/analysis/search/${search.id}/price-comparison`, {
+  headers: {
+    'Authorization': `Bearer ${accessToken}`
+  }
+}).then(res => res.json());
+
+console.log(`Price comparisons for ${priceComparison.price_comparisons.length} unique items`);
 ```

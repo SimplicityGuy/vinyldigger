@@ -13,6 +13,7 @@ Welcome to the VinylDigger documentation! This index provides quick access to al
 - **[API Documentation](api.md)** - Complete REST API reference with examples
 - **[API Client Examples](api-examples.md)** - Example code in Python, JavaScript/TypeScript, Go, and cURL
 - **[Architecture Overview](architecture.md)** - System design, components, and technical details
+- **[Analysis Engine](analysis-engine.md)** - Comprehensive guide to the AI-powered analysis system
 - **[Testing Guide](testing.md)** - Running and writing tests, CI/CD integration
 - **[Deployment Guide](deployment.md)** - Production deployment instructions and best practices
 - **[Performance Tuning](performance.md)** - Optimization strategies for database, API, and frontend

@@ -129,6 +129,310 @@ def test_discogs_search(mock_get: MagicMock, db: Session):
 4. **Use meaningful test names** - `test_login_with_invalid_credentials` not `test_login_2`
 5. **Keep tests isolated** - Each test should work independently
 6. **Platform name consistency** - Always use lowercase (e.g., `platform="discogs"`)
+7. **UUID handling** - Use UUID objects in fixtures, not strings: `uuid4()` not `str(uuid4())`
+8. **Async test patterns** - Use proper AsyncMock for async database operations
+
+## Analysis Engine Testing
+
+The Analysis Engine includes sophisticated testing patterns for the item matching, seller analysis, and recommendation systems.
+
+### Test Structure for Analysis
+
+```
+backend/tests/
+├── services/
+│   ├── test_item_matcher.py        # Item matching and deduplication tests
+│   ├── test_seller_analyzer.py     # Seller scoring and analysis tests
+│   └── test_recommendation_engine.py # Recommendation generation tests
+├── api/v1/endpoints/
+│   └── test_search_analysis.py     # Analysis API endpoint tests
+└── integration/
+    └── test_enhanced_search_workflow.py # End-to-end analysis workflow tests
+```
+
+### Analysis Testing Patterns
+
+#### 1. Item Matching Service Testing
+
+```python
+from decimal import Decimal
+from uuid import uuid4
+import pytest
+from src.services.item_matcher import ItemMatchingService
+
+class TestItemMatchingService:
+    @pytest.fixture
+    def service(self):
+        return ItemMatchingService()
+
+    def test_normalize_text(self, service):
+        """Test text normalization for matching."""
+        result = service.normalize_text("The Beatles - Abbey Road (Remastered)")
+        assert result == "beatles abbey road remastered"
+
+    def test_calculate_similarity_high_confidence(self, service):
+        """Test high confidence similarity calculation."""
+        similarity = service.calculate_similarity(
+            "Kind of Blue", "Miles Davis", 1959,
+            "Kind Of Blue", "Miles Davis", 1959
+        )
+        assert similarity >= 0.95
+
+    @pytest.mark.asyncio
+    async def test_find_or_create_item_match_new(self, service, mock_db):
+        """Test creating new item match."""
+        # Mock database returning no existing matches
+        mock_result = MagicMock()
+        mock_result.scalars.return_value.first.return_value = None
+        mock_db.execute.return_value = mock_result
+
+        item_data = {
+            "title": "Kind of Blue",
+            "artist": "Miles Davis",
+            "year": 1959
+        }
+
+        match, confidence = await service.find_or_create_item_match(
+            mock_db, item_data, SearchPlatform.DISCOGS
+        )
+
+        assert match.canonical_title == "kind of blue"
+        assert match.canonical_artist == "miles davis"
+        assert confidence == 100.0  # New match = 100% confidence
+```
+
+#### 2. Seller Analysis Service Testing
+
+```python
+from src.services.seller_analyzer import SellerAnalysisService
+
+class TestSellerAnalysisService:
+    @pytest.fixture
+    def service(self):
+        return SellerAnalysisService()
+
+    def test_normalize_country_code_us_states(self, service):
+        """Test US state recognition in country normalization."""
+        assert service.normalize_country_code("Los Angeles, CA") == "US"
+        assert service.normalize_country_code("New York, NY") == "US"
+        assert service.normalize_country_code("Toronto, Canada") == "CA"
+
+    def test_estimate_shipping_cost_domestic(self, service, sample_seller):
+        """Test domestic shipping cost calculation."""
+        sample_seller.country_code = "US"
+        cost = service.estimate_shipping_cost(
+            seller=sample_seller,
+            user_id="test_user",
+            item_count=1,
+            user_location="US"
+        )
+        assert cost == Decimal("5.00")  # US domestic base rate
+
+    @pytest.mark.asyncio
+    async def test_score_seller_reputation(self, service, sample_seller):
+        """Test seller reputation scoring algorithm."""
+        sample_seller.feedback_score = Decimal("99.5")
+        sample_seller.total_feedback_count = 1000
+        sample_seller.positive_feedback_percentage = Decimal("99.2")
+
+        score = await service.score_seller_reputation(sample_seller)
+        assert score >= Decimal("90.0")  # Should be excellent
+```
+
+#### 3. Recommendation Engine Testing
+
+```python
+from src.services.recommendation_engine import RecommendationEngine
+
+class TestRecommendationEngine:
+    @pytest.fixture
+    def engine(self):
+        return RecommendationEngine()
+
+    def test_determine_deal_score_excellent(self, engine):
+        """Test deal score classification."""
+        score = engine._determine_deal_score(Decimal("92.0"))
+        assert score == DealScore.EXCELLENT
+
+    @pytest.mark.asyncio
+    async def test_create_multi_item_recommendation(self, engine):
+        """Test multi-item deal recommendation generation."""
+        # Create test data
+        analysis = SearchResultAnalysis(...)
+        seller = Seller(...)
+        seller_analysis = SellerAnalysis(...)
+        seller_items = [SearchResult(...), SearchResult(...)]
+
+        rec = await engine._create_multi_item_recommendation(
+            analysis, seller, seller_analysis, seller_items
+        )
+
+        assert rec.recommendation_type == RecommendationType.MULTI_ITEM_DEAL
+        assert rec.total_items == len(seller_items)
+        assert rec.deal_score in [DealScore.EXCELLENT, DealScore.VERY_GOOD,
+                                  DealScore.GOOD, DealScore.FAIR, DealScore.POOR]
+```
+
+#### 4. API Endpoint Testing for Analysis
+
+```python
+class TestSearchAnalysisEndpoints:
+    @pytest.fixture
+    def authenticated_client(self, client: AsyncClient, mock_user):
+        """Create authenticated client with proper dependency override."""
+        async def mock_get_current_user():
+            return mock_user
+
+        app.dependency_overrides[get_current_user] = mock_get_current_user
+        yield client
+        app.dependency_overrides.pop(get_current_user, None)
+
+    @pytest.mark.asyncio
+    async def test_get_search_analysis_success(
+        self, authenticated_client, db_session, sample_search, sample_analysis
+    ):
+        """Test successful analysis retrieval with complete data."""
+        # Add test data to database
+        db_session.add(sample_search)
+        db_session.add(sample_analysis)
+
+        # Create recommendation
+        recommendation = DealRecommendation(
+            id=uuid4(),
+            analysis_id=sample_analysis.id,
+            recommendation_type=RecommendationType.MULTI_ITEM_DEAL,
+            deal_score=DealScore.EXCELLENT,
+            score_value=Decimal("90.0"),
+            # ... other required fields
+        )
+        db_session.add(recommendation)
+        await db_session.commit()
+
+        response = await authenticated_client.get(
+            f"/api/v1/analysis/search/{sample_search.id}/analysis"
+        )
+
+        assert response.status_code == 200
+        data = response.json()
+        assert data["analysis_completed"] is True
+        assert len(data["recommendations"]) == 1
+        assert data["recommendations"][0]["deal_score"] == "EXCELLENT"
+```
+
+#### 5. Integration Testing for Analysis Workflow
+
+```python
+class TestEnhancedSearchWorkflow:
+    @pytest.mark.asyncio
+    async def test_complete_enhanced_search_workflow(self, mock_db):
+        """Test complete search and analysis pipeline."""
+        with (
+            patch("src.workers.tasks.DiscogsService") as mock_discogs,
+            patch("src.workers.tasks.EbayService") as mock_ebay,
+            patch("src.workers.tasks.AsyncSessionLocal") as mock_session,
+        ):
+            # Mock search results
+            mock_discogs_results = [
+                {
+                    "id": "123",
+                    "title": "Kind of Blue",
+                    "artist": "Miles Davis",
+                    "price": 45.00,
+                    "seller": {"username": "jazz_collector"}
+                }
+            ]
+
+            # Configure mocks
+            mock_discogs.return_value.search.return_value = mock_discogs_results
+            mock_ebay.return_value.search.return_value = []
+            mock_session.return_value.__aenter__.return_value = mock_db
+
+            # Execute workflow
+            await run_search_task("search_id", "user_id")
+
+            # Verify analysis was triggered
+            # Check database for analysis results
+            # Verify recommendations were generated
+```
+
+### Common Testing Fixtures for Analysis
+
+```python
+# conftest.py additions
+@pytest.fixture
+def sample_seller():
+    """Create sample seller for testing."""
+    return Seller(
+        id=uuid4(),  # Use UUID object, not string
+        platform=SearchPlatform.DISCOGS,
+        platform_seller_id="seller123",
+        seller_name="Test Seller",
+        location="Los Angeles, CA",
+        country_code="US",
+        feedback_score=Decimal("98.5"),
+        total_feedback_count=1500,
+    )
+
+@pytest.fixture
+def sample_search_results():
+    """Create sample search results with realistic data."""
+    return [
+        SearchResult(
+            id=uuid4(),
+            search_id=uuid4(),
+            platform=SearchPlatform.DISCOGS,
+            item_id="disc123",
+            item_price=Decimal("25.00"),
+            item_condition="VG+",
+            is_in_wantlist=True,
+            item_data={"title": "Kind of Blue", "artist": "Miles Davis"}
+        ),
+        # Add more variations...
+    ]
+
+@pytest.fixture
+def mock_db():
+    """Create properly configured async database mock."""
+    mock = AsyncMock(spec=AsyncSession)
+    mock.add = MagicMock()
+    mock.commit = AsyncMock()
+    mock.refresh = AsyncMock()
+    return mock
+```
+
+### Analysis Testing Best Practices
+
+1. **Use realistic test data** - Mirror actual API responses for better test coverage
+2. **Test scoring edge cases** - Zero feedback, missing data, extreme values
+3. **Mock async operations properly** - Use AsyncMock for database and external calls
+4. **Test recommendation ranking** - Verify recommendations are sorted correctly
+5. **Validate UUID handling** - Always use UUID objects in fixtures, not strings
+6. **Test error scenarios** - Empty results, invalid data, service failures
+7. **Verify database interactions** - Check that analyses are stored correctly
+8. **Test cross-platform scenarios** - Mix Discogs and eBay results in tests
+
+### Performance Testing for Analysis
+
+```python
+import time
+import pytest
+
+@pytest.mark.performance
+async def test_analysis_performance_large_dataset():
+    """Test analysis performance with large result sets."""
+    # Create 1000 mock search results
+    large_dataset = create_mock_search_results(1000)
+
+    start_time = time.time()
+    analysis = await recommendation_engine.analyze_search_results(
+        mock_db, search_id, user_id
+    )
+    execution_time = time.time() - start_time
+
+    # Should complete within reasonable time
+    assert execution_time < 30.0  # 30 seconds max
+    assert analysis.total_results == 1000
+```
 
 ## Frontend Testing
 

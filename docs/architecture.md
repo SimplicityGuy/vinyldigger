@@ -112,6 +112,10 @@ Celery workers handle long-running tasks asynchronously.
 - **Collection Sync**: Synchronizes user's Discogs collection
 - **Want List Sync**: Synchronizes user's Discogs want list
 - **Data Processing**: Matches results against collections
+- **Search Analysis**: Performs intelligent analysis of search results
+- **Item Matching**: Cross-platform item matching and deduplication
+- **Seller Analysis**: Evaluates sellers for multi-item opportunities
+- **Recommendation Generation**: Creates smart deal recommendations
 
 **Configuration**:
 ```python
@@ -172,6 +176,11 @@ PostgreSQL database with the following main tables:
 7. **collection_items**: Individual items in collections
 8. **want_lists**: User's want lists
 9. **want_list_items**: Individual items in want lists
+10. **sellers**: Seller information across platforms
+11. **item_matches**: Cross-platform item matching
+12. **search_result_analyses**: Analysis data for completed searches
+13. **seller_analyses**: Seller scoring and recommendation data
+14. **deal_recommendations**: AI-generated deal recommendations
 
 ### Data Flow
 
@@ -195,6 +204,105 @@ graph LR
     C --> D[Data processed and stored]
     D --> E[Search results updated with matches]
 ```
+
+3. **Enhanced Search Analysis Flow**:
+
+```mermaid
+graph TD
+    A[Search Results Available] --> B[Item Matching Service]
+    B --> C[Cross-Platform Deduplication]
+    C --> D[Seller Analysis Service]
+    D --> E[Multi-Item Opportunity Detection]
+    E --> F[Recommendation Engine]
+    F --> G[Deal Scoring & Ranking]
+    G --> H[Analysis Results Stored]
+    H --> I[API Endpoints Available]
+```
+
+## Analysis Engine Architecture
+
+The Analysis Engine is a sophisticated system that processes search results to provide intelligent recommendations and insights.
+
+### Core Components
+
+1. **Item Matching Service**
+   - **Purpose**: Identifies identical items across platforms
+   - **Algorithm**: Fuzzy text matching with confidence scoring
+   - **Features**:
+     - Canonical title/artist normalization
+     - Year and format matching
+     - Confidence-based deduplication
+     - Manual override support
+
+2. **Seller Analysis Service**
+   - **Purpose**: Evaluates sellers for optimization opportunities
+   - **Metrics**:
+     - Reputation scoring (0-100)
+     - Location preference matching
+     - Price competitiveness analysis
+     - Inventory depth evaluation
+     - Shipping cost estimation
+
+3. **Recommendation Engine**
+   - **Purpose**: Generates actionable deal recommendations
+   - **Types**:
+     - Multi-item deals (shipping optimization)
+     - Best price recommendations
+     - High-value discoveries
+     - Collection completion suggestions
+
+4. **Deal Scoring System**
+   - **Scoring Levels**: Excellent (90+), Very Good (80+), Good (70+), Fair (60+), Poor (<60)
+   - **Factors**:
+     - Price competitiveness
+     - Seller reputation
+     - Shipping savings potential
+     - Want list relevance
+
+### Analysis Workflow
+
+```mermaid
+graph TD
+    A[Search Completed] --> B{Results Available?}
+    B -->|Yes| C[Extract Item Data]
+    B -->|No| Z[End]
+    C --> D[Find/Create Sellers]
+    D --> E[Match Items Across Platforms]
+    E --> F[Calculate Seller Metrics]
+    F --> G[Find Multi-Item Opportunities]
+    G --> H[Generate Recommendations]
+    H --> I[Score All Deals]
+    I --> J[Store Analysis Results]
+    J --> K[Notify Analysis Complete]
+```
+
+### Analysis Data Models
+
+1. **SearchResultAnalysis**
+   - Aggregate statistics for the entire search
+   - Completion status and timestamps
+   - Price distribution metrics
+   - Platform coverage analysis
+
+2. **SellerAnalysis**
+   - Individual seller performance metrics
+   - Recommendation ranking
+   - Scoring breakdowns by category
+   - Multi-item potential assessment
+
+3. **DealRecommendation**
+   - Specific actionable recommendations
+   - Deal type classification
+   - Potential savings calculations
+   - Item grouping for multi-item deals
+
+### Performance Optimizations
+
+1. **Async Processing**: All analysis runs in background workers
+2. **Intelligent Caching**: Results cached until search data changes
+3. **Incremental Updates**: Only reanalyze when new results arrive
+4. **Batch Operations**: Group database operations for efficiency
+5. **Selective Analysis**: Skip analysis for searches with minimal results
 
 ### Caching Strategy
 
