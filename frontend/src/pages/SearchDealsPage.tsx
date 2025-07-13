@@ -1,17 +1,51 @@
 import { memo, useState } from 'react'
-import { useParams } from 'react-router-dom'
+import { useParams, Link } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
-import { Package, Users, TrendingDown, MapPin, Star, Award, ChevronDown, ChevronUp, ExternalLink } from 'lucide-react'
+import { Package, Users, TrendingDown, MapPin, Star, Award, ChevronDown, ChevronUp, ExternalLink, ChevronRight } from 'lucide-react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { searchAnalysisApi } from '@/lib/api'
+import { searchAnalysisApi, searchApi } from '@/lib/api'
+
+interface Seller {
+  id: string | null;
+  name: string;
+  location: string | null;
+  feedback_score: number | null;
+}
+
+interface ListingItemData {
+  id?: string;
+  item_web_url?: string;
+  release_id?: string;
+  resource_url?: string;
+  title?: string;
+  year?: number;
+  [key: string]: unknown;
+}
+
+interface Listing {
+  id: string;
+  platform: string;
+  price: number | null;
+  condition: string | null;
+  seller: Seller | null;
+  is_in_wantlist: boolean;
+  shipping_price?: number;
+  item_data?: ListingItemData;
+}
+
+interface ItemMatch {
+  canonical_title: string;
+  canonical_artist: string;
+  total_matches: number;
+}
+
+interface PriceComparison {
+  item_match: ItemMatch;
+  listings: Listing[];
+}
 
 interface MultiItemDeal {
-  seller: {
-    id: string | null;
-    name: string;
-    location: string | null;
-    feedback_score: number | null;
-  } | null;
+  seller: Seller | null;
   total_items: number;
   wantlist_items: number;
   total_value: number;
@@ -23,18 +57,30 @@ interface MultiItemDeal {
 }
 
 // Helper function to create URLs
-const createListingUrl = (listing: any) => {
+const createListingUrl = (listing: Listing): string | undefined => {
   if (listing.platform === 'ebay' && listing.item_data?.item_web_url) {
     return listing.item_data.item_web_url
   }
-  return null
+  return undefined
 }
 
-const createDiscogsReleaseUrl = (listing: any) => {
-  if (listing.platform === 'discogs' && listing.item_data?.id) {
-    return `https://www.discogs.com/release/${listing.item_data.id}`
+const createDiscogsReleaseUrl = (listing: Listing): string | undefined => {
+  if (listing.platform === 'discogs' && listing.item_data) {
+    const itemData = listing.item_data
+    // Check if it's a release or master based on the resource_url
+    if (itemData.resource_url) {
+      if (itemData.resource_url.includes('/releases/')) {
+        return `https://www.discogs.com/release/${itemData.id}`
+      } else if (itemData.resource_url.includes('/masters/')) {
+        return `https://www.discogs.com/master/${itemData.id}`
+      }
+    }
+    // Fallback to release URL
+    if (itemData.id) {
+      return `https://www.discogs.com/release/${itemData.id}`
+    }
   }
-  return null
+  return undefined
 }
 
 
@@ -52,6 +98,12 @@ export const SearchDealsPage = memo(function SearchDealsPage() {
     setExpandedSections(newExpanded)
   }
 
+  const { data: searchData, isLoading: searchLoading } = useQuery({
+    queryKey: ['search', searchId],
+    queryFn: () => searchApi.getSearch(searchId!),
+    enabled: !!searchId,
+  })
+
   const { data: dealsData, isLoading: dealsLoading } = useQuery({
     queryKey: ['multi-item-deals', searchId],
     queryFn: () => searchAnalysisApi.getMultiItemDeals(searchId!),
@@ -64,7 +116,7 @@ export const SearchDealsPage = memo(function SearchDealsPage() {
     enabled: !!searchId,
   })
 
-  if (dealsLoading || priceLoading) {
+  if (searchLoading || dealsLoading || priceLoading) {
     return (
       <div className="flex justify-center py-8">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
@@ -74,10 +126,27 @@ export const SearchDealsPage = memo(function SearchDealsPage() {
 
   return (
     <div className="space-y-6">
+      {/* Breadcrumb Navigation */}
+      <nav className="flex items-center space-x-2 text-sm text-muted-foreground">
+        <Link to="/searches" className="hover:text-foreground transition-colors">
+          Searches
+        </Link>
+        <ChevronRight className="h-4 w-4" />
+        {searchData && (
+          <>
+            <Link to={`/searches/${searchId}`} className="hover:text-foreground transition-colors">
+              {searchData.name}
+            </Link>
+            <ChevronRight className="h-4 w-4" />
+          </>
+        )}
+        <span className="text-foreground">Deals</span>
+      </nav>
+
       <div>
         <h2 className="text-3xl font-bold tracking-tight">Multi-Item Deals & Price Comparison</h2>
         <p className="text-muted-foreground">
-          Find the best deals by combining multiple items from the same seller
+          {searchData ? `Results for "${searchData.name}"` : 'Find the best deals by combining multiple items from the same seller'}
         </p>
       </div>
 
@@ -196,27 +265,8 @@ export const SearchDealsPage = memo(function SearchDealsPage() {
             </div>
           ) : (
             <div className="space-y-6">
-              {priceData.price_comparisons.map((comparison: {
-                item_match: {
-                  canonical_title: string;
-                  canonical_artist: string;
-                  total_matches: number;
-                };
-                listings: Array<{
-                  id: string;
-                  platform: string;
-                  price: number | null;
-                  condition: string | null;
-                  seller: {
-                    name: string;
-                    location: string | null;
-                    feedback_score: number | null;
-                  } | null;
-                  is_in_wantlist: boolean;
-                }>;
-              }, index: number) => {
+              {priceData.price_comparisons.map((comparison: PriceComparison, index: number) => {
                 const isExpanded = expandedSections.has(index)
-                const visibleListings = isExpanded ? comparison.listings : comparison.listings.slice(0, 1)
 
                 return (
                   <div key={index} className="border rounded-lg">
@@ -228,18 +278,28 @@ export const SearchDealsPage = memo(function SearchDealsPage() {
                         <div className="flex-1">
                           <div className="flex items-center gap-2">
                             <h4 className="font-medium">{comparison.item_match.canonical_title}</h4>
-                            {comparison.listings[0]?.platform === 'discogs' && (
-                              <a
-                                href={createDiscogsReleaseUrl(comparison.listings[0])}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="text-blue-600 hover:text-blue-800 flex items-center gap-1"
-                                onClick={(e) => e.stopPropagation()}
-                              >
-                                <ExternalLink className="h-3 w-3" />
-                                <span className="text-xs">Release Page</span>
-                              </a>
-                            )}
+                            {(() => {
+                              // Find any Discogs listing to get the release link
+                              const discogsListing = comparison.listings.find(listing => listing.platform === 'discogs')
+                              if (discogsListing) {
+                                const releaseUrl = createDiscogsReleaseUrl(discogsListing)
+                                if (releaseUrl) {
+                                  return (
+                                    <a
+                                      href={releaseUrl}
+                                      target="_blank"
+                                      rel="noopener noreferrer"
+                                      className="text-blue-600 hover:text-blue-800 flex items-center gap-1"
+                                      onClick={(e) => e.stopPropagation()}
+                                    >
+                                      <ExternalLink className="h-3 w-3" />
+                                      <span className="text-xs">Discogs</span>
+                                    </a>
+                                  )
+                                }
+                              }
+                              return null
+                            })()}
                           </div>
                           <p className="text-sm text-muted-foreground">
                             by {comparison.item_match.canonical_artist}
@@ -305,6 +365,11 @@ export const SearchDealsPage = memo(function SearchDealsPage() {
                                   <div className="font-medium">
                                     {listing.price ? `$${listing.price.toFixed(2)}` : 'Price TBD'}
                                   </div>
+                                  {listing.shipping_price !== undefined && listing.shipping_price !== null && (
+                                    <div className="text-xs text-muted-foreground">
+                                      + ${listing.shipping_price.toFixed(2)} shipping
+                                    </div>
+                                  )}
                                   {listing.seller?.feedback_score && (
                                     <div className="text-xs text-muted-foreground">
                                       {listing.seller.feedback_score.toFixed(1)}% feedback

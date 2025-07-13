@@ -1,9 +1,10 @@
 import asyncio
-from typing import Any
+from collections.abc import Generator
+from typing import Any, Literal, cast
 from uuid import UUID
 
 import httpx
-from httpx import AsyncClient
+from httpx import AsyncClient, Request, Response
 from oauthlib.oauth1 import Client as OAuth1Client
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -26,7 +27,7 @@ class DiscogsOAuth1Auth(httpx.Auth):
             signature_type="AUTH_HEADER",
         )
 
-    def auth_flow(self, request: httpx.Request) -> httpx.Request:
+    def auth_flow(self, request: Request) -> Generator[Request, Response, None]:
         """Apply OAuth1 signature to the request."""
         # Convert httpx request to a format oauthlib can work with
         uri = str(request.url)
@@ -35,7 +36,12 @@ class DiscogsOAuth1Auth(httpx.Auth):
         headers = dict(request.headers)
 
         # Generate OAuth signature
-        uri, headers, body = self.oauth_client.sign(uri, http_method=method, body=body, headers=headers)
+        # Cast to literal type expected by oauthlib
+        http_method = cast(
+            Literal["CONNECT", "DELETE", "GET", "HEAD", "OPTIONS", "PATCH", "POST", "PUT", "TRACE"],
+            method,
+        )
+        uri, headers, body = self.oauth_client.sign(uri, http_method=http_method, body=body, headers=headers)
 
         # Update the request with OAuth headers
         request.headers.update(headers)

@@ -15,31 +15,45 @@ FROM base AS development
 # Set environment variables
 ENV NODE_ENV=development
 
-# Install curl for health checks and dumb-init for proper signal handling
+# Install wget for health checks and dumb-init for proper signal handling
 # hadolint ignore=DL3018
 RUN apk add --no-cache \
-    curl \
+    wget \
     dumb-init
 
 # Set working directory
 WORKDIR /app
 
-# Copy package files
+# Copy package files first for better caching
 COPY package.json package-lock.json* ./
 
-# Install dependencies
+# Install dependencies in a location that won't be overwritten by volume mounts
 RUN npm ci --include=dev
 
-# Copy application files
+# Create a script to ensure npm is available even with volume mounts
+RUN echo '#!/bin/sh' > /usr/local/bin/docker-entrypoint.sh && \
+    echo 'set -e' >> /usr/local/bin/docker-entrypoint.sh && \
+    echo '' >> /usr/local/bin/docker-entrypoint.sh && \
+    echo '# If node_modules is empty (due to volume mount), reinstall dependencies' >> /usr/local/bin/docker-entrypoint.sh && \
+    echo 'if [ ! -d "node_modules" ] || [ -z "$(ls -A node_modules 2>/dev/null)" ]; then' >> /usr/local/bin/docker-entrypoint.sh && \
+    echo '    echo "Installing dependencies..."' >> /usr/local/bin/docker-entrypoint.sh && \
+    echo '    npm ci --include=dev' >> /usr/local/bin/docker-entrypoint.sh && \
+    echo 'fi' >> /usr/local/bin/docker-entrypoint.sh && \
+    echo '' >> /usr/local/bin/docker-entrypoint.sh && \
+    echo '# Execute the command' >> /usr/local/bin/docker-entrypoint.sh && \
+    echo 'exec "$@"' >> /usr/local/bin/docker-entrypoint.sh && \
+    chmod +x /usr/local/bin/docker-entrypoint.sh
+
+# Copy application files (will be overridden by volume mount in dev)
 COPY . .
 
 # Expose port
 EXPOSE 3000
 
-# Use dumb-init as entrypoint for proper signal handling
-ENTRYPOINT ["/usr/bin/dumb-init", "--"]
+# Use dumb-init as PID 1
+ENTRYPOINT ["/usr/bin/dumb-init", "--", "/usr/local/bin/docker-entrypoint.sh"]
 
-# Default command (can be overridden by docker-compose)
+# Default command
 CMD ["npm", "run", "dev"]
 
 # Dependencies stage

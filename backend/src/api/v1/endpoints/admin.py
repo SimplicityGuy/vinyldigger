@@ -1,4 +1,4 @@
-from typing import Annotated
+from typing import Annotated, Any
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel, field_validator
@@ -22,7 +22,7 @@ class AppConfigCreate(BaseModel):
 
     @field_validator("provider", mode="before")
     @classmethod
-    def normalize_provider(cls, v):
+    def normalize_provider(cls, v: Any) -> Any:
         if isinstance(v, str):
             return v.upper()
         return v

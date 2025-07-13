@@ -1,6 +1,6 @@
 import { useState, memo } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { Plus, Play, Trash2, BarChart3, Users, Edit } from 'lucide-react'
+import { Plus, Play, Trash2, BarChart3, Users, Edit, Eye } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import { useForm } from 'react-hook-form'
 import { Button } from '@/components/ui/button'
@@ -198,6 +198,17 @@ function SearchesPageComponent() {
                       >
                         <Play className="h-3 w-3" />
                         Run
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        asChild
+                        className="gap-2"
+                      >
+                        <Link to={`/searches/${search.id}`}>
+                          <Eye className="h-3 w-3" />
+                          View
+                        </Link>
                       </Button>
                       <Button
                         size="sm"

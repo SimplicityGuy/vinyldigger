@@ -1,5 +1,6 @@
 """Search analysis API endpoints."""
 
+import re
 from typing import Any
 from uuid import UUID
 
@@ -248,40 +249,75 @@ async def get_price_comparison(
     )
     results = results_query.all()
 
-    # Group by item match
+    # Group by normalized artist and title for better deduplication
+    def normalize_for_grouping(artist: str, title: str) -> str:
+        """Create a normalized key for grouping similar albums."""
+        # Normalize artist variations
+        artist_lower = artist.lower().strip()
+        if artist_lower in ["various", "various artists", "v/a", "va"]:
+            artist_lower = "various artists"
+
+        # Normalize title - remove format indicators and extra info
+        title_lower = title.lower().strip()
+        # Remove common suffixes like (Vinyl), [LP], 12", etc.
+        title_lower = re.sub(r"\s*[\(\[].*?[\)\]]", "", title_lower)
+        title_lower = re.sub(r'\s*(12"|7"|lp|ep|vinyl|cd|album).*$', "", title_lower)
+
+        # Remove extra whitespace and punctuation
+        artist_lower = re.sub(r"[^\w\s]", "", artist_lower).strip()
+        title_lower = re.sub(r"[^\w\s]", "", title_lower).strip()
+
+        return f"{artist_lower}|{title_lower}"
+
     item_comparisons: dict[str, dict[str, Any]] = {}
+    group_key_to_best_match: dict[str, tuple[str, str]] = {}  # Maps group key to best (artist, title) representation
 
     for search_result, item_match, seller in results:
-        match_key = str(item_match.id) if item_match else f"unmatched_{search_result.id}"
+        # Get artist and title
+        if item_match:
+            artist = item_match.canonical_artist
+            title = item_match.canonical_title
+        else:
+            artist = search_result.item_data.get("artist", "Unknown")
+            title = search_result.item_data.get("title", "Unknown")
 
-        if match_key not in item_comparisons:
-            item_comparisons[match_key] = {
+        # Create normalized grouping key
+        group_key = normalize_for_grouping(artist, title)
+
+        # Track the best representation for this group (prefer Discogs data)
+        if group_key not in group_key_to_best_match or search_result.platform.value == "discogs":
+            group_key_to_best_match[group_key] = (artist, title)
+
+        if group_key not in item_comparisons:
+            best_artist, best_title = group_key_to_best_match[group_key]
+            item_comparisons[group_key] = {
                 "item_match": {
                     "id": str(item_match.id) if item_match else None,
-                    "canonical_title": item_match.canonical_title
-                    if item_match
-                    else search_result.item_data.get("title", "Unknown"),
-                    "canonical_artist": item_match.canonical_artist
-                    if item_match
-                    else search_result.item_data.get("artist", "Unknown"),
-                    "total_matches": item_match.total_matches if item_match else 1,
-                }
-                if item_match
-                else {
-                    "id": None,
-                    "canonical_title": search_result.item_data.get("title", "Unknown"),
-                    "canonical_artist": search_result.item_data.get("artist", "Unknown"),
-                    "total_matches": 1,
+                    "canonical_title": best_title,
+                    "canonical_artist": best_artist,
+                    "total_matches": 0,  # Will count actual listings
                 },
                 "listings": [],
             }
 
-        item_comparisons[match_key]["listings"].append(
+        # Extract price and shipping from item_data
+        price = float(search_result.item_price) if search_result.item_price else None
+        shipping_price = None
+
+        if search_result.item_data and search_result.platform.value == "ebay":
+            # For eBay, get shipping cost from item_data
+            shipping_price = search_result.item_data.get("shipping_cost")
+            if shipping_price is not None:
+                shipping_price = float(shipping_price)
+
+        item_comparisons[group_key]["listings"].append(
             {
                 "id": str(search_result.id),
                 "platform": search_result.platform.value,
-                "price": float(search_result.item_price) if search_result.item_price else None,
+                "price": price,
+                "shipping_price": shipping_price,
                 "condition": search_result.item_condition,
+                "item_data": search_result.item_data,  # Include full item data for URLs and other details
                 "seller": {
                     "id": str(seller.id) if seller else None,
                     "name": seller.seller_name if seller else "Unknown",
@@ -295,9 +331,11 @@ async def get_price_comparison(
             }
         )
 
-    # Sort listings within each item by price
+    # Sort listings within each item by price and update total matches
     for item_data in item_comparisons.values():
         item_data["listings"].sort(key=lambda x: x["price"] if x["price"] is not None else float("inf"))
+        # Update total_matches to reflect actual number of listings
+        item_data["item_match"]["total_matches"] = len(item_data["listings"])
 
     return {
         "search_id": str(search_id),

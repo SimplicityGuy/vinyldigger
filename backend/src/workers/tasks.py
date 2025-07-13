@@ -22,8 +22,9 @@ from uuid import UUID
 
 from celery import Task
 from sqlalchemy import select
-from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 
+from src.core.config import settings
 from src.core.database import AsyncSessionLocal
 from src.core.logging import get_logger
 from src.models.collection import Collection, WantList
@@ -42,6 +43,7 @@ logger = get_logger(__name__)
 
 class AsyncTask(Task):  # type: ignore[misc]
     def run(self, *args: Any, **kwargs: Any) -> Any:
+        # Simple asyncio.run approach - let SQLAlchemy handle greenlet internally
         return asyncio.run(self.async_run(*args, **kwargs))
 
     async def async_run(self, *args: Any, **kwargs: Any) -> None:
@@ -49,7 +51,7 @@ class AsyncTask(Task):  # type: ignore[misc]
 
 
 class RunSearchTask(AsyncTask):
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__()
         self.item_matcher = ItemMatchingService()
         self.seller_analyzer = SellerAnalysisService()
@@ -57,7 +59,23 @@ class RunSearchTask(AsyncTask):
 
     async def async_run(self, search_id: str, user_id: str) -> None:
         logger.info(f"Running enhanced search {search_id} for user {user_id}")
-        async with AsyncSessionLocal() as db:
+
+        # Create a fresh async engine and session for this worker task
+        # This ensures proper greenlet context for SQLAlchemy async operations
+        worker_engine = create_async_engine(
+            str(settings.database_url),
+            pool_size=5,
+            max_overflow=10,
+            pool_pre_ping=True,
+        )
+
+        WorkerAsyncSession = async_sessionmaker(
+            worker_engine,
+            class_=AsyncSession,
+            expire_on_commit=False,
+        )
+
+        async with WorkerAsyncSession() as db:
             try:
                 # Get search details
                 search = await db.get(SavedSearch, UUID(search_id))
@@ -133,6 +151,9 @@ class RunSearchTask(AsyncTask):
                 logger.error(f"Error running search {search_id}: {str(e)}")
                 await db.rollback()
                 raise
+            finally:
+                # Clean up the worker engine
+                await worker_engine.dispose()
 
     async def _search_discogs(
         self,
@@ -344,7 +365,10 @@ class RunSearchTask(AsyncTask):
             # Use recommendation engine to analyze results and generate recommendations
             analysis = await self.recommendation_engine.analyze_search_results(db, search_id, user_id)
 
-            logger.info(f"Generated {len(analysis.recommendations)} recommendations for search {search_id}")
+            if analysis and hasattr(analysis, "recommendations"):
+                logger.info(f"Generated {len(analysis.recommendations)} recommendations for search {search_id}")
+            else:
+                logger.info(f"Analysis completed for search {search_id} (no recommendations generated)")
 
         except Exception as e:
             logger.error(f"Error generating recommendations for search {search_id}: {str(e)}")
@@ -560,19 +584,18 @@ def get_or_create_eventloop() -> asyncio.AbstractEventLoop:
         if not hasattr(_thread_local, "loop"):
             _thread_local.loop = asyncio.new_event_loop()
             asyncio.set_event_loop(_thread_local.loop)
-        return _thread_local.loop
+        return _thread_local.loop  # type: ignore[no-any-return]
 
 
-# Register tasks with Celery
-@celery_app.task(name="src.workers.tasks.RunSearchTask")
+# Use the original task registration method
+@celery_app.task(name="src.workers.tasks.RunSearchTask")  # type: ignore[misc]
 def run_search_task(search_id: str, user_id: str) -> None:
-    """Run a search task asynchronously."""
-    loop = get_or_create_eventloop()
+    """Run search task using the class-based approach."""
     task = RunSearchTask()
-    loop.run_until_complete(task.async_run(search_id, user_id))
+    task.run(search_id, user_id)
 
 
-@celery_app.task(name="src.workers.tasks.SyncCollectionTask")
+@celery_app.task(name="src.workers.tasks.SyncCollectionTask")  # type: ignore[misc]
 def sync_collection_task(user_id: str, sync_type: str = "both") -> None:
     """Sync a user's collection asynchronously."""
     loop = get_or_create_eventloop()

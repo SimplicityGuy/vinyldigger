@@ -12,10 +12,10 @@ from src.core.logging import get_logger
 logger = get_logger(__name__)
 
 # Global Redis client instance
-_redis_client: Redis | None = None  # type: ignore[type-arg]
+_redis_client: Redis[bytes] | None = None
 
 
-async def get_redis() -> Redis:  # type: ignore[type-arg]
+async def get_redis() -> Redis[bytes]:
     """Get Redis client instance."""
     global _redis_client
 
@@ -44,7 +44,7 @@ class OAuthTokenStore:
     PREFIX = "oauth:request:"
     TTL = 600  # 10 minutes
 
-    def __init__(self, redis_client: Redis) -> None:  # type: ignore[type-arg]
+    def __init__(self, redis_client: Redis[bytes]) -> None:
         self.redis = redis_client
 
     async def store_request_token(

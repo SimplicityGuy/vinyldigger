@@ -1,11 +1,12 @@
 import { memo, useState, useEffect, useRef } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { AlertCircle, Package, Heart, RefreshCw, Check, Loader2, Minus, Search, TrendingUp, Clock, Star, ArrowRight } from 'lucide-react'
+import { AlertCircle, Package, Heart, RefreshCw, Check, Loader2, Minus, Search, TrendingUp, Clock, ArrowRight } from 'lucide-react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { collectionApi, oauthApi, searchApi } from '@/lib/api'
 import { useToast } from '@/hooks/useToast'
 import { Link } from 'react-router-dom'
+import type { SavedSearch } from '@/types/api'
 
 export const DashboardPage = memo(function DashboardPage() {
   const { toast } = useToast()
@@ -322,7 +323,7 @@ export const DashboardPage = memo(function DashboardPage() {
           </CardHeader>
           <CardContent>
             <div className="space-y-3">
-              {searches.slice(0, 3).map((search: any) => (
+              {searches.slice(0, 3).map((search: SavedSearch) => (
                 <div key={search.id} className="flex items-center justify-between p-3 border rounded-lg">
                   <div className="flex items-center gap-3">
                     <div className="flex items-center gap-2">

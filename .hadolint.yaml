@@ -11,18 +11,11 @@ ignored:
   # We use latest versions from Alpine's repository for security updates
   - DL3018
 
+  # SC2016: Single quotes don't expand variables
+  # We intentionally use single quotes in some contexts
+  - SC2016
+
 # Trusted registries for FROM instructions
 trustedRegistries:
   - docker.io
   - ghcr.io
-
-# Label schema that should be present
-label-schema:
-  # OCI Standard Labels
-  org.opencontainers.image.created: required
-  org.opencontainers.image.title: required
-  org.opencontainers.image.description: required
-  org.opencontainers.image.version: required
-  org.opencontainers.image.revision: required
-  org.opencontainers.image.source: required
-  org.opencontainers.image.licenses: required

@@ -142,13 +142,16 @@ async def initiate_oauth_flow(
             # Store in Redis
             redis_client = await get_redis()
             token_store = OAuthTokenStore(redis_client)
-            await token_store.store_request_token(
-                state=state,
-                user_id=str(current_user.id),
-                request_token=request_token,
-                request_token_secret=request_token_secret,
-                provider=provider_enum.value,
-            )
+            if request_token and request_token_secret:
+                await token_store.store_request_token(
+                    state=state,
+                    user_id=str(current_user.id),
+                    request_token=request_token,
+                    request_token_secret=request_token_secret,
+                    provider=provider_enum.value,
+                )
+            else:
+                raise HTTPException(status_code=400, detail="Failed to get request token from Discogs")
 
             # Step 2: Get authorization URL
             authorization_url = oauth.authorization_url("https://discogs.com/oauth/authorize")
@@ -263,6 +266,12 @@ async def discogs_oauth_callback(
 
         access_token = oauth_tokens.get("oauth_token")
         access_token_secret = oauth_tokens.get("oauth_token_secret")
+
+        if not access_token or not access_token_secret:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Failed to get access token from Discogs.",
+            )
 
         # Step 4: Get user information from Discogs
         oauth = OAuth1Session(
@@ -385,6 +394,12 @@ async def verify_discogs_oauth(
 
         access_token = oauth_tokens.get("oauth_token")
         access_token_secret = oauth_tokens.get("oauth_token_secret")
+
+        if not access_token or not access_token_secret:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Failed to get access token from Discogs.",
+            )
 
         # Get user information from Discogs
         oauth = OAuth1Session(
@@ -512,6 +527,12 @@ async def ebay_oauth_callback(
             token_data_response = response.json()
             access_token = token_data_response.get("access_token")
             refresh_token = token_data_response.get("refresh_token")
+
+            if not access_token:
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail="Failed to get access token from eBay.",
+                )
 
             # Get user information from eBay (optional - may fail in sandbox or with limited scope)
             ebay_user_id = ""
@@ -659,6 +680,12 @@ async def verify_ebay_oauth(
             token_data_response = response.json()
             access_token = token_data_response.get("access_token")
             refresh_token = token_data_response.get("refresh_token")
+
+            if not access_token:
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail="Failed to get access token from eBay.",
+                )
 
             # Get user information from eBay (optional - may fail in sandbox or with limited scope)
             ebay_user_id = ""

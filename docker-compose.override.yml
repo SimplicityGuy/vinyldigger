@@ -5,7 +5,6 @@ services:
   frontend:
     build:
       target: development
-    command: npm run dev
     environment:
       - NODE_ENV=development
       - VITE_API_URL=http://backend:8000
@@ -13,8 +12,8 @@ services:
       - ./frontend:/app
       - /app/node_modules
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:3000"]
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:3000"]
       interval: 30s
       timeout: 10s
       retries: 3
-      start_period: 40s
+      start_period: 60s

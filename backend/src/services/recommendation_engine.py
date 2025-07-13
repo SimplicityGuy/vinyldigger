@@ -1,6 +1,8 @@
 """Recommendation engine for generating smart deal recommendations."""
 
+from datetime import UTC
 from decimal import Decimal
+from uuid import UUID
 
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -23,7 +25,7 @@ logger = get_logger(__name__)
 class RecommendationEngine:
     """Engine for generating intelligent deal recommendations."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.seller_analyzer = SellerAnalysisService()
 
     # Scoring weights for overall deal quality
@@ -94,7 +96,7 @@ class RecommendationEngine:
         # Mark analysis as complete
         from datetime import datetime
 
-        analysis.analysis_completed_at = datetime.utcnow()
+        analysis.analysis_completed_at = datetime.now(UTC)
 
         logger.info(
             f"Analysis completed for search {search_id}: "
@@ -125,7 +127,10 @@ class RecommendationEngine:
 
         seller_analyses = []
 
-        for seller_id, results in seller_results.items():
+        for seller_id_str, results in seller_results.items():
+            # Convert string back to UUID for database query
+            seller_id = UUID(seller_id_str)
+
             # Get seller info
             seller_result = await db.execute(select(Seller).where(Seller.id == seller_id))
             seller = seller_result.scalar_one_or_none()
@@ -269,28 +274,24 @@ class RecommendationEngine:
             # Generate recommendations based on seller characteristics
             if seller_analysis.wantlist_items >= 2:
                 # Multi-item want list deal
-                recommendation = await self._create_multi_item_recommendation(
-                    analysis, seller, seller_analysis, seller_items
-                )
+                recommendation = self._create_multi_item_recommendation(analysis, seller, seller_analysis, seller_items)
                 recommendations.append(recommendation)
 
             elif seller_analysis.overall_score >= 85.0 and seller_analysis.total_items == 1:
                 # Best single item deal
-                recommendation = await self._create_best_price_recommendation(
-                    analysis, seller, seller_analysis, seller_items
-                )
+                recommendation = self._create_best_price_recommendation(analysis, seller, seller_analysis, seller_items)
                 recommendations.append(recommendation)
 
             elif seller_analysis.seller_reputation_score >= 90.0:
                 # High feedback seller
-                recommendation = await self._create_high_feedback_recommendation(
+                recommendation = self._create_high_feedback_recommendation(
                     analysis, seller, seller_analysis, seller_items
                 )
                 recommendations.append(recommendation)
 
             elif seller_analysis.location_preference_score >= 90.0:
                 # Location preference match
-                recommendation = await self._create_location_preference_recommendation(
+                recommendation = self._create_location_preference_recommendation(
                     analysis, seller, seller_analysis, seller_items
                 )
                 recommendations.append(recommendation)
@@ -299,7 +300,7 @@ class RecommendationEngine:
         for rec in recommendations:
             db.add(rec)
 
-    async def _create_multi_item_recommendation(
+    def _create_multi_item_recommendation(
         self,
         analysis: SearchResultAnalysis,
         seller: Seller,
@@ -339,7 +340,7 @@ class RecommendationEngine:
             item_ids=[str(item.id) for item in seller_items],
         )
 
-    async def _create_best_price_recommendation(
+    def _create_best_price_recommendation(
         self,
         analysis: SearchResultAnalysis,
         seller: Seller,
@@ -370,7 +371,7 @@ class RecommendationEngine:
             item_ids=[str(item.id)],
         )
 
-    async def _create_high_feedback_recommendation(
+    def _create_high_feedback_recommendation(
         self,
         analysis: SearchResultAnalysis,
         seller: Seller,
@@ -399,7 +400,7 @@ class RecommendationEngine:
             item_ids=[str(item.id) for item in seller_items],
         )
 
-    async def _create_location_preference_recommendation(
+    def _create_location_preference_recommendation(
         self,
         analysis: SearchResultAnalysis,
         seller: Seller,

@@ -1,9 +1,9 @@
 import { memo } from 'react'
-import { useParams } from 'react-router-dom'
+import { useParams, Link } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
-import { BarChart3, TrendingUp, Users, Star, MapPin, Award } from 'lucide-react'
+import { BarChart3, TrendingUp, Users, Star, MapPin, Award, ChevronRight } from 'lucide-react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { searchAnalysisApi } from '@/lib/api'
+import { searchAnalysisApi, searchApi } from '@/lib/api'
 
 interface Recommendation {
   id: string;
@@ -46,6 +46,12 @@ interface SellerAnalysis {
 export const SearchAnalysisPage = memo(function SearchAnalysisPage() {
   const { searchId } = useParams<{ searchId: string }>()
 
+  const { data: search } = useQuery({
+    queryKey: ['searches', searchId],
+    queryFn: () => searchApi.getSearch(searchId!),
+    enabled: !!searchId,
+  })
+
   const { data: analysisData, isLoading } = useQuery({
     queryKey: ['search-analysis', searchId],
     queryFn: () => searchAnalysisApi.getSearchAnalysis(searchId!),
@@ -63,9 +69,28 @@ export const SearchAnalysisPage = memo(function SearchAnalysisPage() {
   if (!analysisData?.analysis_completed) {
     return (
       <div className="space-y-6">
+        {/* Breadcrumb Navigation */}
+        <nav className="flex items-center space-x-2 text-sm text-muted-foreground">
+          <Link to="/searches" className="hover:text-foreground transition-colors">
+            Searches
+          </Link>
+          <ChevronRight className="h-4 w-4" />
+          {search && (
+            <>
+              <Link to={`/searches/${searchId}`} className="hover:text-foreground transition-colors">
+                {search.name}
+              </Link>
+              <ChevronRight className="h-4 w-4" />
+            </>
+          )}
+          <span className="text-foreground">Analysis</span>
+        </nav>
+
         <div>
           <h2 className="text-3xl font-bold tracking-tight">Search Analysis</h2>
-          <p className="text-muted-foreground">Analysis is still processing or not available</p>
+          <p className="text-muted-foreground">
+            {search ? `Analysis for "${search.name}" is still processing or not available` : 'Analysis is still processing or not available'}
+          </p>
         </div>
         <Card>
           <CardContent className="py-8 text-center">
@@ -82,10 +107,27 @@ export const SearchAnalysisPage = memo(function SearchAnalysisPage() {
 
   return (
     <div className="space-y-6">
+      {/* Breadcrumb Navigation */}
+      <nav className="flex items-center space-x-2 text-sm text-muted-foreground">
+        <Link to="/searches" className="hover:text-foreground transition-colors">
+          Searches
+        </Link>
+        <ChevronRight className="h-4 w-4" />
+        {search && (
+          <>
+            <Link to={`/searches/${searchId}`} className="hover:text-foreground transition-colors">
+              {search.name}
+            </Link>
+            <ChevronRight className="h-4 w-4" />
+          </>
+        )}
+        <span className="text-foreground">Analysis</span>
+      </nav>
+
       <div>
         <h2 className="text-3xl font-bold tracking-tight">Search Analysis</h2>
         <p className="text-muted-foreground">
-          Comprehensive analysis of search results and recommendations
+          {search ? `Analysis for "${search.name}"` : 'Comprehensive analysis of search results and recommendations'}
         </p>
       </div>
 

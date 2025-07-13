@@ -1,5 +1,5 @@
 from datetime import timedelta
-from typing import Annotated
+from typing import Annotated, Any
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, status
@@ -43,7 +43,7 @@ class UserResponse(BaseModel):
 
     @field_validator("created_at", "updated_at", mode="before")
     @classmethod
-    def convert_datetime_to_str(cls, v):
+    def convert_datetime_to_str(cls, v: Any) -> Any:
         if hasattr(v, "isoformat"):
             return v.isoformat()
         return v

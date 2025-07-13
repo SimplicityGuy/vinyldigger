@@ -200,6 +200,11 @@ export const searchApi = {
     return response.json()
   },
 
+  async getSearch(searchId: string): Promise<SavedSearch> {
+    const response = await fetchApi(`/searches/${searchId}`)
+    return response.json()
+  },
+
   async runSearch(searchId: string): Promise<{ message: string }> {
     const response = await fetchApi(`/searches/${searchId}/run`, {
       method: 'POST',

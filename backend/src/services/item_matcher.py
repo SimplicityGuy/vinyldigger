@@ -251,7 +251,12 @@ class ItemMatchingService:
         # Year matching
         year_match = False
         if item_match.canonical_year and item_info.get("year"):
-            year_match = abs(item_match.canonical_year - item_info["year"]) <= 1  # Allow 1 year difference
+            try:
+                # Ensure year is an integer for comparison
+                item_year = int(item_info["year"]) if isinstance(item_info["year"], str) else item_info["year"]
+                year_match = abs(item_match.canonical_year - item_year) <= 1  # Allow 1 year difference
+            except (ValueError, TypeError):
+                year_match = False  # Can't compare if year is invalid
         elif not item_match.canonical_year and not item_info.get("year"):
             year_match = True  # Both missing year is neutral
 

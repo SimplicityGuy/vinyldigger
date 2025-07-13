@@ -27,7 +27,8 @@ class SavedSearchCreate(BaseModel):
     seller_location_preference: str | None = None
 
     @field_validator("platform", mode="before")
-    def normalize_platform(cls, v):
+    @classmethod
+    def normalize_platform(cls, v: Any) -> Any:
         if isinstance(v, str):
             return v.upper()
         return v
@@ -45,7 +46,8 @@ class SavedSearchUpdate(BaseModel):
     is_active: bool | None = None
 
     @field_validator("platform", mode="before")
-    def normalize_platform(cls, v):
+    @classmethod
+    def normalize_platform(cls, v: Any) -> Any:
         if v is not None and isinstance(v, str):
             return v.upper()
         return v

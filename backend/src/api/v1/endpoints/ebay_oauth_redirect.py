@@ -18,11 +18,12 @@ async def ebay_oauth_redirect(
     state: str = Query(None, description="State parameter for CSRF protection"),
     error: str = Query(None, description="Error from eBay OAuth"),
     error_description: str = Query(None, description="Error description"),
-):
+) -> HTMLResponse:
     """Handle eBay OAuth redirect and display the authorization code."""
 
     if error:
-        return f"""
+        return HTMLResponse(
+            content=f"""
         <html>
             <head>
                 <title>eBay Authorization Failed</title>
@@ -42,9 +43,11 @@ async def ebay_oauth_redirect(
             </body>
         </html>
         """
+        )
 
     if not code:
-        return """
+        return HTMLResponse(
+            content="""
         <html>
             <head>
                 <title>eBay Authorization Error</title>
@@ -60,8 +63,10 @@ async def ebay_oauth_redirect(
             </body>
         </html>
         """
+        )
 
-    return f"""
+    return HTMLResponse(
+        content=f"""
     <html>
         <head>
             <title>eBay Authorization Successful</title>
@@ -154,3 +159,4 @@ async def ebay_oauth_redirect(
         </body>
     </html>
     """
+    )
