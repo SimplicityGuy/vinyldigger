@@ -23,35 +23,35 @@ class SellerAnalysisService:
             "CA": 15.00,  # US to Canada
             "EU": 25.00,  # US to Europe
             "UK": 25.00,  # US to UK
-            "OTHER": 35.00,  # US to rest of world
+            "OTH": 35.00,  # US to rest of world
         },
         "CA": {
             "US": 15.00,  # Canada to US
             "CA": 8.00,  # Domestic Canada
             "EU": 20.00,  # Canada to Europe
             "UK": 20.00,  # Canada to UK
-            "OTHER": 30.00,  # Canada to rest of world
+            "OTH": 30.00,  # Canada to rest of world
         },
         "EU": {
             "US": 25.00,  # Europe to US
             "CA": 20.00,  # Europe to Canada
             "EU": 12.00,  # Within Europe
             "UK": 15.00,  # Europe to UK
-            "OTHER": 30.00,  # Europe to rest of world
+            "OTH": 30.00,  # Europe to rest of world
         },
         "UK": {
             "US": 25.00,  # UK to US
             "CA": 20.00,  # UK to Canada
             "EU": 15.00,  # UK to Europe
             "UK": 8.00,  # Domestic UK
-            "OTHER": 30.00,  # UK to rest of world
+            "OTH": 30.00,  # UK to rest of world
         },
-        "OTHER": {
+        "OTH": {
             "US": 35.00,  # International to US
             "CA": 30.00,  # International to Canada
             "EU": 30.00,  # International to Europe
             "UK": 30.00,  # International to UK
-            "OTHER": 25.00,  # International to international
+            "OTH": 25.00,  # International to international
         },
     }
 
@@ -59,7 +59,7 @@ class SellerAnalysisService:
     def normalize_country_code(location: str | None) -> str:
         """Normalize location to country code for shipping estimates."""
         if not location:
-            return "OTHER"
+            return "OTH"
 
         location_upper = location.upper()
 
@@ -108,7 +108,7 @@ class SellerAnalysisService:
         if any(country in location_upper for country in eu_countries):
             return "EU"
 
-        return "OTHER"
+        return "OTH"
 
     async def extract_seller_info(self, item_data: dict[str, Any], platform: SearchPlatform) -> dict[str, Any]:
         """Extract seller information from item data."""
@@ -266,7 +266,7 @@ class SellerAnalysisService:
     ) -> Decimal:
         """Estimate shipping cost based on seller and user locations."""
 
-        seller_country = seller.country_code or "OTHER"
+        seller_country = seller.country_code or "OTH"
         user_country = self.normalize_country_code(user_location)
 
         # Get base shipping cost
@@ -343,12 +343,12 @@ class SellerAnalysisService:
         if not preferred_location:
             return Decimal("50.0")  # Neutral if no preference
 
-        seller_country = seller.country_code or "OTHER"
+        seller_country = seller.country_code or "OTH"
         preferred_country = self.normalize_country_code(preferred_location)
 
         if seller_country == preferred_country:
             return Decimal("100.0")  # Perfect match
-        elif seller_country == "OTHER" or preferred_country == "OTHER":
+        elif seller_country == "OTH" or preferred_country == "OTH":
             return Decimal("30.0")  # Unknown location penalty
         else:
             return Decimal("10.0")  # Different location penalty

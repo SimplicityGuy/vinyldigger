@@ -217,10 +217,17 @@ class ItemMatchingService:
             return existing_match
 
         # Create new match
+        year = item_info.get("year")
+        if year is not None and isinstance(year, str):
+            try:
+                year = int(year)
+            except (ValueError, TypeError):
+                year = None
+
         new_match = ItemMatch(
             canonical_title=item_info["title"],
             canonical_artist=item_info["artist"],
-            canonical_year=item_info.get("year"),
+            canonical_year=year,
             canonical_format=item_info.get("format"),
             catalog_number=item_info.get("catalog_number"),
             match_fingerprint=fingerprint,

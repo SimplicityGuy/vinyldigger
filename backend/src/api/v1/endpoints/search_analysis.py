@@ -170,7 +170,11 @@ async def get_multi_item_deals(
     analysis = analysis_result.scalar_one_or_none()
 
     if not analysis:
-        raise HTTPException(status_code=404, detail="Analysis not found for this search")
+        return {
+            "search_id": str(search_id),
+            "multi_item_deals": [],
+            "message": "Analysis not yet completed for this search",
+        }
 
     # Get multi-item recommendations
     multi_item_recs_result = await db.execute(

@@ -50,10 +50,10 @@ class TestSellerAnalysisService:
         assert SellerAnalysisService.normalize_country_code("Toronto, Canada") == "CA"
         assert SellerAnalysisService.normalize_country_code("Berlin, Germany") == "EU"  # Germany is grouped under EU
         assert (
-            SellerAnalysisService.normalize_country_code("Tokyo, Japan") == "OTHER"
+            SellerAnalysisService.normalize_country_code("Tokyo, Japan") == "OTH"
         )  # Japan is not specifically handled
-        assert SellerAnalysisService.normalize_country_code(None) == "OTHER"
-        assert SellerAnalysisService.normalize_country_code("Random Location") == "OTHER"
+        assert SellerAnalysisService.normalize_country_code(None) == "OTH"
+        assert SellerAnalysisService.normalize_country_code("Random Location") == "OTH"
 
     def test_extract_discogs_seller(self, service):
         """Test extracting seller info from Discogs data."""
@@ -161,7 +161,7 @@ class TestSellerAnalysisService:
         # Test different countries but preference is ANY (gets normalized to OTHER)
         sample_seller.country_code = "UK"
         score = await service.calculate_location_preference_score(seller=sample_seller, preferred_location="ANY")
-        assert score == Decimal("30.0")  # ANY gets normalized to OTHER, so penalty applies
+        assert score == Decimal("30.0")  # ANY gets normalized to OTH, so penalty applies
 
         # Test different countries with specific preference
         sample_seller.country_code = "UK"

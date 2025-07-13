@@ -231,6 +231,24 @@ class TestSearchAnalysisEndpoints:
         assert deal["deal_score"] == "EXCELLENT"
 
     @pytest.mark.asyncio
+    async def test_get_multi_item_deals_no_analysis(
+        self, authenticated_client: AsyncClient, db_session: AsyncSession, sample_search
+    ):
+        """Test multi-item deals endpoint when analysis hasn't been completed."""
+        # Add only the search, no analysis
+        db_session.add(sample_search)
+        await db_session.commit()
+
+        response = await authenticated_client.get(f"/api/v1/analysis/search/{sample_search.id}/multi-item-deals")
+
+        assert response.status_code == status.HTTP_200_OK
+        data = response.json()
+
+        assert data["search_id"] == str(sample_search.id)
+        assert data["multi_item_deals"] == []
+        assert data["message"] == "Analysis not yet completed for this search"
+
+    @pytest.mark.asyncio
     async def test_get_price_comparison_success(
         self, authenticated_client: AsyncClient, db_session: AsyncSession, sample_search, sample_seller
     ):
