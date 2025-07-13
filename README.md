@@ -41,7 +41,8 @@ A powerful web application that automates vinyl record discovery and comparison 
 - **Condition Filtering**: Minimum acceptable conditions for records and sleeves
 - **Location Preferences**: Filter by seller location (US, EU, UK, or worldwide)
 - **Price History**: Track price changes over time
-- **Automated Monitoring**: Schedule searches to run periodically
+- **Automated Monitoring**: Schedule searches to run periodically (configurable frequency: 6-48+ hours)
+- **Event-Driven Analysis**: Comprehensive analysis runs automatically after each search execution
 
 ### 🔐 Security & Privacy
 - **OAuth Authentication**: Secure OAuth integration for both Discogs (OAuth 1.0a) and eBay (OAuth 2.0)

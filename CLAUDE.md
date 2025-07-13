@@ -77,12 +77,41 @@ frontend/
 3. **Redis**: Message broker between services
 4. **Task States**: Tracked in PostgreSQL
 
-### Search Workflow
-1. User creates saved search with criteria
-2. Scheduler checks for due searches hourly
-3. Worker executes search across platforms
-4. Results stored with collection/want list matching
-5. Price history tracked for trends
+### Search & Analysis Workflow
+
+#### Search Execution
+1. **User creates saved search** with criteria and frequency preference
+2. **Scheduler checks for due searches** every hour via APScheduler
+3. **Worker executes search** across Discogs/eBay platforms
+4. **Analysis runs immediately** after search completion
+5. **Results stored** with collection/want list matching and analysis data
+6. **Price history tracked** for trends over time
+
+#### Analysis Frequency & Execution Model
+
+**Analysis is Event-Driven**: Analysis occurs every time a search executes, not on an independent schedule.
+
+**Search Frequency** (User Configurable):
+- **Default**: Every 24 hours per saved search
+- **Configurable**: 6, 12, 24, 48+ hours via `check_interval_hours`
+- **Manual**: Users can trigger immediate searches anytime
+
+**What Gets Analyzed Each Time**:
+- **Item Matching**: Cross-platform item identification using fuzzy matching
+- **Seller Analysis**: Reputation scoring, inventory depth, location preferences
+- **Deal Recommendations**: Multi-item opportunities, shipping cost optimization
+- **Collection/Wantlist Matching**: Against user's Discogs collection data
+- **Price Comparison**: Historical pricing and market trends
+
+**Analysis Results**:
+- **Immediately Available**: Via `/api/v1/analysis/search/{id}/...` endpoints
+- **Cached Until Next Run**: Analysis data persists until search re-executes
+- **Progressive Enhancement**: New searches add to historical analysis data
+
+**Performance Characteristics**:
+- **Concurrent Processing**: Multiple searches can run simultaneously via Celery workers
+- **Scalable**: Worker pool can be scaled based on user demand
+- **Efficient**: Results cached in database, no redundant analysis calls
 
 ## Development Guidelines
 
@@ -213,6 +242,18 @@ See `backend/docs/testing_guide.md` for comprehensive testing patterns and examp
 2. Add to Celery imports
 3. Create service method to queue task
 4. Add monitoring/logging
+
+### Modifying Analysis Frequency
+**To change default frequency**:
+1. Update `check_interval_hours` default in `src/models/search.py`
+2. Update API schema defaults in `src/api/v1/endpoints/searches.py`
+3. Update config defaults in `src/api/v1/endpoints/config.py`
+
+**Analysis execution flow**:
+- `src/workers/scheduler.py` → Checks `SavedSearch.check_interval_hours`
+- `src/workers/tasks.py` → `RunSearchTask` → Executes search + analysis
+- `src/services/recommendation_engine.py` → Performs analysis logic
+- Results stored in `search_analyses`, `deal_recommendations` tables
 
 ### Modifying Database Schema
 **Development Workflow:**

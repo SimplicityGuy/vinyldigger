@@ -1,3 +1,18 @@
+"""Background tasks for VinylDigger.
+
+ANALYSIS EXECUTION MODEL:
+- Analysis is EVENT-DRIVEN: runs automatically after each search execution
+- Analysis frequency = Search frequency (user configurable via check_interval_hours)
+- Default: Every 24 hours per saved search
+- Manual: Users can trigger immediate searches anytime
+
+SEARCH → ANALYSIS FLOW:
+1. Scheduler (hourly) → Checks SavedSearch.check_interval_hours
+2. RunSearchTask → Executes search across platforms
+3. Analysis runs immediately → Item matching, seller analysis, recommendations
+4. Results cached → Available via /api/v1/analysis/... endpoints until next run
+"""
+
 import asyncio
 import threading
 from datetime import datetime
