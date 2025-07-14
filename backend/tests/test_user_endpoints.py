@@ -70,7 +70,7 @@ class TestUserEndpoints:
         response = await authenticated_client.put("/api/v1/auth/me", json=update_data)
 
         assert response.status_code == status.HTTP_400_BAD_REQUEST
-        assert "already exists" in response.json()["detail"]
+        assert "Email already registered" in response.json()["detail"]
 
     async def test_update_user_same_email(self, authenticated_client: AsyncClient, db_session: AsyncSession, mock_user):
         """Test user update with same email (no change)."""

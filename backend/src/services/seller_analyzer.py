@@ -373,6 +373,10 @@ class SellerAnalysisService:
         self, db: AsyncSession, search_id: str, min_items: int = 2
     ) -> list[dict[str, Any]]:
         """Find sellers with multiple items in a search."""
+        from uuid import UUID
+
+        # Convert string search_id to UUID for database query
+        search_uuid = UUID(search_id) if isinstance(search_id, str) else search_id
 
         # Query for sellers with multiple items
         query = (
@@ -382,7 +386,7 @@ class SellerAnalysisService:
                 func.sum(SearchResult.item_price).label("total_value"),
                 func.sum(case((SearchResult.is_in_wantlist.is_(True), 1), else_=0)).label("wantlist_count"),
             )
-            .where(SearchResult.search_id == search_id, SearchResult.seller_id.is_not(None))
+            .where(SearchResult.search_id == search_uuid, SearchResult.seller_id.is_not(None))
             .group_by(SearchResult.seller_id)
             .having(func.count(SearchResult.id) >= min_items)
             .order_by(func.count(SearchResult.id).desc())

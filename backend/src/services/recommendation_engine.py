@@ -41,14 +41,17 @@ class RecommendationEngine:
         """Perform comprehensive analysis of search results."""
 
         # Get search details
-        search_result = await db.execute(select(SavedSearch).where(SavedSearch.id == search_id))
+        from uuid import UUID
+
+        search_uuid = UUID(search_id) if isinstance(search_id, str) else search_id
+        search_result = await db.execute(select(SavedSearch).where(SavedSearch.id == search_uuid))
         search = search_result.scalar_one_or_none()
 
         if not search:
             raise ValueError(f"Search {search_id} not found")
 
         # Get all search results
-        results_query = await db.execute(select(SearchResult).where(SearchResult.search_id == search_id))
+        results_query = await db.execute(select(SearchResult).where(SearchResult.search_id == search_uuid))
         search_results = list(results_query.scalars().all())
 
         # Calculate summary statistics
@@ -67,12 +70,14 @@ class RecommendationEngine:
         unique_sellers = len({r.seller_id for r in search_results if r.seller_id})
 
         # Find multi-item sellers
-        multi_item_opportunities = await self.seller_analyzer.find_multi_item_opportunities(db, search_id, min_items=2)
+        multi_item_opportunities = await self.seller_analyzer.find_multi_item_opportunities(
+            db, str(search_uuid), min_items=2
+        )
         multi_item_sellers = len(multi_item_opportunities)
 
         # Create analysis record
         analysis = SearchResultAnalysis(
-            search_id=search_id,
+            search_id=search_uuid,
             total_results=total_results,
             total_sellers=unique_sellers,
             multi_item_sellers=multi_item_sellers,
