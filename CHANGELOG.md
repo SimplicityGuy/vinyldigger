@@ -8,50 +8,37 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
-- Marketplace search implementation - search actual listings with real prices
-- Editable saved searches with full CRUD functionality
-- Enhanced price comparison UI with expandable album groupings
-- Direct links to eBay listings and Discogs release pages
-- Dashboard improvements with 4-card stats grid and recent activity feed
-- Real-time sync status with intelligent completion detection
-- Profile management with editable email addresses
-- OAuth authentication support for both Discogs (OAuth 1.0a) and eBay (OAuth 2.0)
-- Backend testing guide documentation
-- Comprehensive documentation updates and cleanup
-
-### Changed
-- Switched from Discogs catalog database search to marketplace search
-- Improved search result data structure with listing IDs and release IDs
-- Enhanced seller analysis with complete marketplace data
-- Updated Python to 3.13 with Redis type annotation fixes
-- Improved Docker builds with OCI standard labels compliance
-- Enhanced API documentation with new sync endpoints
+- Documentation improvements and organization
+- CHANGELOG.md and SECURITY.md files
 
 ### Fixed
-- Member Since display in user settings
-- Redis type annotation issues for Python 3.13 compatibility
-- Foreign key validation with proper enum usage
-- OAuth token length support (5000 characters)
-- Platform naming consistency (lowercase in backend)
 - Pre-commit hook issues in scheduler tests
 
-### Security
-- OAuth authentication implementation replacing API keys
-- Encrypted storage for legacy API credentials
-- JWT token security enhancements
-
-## [1.0.0] - 2025-01-01
+## [1.0.0] - 2025-01-08
 
 ### Added
 - Initial release of VinylDigger
-- Smart search integration across Discogs and eBay
-- Want list and collection matching
-- Multi-seller analysis and deal recommendations
-- Automated search scheduling
-- User authentication and authorization
-- Docker containerization
-- Comprehensive test suite
+- Marketplace search implementation - search actual listings with real prices
+- Smart search integration across Discogs and eBay platforms
+- Want list and collection matching with flexible sync options
+- Multi-seller analysis and smart deal recommendations
+- Automated search scheduling with configurable frequency (6-48+ hours)
+- Editable saved searches with full CRUD functionality
+- Enhanced price comparison UI with expandable album groupings
+- Direct links to eBay listings and Discogs release pages
+- Dashboard with 4-card stats grid and recent activity feed
+- Real-time sync status with intelligent completion detection
+- Profile management with editable email addresses
+- OAuth authentication support for both Discogs (OAuth 1.0a) and eBay (OAuth 2.0)
+- Encrypted storage for legacy API credentials
+- JWT-based authentication system
+- Docker containerization with OCI standard labels
+- Comprehensive test suite with pytest and Vitest
 - API documentation with Swagger/OpenAPI
+- PostgreSQL 16 with async SQLAlchemy
+- Redis 7 with Celery for background tasks
+- React 19 with TypeScript 5.7 frontend
+- Tailwind CSS v4 with Radix UI components
 
 [Unreleased]: https://github.com/SimplicityGuy/vinyldigger/compare/v1.0.0...HEAD
 [1.0.0]: https://github.com/SimplicityGuy/vinyldigger/releases/tag/v1.0.0

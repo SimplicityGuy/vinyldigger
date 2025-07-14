@@ -117,11 +117,11 @@ A powerful web application that automates vinyl record discovery and comparison 
    - Backend API: http://localhost:8000
    - API Documentation: http://localhost:8000/api/docs
 
-## ✨ Recent Improvements (January 2025)
+## ✨ Key Features
 
-VinylDigger has received major UX and functionality improvements:
+VinylDigger includes these powerful capabilities:
 
-### 🎯 Enhanced User Experience
+### 🎯 User Experience
 - **Editable Saved Searches**: Modify all search parameters including query, platform, and preferences
 - **Improved Price Comparison UI**: Expandable album groupings with clean, organized listings
 - **Direct Links**: One-click access to eBay listings and Discogs release pages

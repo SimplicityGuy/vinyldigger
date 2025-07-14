@@ -4,7 +4,7 @@
 
 VinylDigger is a modern web application designed to help vinyl record collectors find the best deals across multiple marketplaces. The system employs a microservices architecture with clear separation between frontend, backend API, background workers, and scheduled tasks.
 
-### Recent Architecture Enhancements (January 2025)
+### Key Architecture Features
 
 - **Enhanced UI/UX Layer**: Improved React components with better state management and real-time updates
 - **Extended API Surface**: Additional endpoints for complete CRUD operations on user resources

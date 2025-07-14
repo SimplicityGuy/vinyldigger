@@ -4,7 +4,7 @@
 
 VinylDigger provides a RESTful API for automating vinyl record discovery across Discogs and eBay. The API is built with FastAPI and automatically generates OpenAPI/Swagger documentation.
 
-### Recent API Updates (January 2025)
+### API Features
 
 - **Enhanced User Management**: New PUT endpoint for updating user profile information
 - **Complete Search CRUD**: Full create, read, update, delete operations for saved searches

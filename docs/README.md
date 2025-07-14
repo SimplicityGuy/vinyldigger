@@ -25,7 +25,7 @@ Welcome to the VinylDigger documentation! This index provides quick access to al
 - **[Troubleshooting Guide](troubleshooting.md)** - Common issues and their solutions
 - **[Documentation Status Report](documentation-status.md)** - Comprehensive documentation audit and verification
 - **[Documentation Cleanup Summary](documentation-cleanup-summary.md)** - Recent standardization actions and results
-- **[UI/UX Improvements Summary](ui-improvements-summary.md)** - January 2025 user experience enhancements
+- **[UI/UX Design Overview](ui-ux-design.md)** - User experience design and features
 
 ### Specialized Guides
 - **[OAuth Setup Guide](oauth-setup.md)** - General OAuth authentication setup
@@ -85,7 +85,7 @@ docs/
 ├── docker-oci-labels.md        # Docker standards documentation
 ├── documentation-status.md     # Documentation audit report
 ├── documentation-cleanup-summary.md  # Cleanup actions summary
-├── ui-improvements-summary.md  # January 2025 UI/UX enhancements
+├── ui-ux-design.md             # UI/UX design documentation
 └── backend/                    # Backend-specific documentation
     ├── development_db_workflow.md    # Database development workflow
     ├── discogs_auth.md              # Discogs OAuth authentication guide
@@ -138,4 +138,4 @@ backend/docs/
 
 ---
 
-*Last updated: January 2025 - Includes recent UI/UX improvements and API enhancements*
+*Last updated: January 2025*

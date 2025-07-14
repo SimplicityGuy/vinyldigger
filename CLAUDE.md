@@ -3,9 +3,9 @@
 ## Project Overview
 VinylDigger is a web application that automates vinyl record discovery across Discogs and eBay. It helps record collectors find the best deals by monitoring both platforms, matching against their want list, and identifying sellers with multiple desired items to optimize shipping costs.
 
-## Recent Improvements (January 2025)
+## Core Features
 
-### User Experience Enhancements
+### User Experience
 1. **Editable Saved Searches**: Complete CRUD functionality for saved searches
 2. **Enhanced Price Comparison UI**: Expandable album groupings with clean organization
 3. **Direct Links**: One-click access to eBay listings and Discogs release pages
