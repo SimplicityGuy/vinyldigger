@@ -187,7 +187,7 @@ test-backend:
 
 # Run backend tests in CI with coverage
 test-backend-ci:
-    cd backend && uv run pytest --cov=src --cov-report=xml
+    cd backend && python3 -m pytest --cov=src --cov-report=xml
 
 # Run frontend tests locally
 test-frontend:
@@ -210,7 +210,7 @@ install-backend:
 
 # Install backend dependencies for CI (system install)
 install-backend-ci:
-    cd backend && uv pip install -e ".[dev]" --system
+    cd backend && uv pip install --system -e ".[dev]"
 
 # Install frontend dependencies
 install-frontend:
