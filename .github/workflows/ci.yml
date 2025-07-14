@@ -22,7 +22,7 @@ jobs:
           python-version: '3.13'
 
       - name: Install just
-        uses: extractions/setup-just@dd310ad5a97d8e7b41793f8ef055398d51ad4de6 # v2.0.0
+        uses: extractions/setup-just@e33e0265a09d6d736e2ee1e0eb685ef1de4669ff # v3.0.0
         with:
           just-version: '1.38.0'  # Pin to specific version for reliability
 
@@ -84,7 +84,7 @@ jobs:
           enable-cache: true
 
       - name: Install just
-        uses: extractions/setup-just@dd310ad5a97d8e7b41793f8ef055398d51ad4de6 # v2.0.0
+        uses: extractions/setup-just@e33e0265a09d6d736e2ee1e0eb685ef1de4669ff # v3.0.0
         with:
           just-version: '1.38.0'  # Pin to specific version for reliability
 
@@ -149,7 +149,7 @@ jobs:
           cache-dependency-path: frontend/package-lock.json
 
       - name: Install just
-        uses: extractions/setup-just@dd310ad5a97d8e7b41793f8ef055398d51ad4de6 # v2.0.0
+        uses: extractions/setup-just@e33e0265a09d6d736e2ee1e0eb685ef1de4669ff # v3.0.0
         with:
           just-version: '1.38.0'  # Pin to specific version for reliability
 
