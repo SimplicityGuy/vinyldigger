@@ -1,7 +1,17 @@
 import { memo } from 'react'
 import { useParams, Link, useNavigate } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { ChevronRight, BarChart3, TrendingDown, Clock, Play, Package, Calendar, Timer, FileText } from 'lucide-react'
+import {
+  ChevronRight,
+  BarChart3,
+  TrendingDown,
+  Clock,
+  Play,
+  Package,
+  Calendar,
+  Timer,
+  FileText,
+} from 'lucide-react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -92,10 +102,7 @@ export const SearchDetailPage = memo(function SearchDetailPage() {
             Monitor vinyl records across multiple platforms
           </p>
         </div>
-        <Button
-          onClick={() => runSearchMutation.mutate()}
-          disabled={runSearchMutation.isPending}
-        >
+        <Button onClick={() => runSearchMutation.mutate()} disabled={runSearchMutation.isPending}>
           <Play className="h-4 w-4 mr-2" />
           Run Search
         </Button>
@@ -108,16 +115,16 @@ export const SearchDetailPage = memo(function SearchDetailPage() {
             <FileText className="h-5 w-5" />
             Search Configuration
           </CardTitle>
-          <CardDescription>
-            Details about how this search is configured
-          </CardDescription>
+          <CardDescription>Details about how this search is configured</CardDescription>
         </CardHeader>
         <CardContent>
           <div className="grid gap-4 md:grid-cols-2">
             <div>
               <div className="text-sm text-muted-foreground mb-1">Platform</div>
               <Badge className={getPlatformBadge(search.platform)}>
-                {search.platform === 'both' ? 'All Platforms' : search.platform.charAt(0).toUpperCase() + search.platform.slice(1)}
+                {search.platform === 'both'
+                  ? 'All Platforms'
+                  : search.platform.charAt(0).toUpperCase() + search.platform.slice(1)}
               </Badge>
             </div>
             <div>
@@ -132,9 +139,7 @@ export const SearchDetailPage = memo(function SearchDetailPage() {
               <div className="flex items-center gap-2">
                 <Clock className="h-4 w-4 text-muted-foreground" />
                 <span>
-                  {search.last_run_at
-                    ? new Date(search.last_run_at).toLocaleString()
-                    : 'Never'}
+                  {search.last_run_at ? new Date(search.last_run_at).toLocaleString() : 'Never'}
                 </span>
               </div>
             </div>
@@ -142,9 +147,7 @@ export const SearchDetailPage = memo(function SearchDetailPage() {
               <div className="text-sm text-muted-foreground mb-1">Check Interval</div>
               <div className="flex items-center gap-2">
                 <Calendar className="h-4 w-4 text-muted-foreground" />
-                <span>
-                  {search.is_active ? 'Active' : 'Inactive'}
-                </span>
+                <span>{search.is_active ? 'Active' : 'Inactive'}</span>
               </div>
             </div>
           </div>
@@ -152,9 +155,7 @@ export const SearchDetailPage = memo(function SearchDetailPage() {
           {/* Search Query */}
           <div className="mt-4 pt-4 border-t">
             <div className="text-sm text-muted-foreground mb-1">Search Query</div>
-            <code className="block p-3 bg-muted rounded-md text-sm">
-              {search.query}
-            </code>
+            <code className="block p-3 bg-muted rounded-md text-sm">{search.query}</code>
           </div>
 
           {/* Filters */}
@@ -184,12 +185,8 @@ export const SearchDetailPage = memo(function SearchDetailPage() {
             <BarChart3 className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">
-              View Results
-            </div>
-            <p className="text-xs text-muted-foreground">
-              Total results from last run
-            </p>
+            <div className="text-2xl font-bold">View Results</div>
+            <p className="text-xs text-muted-foreground">Total results from last run</p>
           </CardContent>
         </Card>
 
@@ -202,12 +199,8 @@ export const SearchDetailPage = memo(function SearchDetailPage() {
             <TrendingDown className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">
-              View Deals
-            </div>
-            <p className="text-xs text-muted-foreground">
-              Multi-item deals and price comparisons
-            </p>
+            <div className="text-2xl font-bold">View Deals</div>
+            <p className="text-xs text-muted-foreground">Multi-item deals and price comparisons</p>
           </CardContent>
         </Card>
 
@@ -220,12 +213,8 @@ export const SearchDetailPage = memo(function SearchDetailPage() {
             <Package className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">
-              Browse
-            </div>
-            <p className="text-xs text-muted-foreground">
-              View all your saved searches
-            </p>
+            <div className="text-2xl font-bold">Browse</div>
+            <p className="text-xs text-muted-foreground">View all your saved searches</p>
           </CardContent>
         </Card>
       </div>
@@ -234,9 +223,7 @@ export const SearchDetailPage = memo(function SearchDetailPage() {
       <Card>
         <CardHeader>
           <CardTitle>Search Status</CardTitle>
-          <CardDescription>
-            Current status and execution history
-          </CardDescription>
+          <CardDescription>Current status and execution history</CardDescription>
         </CardHeader>
         <CardContent>
           <div className="space-y-3">
@@ -262,12 +249,9 @@ export const SearchDetailPage = memo(function SearchDetailPage() {
             <div className="flex items-center justify-between">
               <span className="text-sm font-medium">Created</span>
               <span className="text-sm text-muted-foreground">
-                {search.created_at
-                  ? new Date(search.created_at).toLocaleDateString()
-                  : 'Unknown'}
+                {search.created_at ? new Date(search.created_at).toLocaleDateString() : 'Unknown'}
               </span>
             </div>
-
           </div>
         </CardContent>
       </Card>

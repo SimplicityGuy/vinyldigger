@@ -1,6 +1,18 @@
 import { memo, useState, useEffect, useRef } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { AlertCircle, Package, Heart, RefreshCw, Check, Loader2, Minus, Search, TrendingUp, Clock, ArrowRight } from 'lucide-react'
+import {
+  AlertCircle,
+  Package,
+  Heart,
+  RefreshCw,
+  Check,
+  Loader2,
+  Minus,
+  Search,
+  TrendingUp,
+  Clock,
+  ArrowRight,
+} from 'lucide-react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { collectionApi, oauthApi, searchApi } from '@/lib/api'
@@ -174,8 +186,12 @@ export const DashboardPage = memo(function DashboardPage() {
     // Only check for completion if sync has been running for at least 5 seconds
     if (currentTime - syncStartTime < 5000) return
 
-    const collectionLastSync = collectionStatus?.last_sync_at ? new Date(collectionStatus.last_sync_at).getTime() : 0
-    const wantListLastSync = wantListStatus?.last_sync_at ? new Date(wantListStatus.last_sync_at).getTime() : 0
+    const collectionLastSync = collectionStatus?.last_sync_at
+      ? new Date(collectionStatus.last_sync_at).getTime()
+      : 0
+    const wantListLastSync = wantListStatus?.last_sync_at
+      ? new Date(wantListStatus.last_sync_at).getTime()
+      : 0
 
     let syncCompleted = false
 
@@ -205,7 +221,14 @@ export const DashboardPage = memo(function DashboardPage() {
         queryClient.invalidateQueries({ queryKey: ['wantlist-status'] })
       }, 1000)
     }
-  }, [isSyncing, syncType, collectionStatus?.last_sync_at, wantListStatus?.last_sync_at, toast, queryClient])
+  }, [
+    isSyncing,
+    syncType,
+    collectionStatus?.last_sync_at,
+    wantListStatus?.last_sync_at,
+    toast,
+    queryClient,
+  ])
 
   return (
     <div className="space-y-6">
@@ -302,7 +325,9 @@ export const DashboardPage = memo(function DashboardPage() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
-              {allTasksCompleted ? '✓' : `${Object.values(completionStatus).filter(Boolean).length}/4`}
+              {allTasksCompleted
+                ? '✓'
+                : `${Object.values(completionStatus).filter(Boolean).length}/4`}
             </div>
             <p className="text-xs text-muted-foreground">
               {allTasksCompleted ? 'All setup complete' : 'Setup progress'}
@@ -324,7 +349,10 @@ export const DashboardPage = memo(function DashboardPage() {
           <CardContent>
             <div className="space-y-3">
               {searches.slice(0, 3).map((search: SavedSearch) => (
-                <div key={search.id} className="flex items-center justify-between p-3 border rounded-lg">
+                <div
+                  key={search.id}
+                  className="flex items-center justify-between p-3 border rounded-lg"
+                >
                   <div className="flex items-center gap-3">
                     <div className="flex items-center gap-2">
                       <Search className="h-4 w-4 text-muted-foreground" />
@@ -334,8 +362,7 @@ export const DashboardPage = memo(function DashboardPage() {
                     <span className="text-sm text-muted-foreground">
                       {search.last_run_at
                         ? `Last run ${new Date(search.last_run_at).toLocaleDateString()}`
-                        : 'Never run'
-                      }
+                        : 'Never run'}
                     </span>
                   </div>
                   <div className="flex items-center gap-2">
@@ -354,14 +381,19 @@ export const DashboardPage = memo(function DashboardPage() {
                   <Search className="h-8 w-8 text-muted-foreground mx-auto mb-2" />
                   <p className="text-sm text-muted-foreground">No searches yet</p>
                   <Link to="/searches">
-                    <Button size="sm" className="mt-2">Create your first search</Button>
+                    <Button size="sm" className="mt-2">
+                      Create your first search
+                    </Button>
                   </Link>
                 </div>
               )}
 
               {searches.length > 3 && (
                 <div className="pt-2 border-t">
-                  <Link to="/searches" className="flex items-center justify-center gap-2 text-sm text-blue-600 hover:text-blue-800">
+                  <Link
+                    to="/searches"
+                    className="flex items-center justify-center gap-2 text-sm text-blue-600 hover:text-blue-800"
+                  >
                     View all {searches.length} searches
                     <ArrowRight className="h-3 w-3" />
                   </Link>

@@ -4,7 +4,18 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button'
 import { Label } from '@/components/ui/label'
 import { Input } from '@/components/ui/input'
-import { Key, Settings2, User, AlertCircle, CheckCircle, ExternalLink, Calendar, Edit, Save, X } from 'lucide-react'
+import {
+  Key,
+  Settings2,
+  User,
+  AlertCircle,
+  CheckCircle,
+  ExternalLink,
+  Calendar,
+  Edit,
+  Save,
+  X,
+} from 'lucide-react'
 import { Skeleton } from '@/components/ui/skeleton'
 import api from '@/lib/api'
 import { useToast } from '@/hooks/useToast'
@@ -471,7 +482,9 @@ function SettingsPage() {
                 {isUserLoading ? (
                   <Skeleton className="h-3 w-16" />
                 ) : user?.id ? (
-                  <span className="text-xs font-mono text-muted-foreground">{user.id.slice(0, 8)}</span>
+                  <span className="text-xs font-mono text-muted-foreground">
+                    {user.id.slice(0, 8)}
+                  </span>
                 ) : (
                   <span className="text-xs text-muted-foreground">-</span>
                 )}
@@ -489,7 +502,7 @@ function SettingsPage() {
                     {new Date(user.created_at).toLocaleDateString('en-US', {
                       year: 'numeric',
                       month: 'short',
-                      day: 'numeric'
+                      day: 'numeric',
                     })}
                   </span>
                 ) : (

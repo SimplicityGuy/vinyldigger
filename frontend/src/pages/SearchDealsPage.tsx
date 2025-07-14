@@ -1,59 +1,70 @@
 import { memo, useState } from 'react'
 import { useParams, Link } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
-import { Package, Users, TrendingDown, MapPin, Star, Award, ChevronDown, ChevronUp, ExternalLink, ChevronRight } from 'lucide-react'
+import {
+  Package,
+  Users,
+  TrendingDown,
+  MapPin,
+  Star,
+  Award,
+  ChevronDown,
+  ChevronUp,
+  ExternalLink,
+  ChevronRight,
+} from 'lucide-react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { searchAnalysisApi, searchApi } from '@/lib/api'
 
 interface Seller {
-  id: string | null;
-  name: string;
-  location: string | null;
-  feedback_score: number | null;
+  id: string | null
+  name: string
+  location: string | null
+  feedback_score: number | null
 }
 
 interface ListingItemData {
-  id?: string;
-  item_web_url?: string;
-  release_id?: string;
-  resource_url?: string;
-  title?: string;
-  year?: number;
-  [key: string]: unknown;
+  id?: string
+  item_web_url?: string
+  release_id?: string
+  resource_url?: string
+  title?: string
+  year?: number
+  [key: string]: unknown
 }
 
 interface Listing {
-  id: string;
-  platform: string;
-  price: number | null;
-  condition: string | null;
-  seller: Seller | null;
-  is_in_wantlist: boolean;
-  shipping_price?: number;
-  item_data?: ListingItemData;
+  id: string
+  platform: string
+  price: number | null
+  condition: string | null
+  seller: Seller | null
+  is_in_wantlist: boolean
+  shipping_price?: number
+  item_data?: ListingItemData
 }
 
 interface ItemMatch {
-  canonical_title: string;
-  canonical_artist: string;
-  total_matches: number;
+  canonical_title: string
+  canonical_artist: string
+  total_matches: number
 }
 
 interface PriceComparison {
-  item_match: ItemMatch;
-  listings: Listing[];
+  item_match: ItemMatch
+  listings: Listing[]
 }
 
 interface MultiItemDeal {
-  seller: Seller | null;
-  total_items: number;
-  wantlist_items: number;
-  total_value: number;
-  estimated_shipping: number | null;
-  total_cost: number;
-  potential_savings: number | null;
-  deal_score: string;
-  item_ids: string[];
+  seller: Seller | null
+  total_items: number
+  wantlist_items: number
+  total_value: number
+  estimated_shipping: number | null
+  total_cost: number
+  potential_savings: number | null
+  deal_score: string
+  item_ids: string[]
 }
 
 // Helper function to create URLs
@@ -82,7 +93,6 @@ const createDiscogsReleaseUrl = (listing: Listing): string | undefined => {
   }
   return undefined
 }
-
 
 export const SearchDealsPage = memo(function SearchDealsPage() {
   const { searchId } = useParams<{ searchId: string }>()
@@ -146,7 +156,9 @@ export const SearchDealsPage = memo(function SearchDealsPage() {
       <div>
         <h2 className="text-3xl font-bold tracking-tight">Multi-Item Deals & Price Comparison</h2>
         <p className="text-muted-foreground">
-          {searchData ? `Results for "${searchData.name}"` : 'Find the best deals by combining multiple items from the same seller'}
+          {searchData
+            ? `Results for "${searchData.name}"`
+            : 'Find the best deals by combining multiple items from the same seller'}
         </p>
       </div>
 
@@ -173,18 +185,20 @@ export const SearchDealsPage = memo(function SearchDealsPage() {
           ) : (
             <div className="space-y-4">
               {dealsData.multi_item_deals.map((deal: MultiItemDeal, index: number) => (
-                <div
-                  key={index}
-                  className="border rounded-lg p-4 space-y-3"
-                >
+                <div key={index} className="border rounded-lg p-4 space-y-3">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-3">
-                      <div className={`px-3 py-1 rounded-full text-sm font-medium ${
-                        deal.deal_score === 'EXCELLENT' ? 'bg-green-100 text-green-800' :
-                        deal.deal_score === 'VERY_GOOD' ? 'bg-blue-100 text-blue-800' :
-                        deal.deal_score === 'GOOD' ? 'bg-yellow-100 text-yellow-800' :
-                        'bg-gray-100 text-gray-800'
-                      }`}>
+                      <div
+                        className={`px-3 py-1 rounded-full text-sm font-medium ${
+                          deal.deal_score === 'EXCELLENT'
+                            ? 'bg-green-100 text-green-800'
+                            : deal.deal_score === 'VERY_GOOD'
+                              ? 'bg-blue-100 text-blue-800'
+                              : deal.deal_score === 'GOOD'
+                                ? 'bg-yellow-100 text-yellow-800'
+                                : 'bg-gray-100 text-gray-800'
+                        }`}
+                      >
                         {deal.deal_score.replace('_', ' ')} DEAL
                       </div>
                       {deal.seller && (
@@ -253,9 +267,7 @@ export const SearchDealsPage = memo(function SearchDealsPage() {
             <TrendingDown className="h-5 w-5" />
             Price Comparison
           </CardTitle>
-          <CardDescription>
-            Compare prices across different platforms and sellers
-          </CardDescription>
+          <CardDescription>Compare prices across different platforms and sellers</CardDescription>
         </CardHeader>
         <CardContent>
           {!priceData?.price_comparisons || priceData.price_comparisons.length === 0 ? (
@@ -280,7 +292,9 @@ export const SearchDealsPage = memo(function SearchDealsPage() {
                             <h4 className="font-medium">{comparison.item_match.canonical_title}</h4>
                             {(() => {
                               // Find any Discogs listing to get the release link
-                              const discogsListing = comparison.listings.find(listing => listing.platform === 'discogs')
+                              const discogsListing = comparison.listings.find(
+                                (listing) => listing.platform === 'discogs'
+                              )
                               if (discogsListing) {
                                 const releaseUrl = createDiscogsReleaseUrl(discogsListing)
                                 if (releaseUrl) {
@@ -306,7 +320,12 @@ export const SearchDealsPage = memo(function SearchDealsPage() {
                           </p>
                           <div className="flex items-center gap-4 mt-2 text-xs text-muted-foreground">
                             <span>{comparison.item_match.total_matches} listings found</span>
-                            <span>Best price: {comparison.listings[0]?.price ? `$${comparison.listings[0].price.toFixed(2)}` : 'Price TBD'}</span>
+                            <span>
+                              Best price:{' '}
+                              {comparison.listings[0]?.price
+                                ? `$${comparison.listings[0].price.toFixed(2)}`
+                                : 'Price TBD'}
+                            </span>
                           </div>
                         </div>
                         <div className="flex items-center gap-2">
@@ -334,7 +353,9 @@ export const SearchDealsPage = memo(function SearchDealsPage() {
                             >
                               <div className="flex items-center gap-4">
                                 {listingIndex === 0 && (
-                                  <div className="text-green-600 font-medium text-sm">BEST PRICE</div>
+                                  <div className="text-green-600 font-medium text-sm">
+                                    BEST PRICE
+                                  </div>
                                 )}
                                 <div className="flex items-center gap-2">
                                   <span className="px-2 py-1 bg-white rounded text-xs font-medium">
@@ -365,11 +386,12 @@ export const SearchDealsPage = memo(function SearchDealsPage() {
                                   <div className="font-medium">
                                     {listing.price ? `$${listing.price.toFixed(2)}` : 'Price TBD'}
                                   </div>
-                                  {listing.shipping_price !== undefined && listing.shipping_price !== null && (
-                                    <div className="text-xs text-muted-foreground">
-                                      + ${listing.shipping_price.toFixed(2)} shipping
-                                    </div>
-                                  )}
+                                  {listing.shipping_price !== undefined &&
+                                    listing.shipping_price !== null && (
+                                      <div className="text-xs text-muted-foreground">
+                                        + ${listing.shipping_price.toFixed(2)} shipping
+                                      </div>
+                                    )}
                                   {listing.seller?.feedback_score && (
                                     <div className="text-xs text-muted-foreground">
                                       {listing.seller.feedback_score.toFixed(1)}% feedback
