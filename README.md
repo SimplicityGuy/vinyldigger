@@ -399,6 +399,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 - UI components from [Radix UI](https://www.radix-ui.com/)
 - Styled with [Tailwind CSS](https://tailwindcss.com/)
 - State management by [TanStack Query](https://tanstack.com/query)
+- Marketplace search inspired by [Discogs-Marketplace-API-NodeJS](https://github.com/KirianCaumes/Discogs-Marketplace-API-NodeJS)
 
 ## 📞 Support
 

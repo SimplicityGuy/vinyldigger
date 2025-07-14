@@ -112,91 +112,89 @@ class DiscogsService:
         """
         Search Discogs marketplace for vinyl records.
 
-        This method searches actual marketplace listings (items for sale) rather than
-        the catalog database, ensuring results include real prices and seller information.
+        This method searches actual marketplace listings (items for sale) using web scraping
+        since there is no official marketplace search API. It provides real prices and
+        seller information from live marketplace listings.
 
         Args:
             query: Search query string
             filters: Search filters including condition, location, price range
-            db: Database session for OAuth token retrieval
-            user_id: User ID for authentication
+            db: Database session for OAuth token retrieval (not used for scraping)
+            user_id: User ID for authentication (not used for scraping)
 
         Returns:
             List of marketplace listing dictionaries with pricing and seller data
 
         Note:
-            Uses /marketplace/search endpoint to get live listings with:
+            Uses web scraping via Playwright to get live listings with:
             - Actual asking prices
             - Seller information (username, rating, location)
             - Media and sleeve conditions
             - Shipping costs where available
         """
-        if not self.client:
-            raise RuntimeError("Service not initialized. Use async with context.")
-
-        # Get OAuth auth
-        auth = await self.get_oauth_auth(db, user_id)
-        if not auth:
-            return []
-
-        params = {
-            "q": query,
-            "per_page": filters.get("limit", 50),
-            "page": filters.get("page", 1),
-            "format": "Vinyl",  # Focus on vinyl records
-        }
-
-        # Add condition filters for record and sleeve
-        if "min_record_condition" in filters:
-            params["condition"] = filters["min_record_condition"]
-
-        # Add seller location filter
-        if "seller_location_preference" in filters and filters["seller_location_preference"]:
-            if filters["seller_location_preference"] != "ANY":
-                params["seller_country"] = filters["seller_location_preference"]
-
-        # Add genre and style filters
-        if "genre" in filters and filters["genre"]:
-            params["genre"] = filters["genre"]
-        if "style" in filters and filters["style"]:
-            params["style"] = filters["style"]
-
-        # Add price range filters
-        if "min_price" in filters and filters["min_price"]:
-            params["price_min"] = str(filters["min_price"])
-        if "max_price" in filters and filters["max_price"]:
-            params["price_max"] = str(filters["max_price"])
-
-        # Add year range
-        if "year_from" in filters:
-            params["year"] = f"{filters['year_from']}-{filters.get('year_to', '')}"
-        elif "year_to" in filters:
-            params["year"] = f"-{filters['year_to']}"
-
         try:
-            # Use marketplace search instead of database search
-            response = await self.client.get("/marketplace/search", params=params, auth=auth)
-            response.raise_for_status()
+            # Import the marketplace scraper
+            from src.services.discogs_marketplace_scraper import DiscogsMarketplaceScraper
 
-            data = response.json()
-            results = []
+            # Prepare scraper filters from VinylDigger filters
+            scraper_filters = {}
 
-            # Process marketplace listings directly
-            for listing in data.get("results", []):
-                formatted = self._format_marketplace_listing(listing)
-                if formatted:
-                    results.append(formatted)
+            # Map VinylDigger filter names to scraper filter names
+            if "min_record_condition" in filters:
+                scraper_filters["condition"] = filters["min_record_condition"]
 
-            return results
+            if "seller_location_preference" in filters and filters["seller_location_preference"]:
+                if filters["seller_location_preference"] != "ANY":
+                    scraper_filters["seller_location_preference"] = filters["seller_location_preference"]
 
-        except httpx.HTTPStatusError as e:
-            if e.response.status_code == 401:
-                self.logger.error(f"Discogs authentication failed. User may need to reauthorize. Error: {str(e)}")
-            else:
-                self.logger.error(f"Discogs API error: {str(e)}")
-            return []
-        except httpx.HTTPError as e:
-            self.logger.error(f"Discogs API error: {str(e)}")
+            if "genre" in filters and filters["genre"]:
+                scraper_filters["genre"] = filters["genre"]
+
+            if "style" in filters and filters["style"]:
+                scraper_filters["style"] = filters["style"]
+
+            # Map price filters
+            if "min_price" in filters and filters["min_price"]:
+                scraper_filters["price_min"] = filters["min_price"]
+            if "max_price" in filters and filters["max_price"]:
+                scraper_filters["price_max"] = filters["max_price"]
+
+            # Map year filters
+            if "year_from" in filters:
+                scraper_filters["year_from"] = filters["year_from"]
+            if "year_to" in filters:
+                scraper_filters["year_to"] = filters["year_to"]
+
+            # Set defaults
+            scraper_filters["format"] = "Vinyl"
+            page = filters.get("page", 1)
+            limit = filters.get("limit", 50)
+
+            # Use the marketplace scraper
+            async with DiscogsMarketplaceScraper() as scraper:
+                result = await scraper.search_marketplace(query, scraper_filters, page, limit)
+
+                # Check for scraping errors
+                if "error" in result:
+                    self.logger.error(f"Marketplace scraping failed: {result.get('error')}")
+                    # In production, we could implement fallback strategies here
+                    # For now, return empty results
+                    return []
+
+                # Convert scraper results to VinylDigger format
+                formatted_results = []
+                for item in result.get("items", []):
+                    formatted = self._format_scraped_marketplace_listing(item)
+                    if formatted:
+                        formatted_results.append(formatted)
+
+                self.logger.info(f"Marketplace scraper found {len(formatted_results)} results for query: {query}")
+                return formatted_results
+
+        except Exception as e:
+            self.logger.error(f"Discogs marketplace scraping error: {str(e)}")
+            # Log additional context for debugging
+            self.logger.error(f"Query: {query}, Filters: {filters}")
             return []
 
     async def get_item_details(self, item_id: str, db: AsyncSession, user_id: str) -> dict[str, Any] | None:
@@ -388,6 +386,64 @@ class DiscogsService:
         except httpx.HTTPError as e:
             self.logger.error(f"Discogs API error syncing wantlist: {str(e)}")
             return []
+
+    def _format_scraped_marketplace_listing(self, item: dict[str, Any]) -> dict[str, Any] | None:
+        """Format a scraped marketplace listing for VinylDigger compatibility."""
+        try:
+            # Extract seller information
+            seller_info = item.get("seller", {})
+            seller = {
+                "id": seller_info.get("id"),
+                "username": seller_info.get("username", "Unknown"),
+                "rating": seller_info.get("rating"),
+                "url": seller_info.get("url"),
+            }
+
+            # Extract price information
+            price = item.get("price")
+            currency = item.get("currency", "USD")
+            shipping_cost = item.get("shipping_price")
+
+            # Extract format information
+            formats = item.get("format", [])
+            if isinstance(formats, str):
+                formats = [formats]
+
+            return {
+                "id": item.get("id"),  # Listing ID
+                "release_id": item.get("release_id", item.get("id")),  # Release ID for cross-referencing
+                "title": item.get("title", ""),
+                "artist": item.get("artist", ""),
+                "album": item.get("album", item.get("title", "")),  # For compatibility
+                "year": item.get("year"),
+                "country": item.get("country"),
+                "format": formats,
+                "label": item.get("label", []),
+                "catno": item.get("catno"),
+                "thumb": item.get("thumb", item.get("image_url")),
+                "cover_image": item.get("cover_image", item.get("image_url")),
+                "resource_url": item.get("resource_url", item.get("item_url")),
+                "uri": item.get("uri", item.get("item_url")),
+                # Actual marketplace data
+                "price": price,
+                "currency": currency,
+                "condition": item.get("condition"),
+                "sleeve_condition": item.get("sleeve_condition"),
+                "seller": seller,
+                "shipping_price": shipping_cost,
+                "location": item.get("location"),
+                "posted": item.get("posted"),
+                "allow_offers": item.get("allow_offers", False),
+                "status": item.get("status", "For Sale"),
+                "ships_from": item.get("ships_from"),
+                # For compatibility with existing code
+                "master_id": item.get("master_id"),
+                # Community data
+                "community": item.get("community", {}),
+            }
+        except Exception as e:
+            self.logger.error(f"Error formatting scraped Discogs marketplace listing: {str(e)}")
+            return None
 
     def _format_marketplace_listing(self, listing: dict[str, Any]) -> dict[str, Any] | None:
         """Format a marketplace listing from Discogs API."""

@@ -429,7 +429,8 @@ class SyncCollectionTask(AsyncTask):
                                 item_count=0,
                             )
                             db.add(collection)
-                            # Let SQLAlchemy handle flushing automatically
+                            # Flush to ensure collection gets an ID before creating collection items
+                            await db.flush()
 
                         for item in collection_items:
                             release_id = item["basic_information"]["id"]
@@ -514,7 +515,8 @@ class SyncCollectionTask(AsyncTask):
                                 item_count=0,
                             )
                             db.add(wantlist)
-                            # Let SQLAlchemy handle flushing automatically
+                            # Flush to ensure wantlist gets an ID before creating wantlist items
+                            await db.flush()
 
                         for item in wantlist_items:
                             release_id = item["basic_information"]["id"]
