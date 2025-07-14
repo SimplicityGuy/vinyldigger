@@ -1278,6 +1278,7 @@ dev = [
 dev = [
     { name = "celery-types" },
     { name = "mypy" },
+    { name = "pytest-cov" },
     { name = "types-oauthlib" },
     { name = "types-passlib" },
     { name = "types-python-jose" },
@@ -1332,6 +1333,7 @@ provides-extras = ["dev"]
 dev = [
     { name = "celery-types", specifier = ">=0.23.0" },
     { name = "mypy", specifier = ">=1.16.1" },
+    { name = "pytest-cov", specifier = ">=6.2.1" },
     { name = "types-oauthlib", specifier = ">=3.3.0.20250708" },
     { name = "types-passlib", specifier = ">=1.7.7.20250602" },
     { name = "types-python-jose", specifier = ">=3.5.0.20250531" },

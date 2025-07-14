@@ -137,6 +137,7 @@ exclude_lines = [
 dev = [
     "celery-types>=0.23.0",
     "mypy>=1.16.1",
+    "pytest-cov>=6.2.1",
     "types-oauthlib>=3.3.0.20250708",
     "types-passlib>=1.7.7.20250602",
     "types-python-jose>=3.5.0.20250531",
