@@ -1,6 +1,7 @@
 from datetime import timedelta
 from typing import Annotated, Any
 from uuid import UUID
+from uuid import UUID as UUID_type
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
@@ -84,8 +85,6 @@ async def get_current_user(
         ) from e
 
     # Convert string user_id to UUID for database query
-    from uuid import UUID as UUID_type
-
     user_uuid = UUID_type(user_id)
 
     result = await db.execute(select(User).where(User.id == user_uuid))
@@ -171,8 +170,6 @@ async def refresh_token(
 
     # Verify user exists
     # Convert string user_id to UUID for database query
-    from uuid import UUID as UUID_type
-
     user_uuid = UUID_type(user_id)
 
     result = await db.execute(select(User).where(User.id == user_uuid))

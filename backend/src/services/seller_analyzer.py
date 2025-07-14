@@ -1,5 +1,6 @@
 """Seller analysis service for multi-seller optimization and scoring."""
 
+import re
 from decimal import Decimal
 from typing import Any
 
@@ -65,7 +66,6 @@ class SellerAnalysisService:
 
         # Check for US state abbreviations first (to avoid CA confusion)
         # Only match if it ends with state abbreviation or has space after
-        import re
 
         us_state_pattern = r"(, (CA|NY|TX|FL|IL|PA|OH|GA|NC|MI|MA|WA|VA|NJ|AZ|CO|OR|MD|MN|WI))(\s|$)"
         if re.search(us_state_pattern, location_upper):

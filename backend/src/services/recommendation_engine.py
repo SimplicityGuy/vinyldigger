@@ -1,6 +1,6 @@
 """Recommendation engine for generating smart deal recommendations."""
 
-from datetime import UTC
+from datetime import UTC, datetime
 from decimal import Decimal
 from uuid import UUID
 
@@ -95,8 +95,6 @@ class RecommendationEngine:
         await self._generate_recommendations(db, analysis, search, user_id)
 
         # Mark analysis as complete
-        from datetime import datetime
-
         analysis.analysis_completed_at = datetime.now(UTC)
 
         logger.info(

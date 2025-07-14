@@ -1,6 +1,8 @@
+import base64
 import secrets
 from typing import Annotated
 
+import httpx
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from pydantic import BaseModel
 from requests_oauthlib import OAuth1Session
@@ -500,10 +502,6 @@ async def ebay_oauth_callback(
         ebay_urls = get_ebay_urls(app_config)
 
         # Exchange authorization code for access token
-        import base64
-
-        import httpx
-
         # Create Basic auth header
         auth_string = f"{app_config.consumer_key}:{app_config.consumer_secret}"
         auth_bytes = auth_string.encode("ascii")
@@ -653,10 +651,6 @@ async def verify_ebay_oauth(
         ebay_urls = get_ebay_urls(app_config)
 
         # Exchange authorization code for access token
-        import base64
-
-        import httpx
-
         # Create Basic auth header
         auth_string = f"{app_config.consumer_key}:{app_config.consumer_secret}"
         auth_bytes = auth_string.encode("ascii")
