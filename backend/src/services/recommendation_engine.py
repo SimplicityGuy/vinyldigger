@@ -85,7 +85,7 @@ class RecommendationEngine:
         )
 
         db.add(analysis)
-        await db.flush()
+        # No need to flush here - SQLAlchemy will handle it when needed
 
         # Analyze individual sellers
         await self._analyze_sellers(db, analysis, search_results, search, user_id)

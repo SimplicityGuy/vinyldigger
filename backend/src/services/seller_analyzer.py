@@ -209,7 +209,7 @@ class SellerAnalysisService:
         )
 
         db.add(new_seller)
-        await db.flush()
+        # Let SQLAlchemy handle flushing automatically
         return new_seller
 
     async def analyze_seller_inventory(self, db: AsyncSession, seller: Seller, user_id: str) -> dict[str, Any]:

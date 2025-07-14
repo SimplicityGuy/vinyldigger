@@ -236,6 +236,7 @@ class ItemMatchingService:
         )
 
         db.add(new_match)
+        # Flush to ensure the ID is generated before we use it
         await db.flush()
         return new_match
 
@@ -355,8 +356,7 @@ class ItemMatchingService:
                 (current_avg * (item_match.total_matches - 1)) + float(confidence_score)
             ) / item_match.total_matches
             item_match.avg_confidence_score = Decimal(str(new_avg))
-
-            await db.flush()
+            # Let SQLAlchemy handle flushing automatically
 
             logger.info(
                 f"Matched search result {search_result_id} to item {item_match.id} "
