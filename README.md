@@ -11,8 +11,8 @@
 [![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-4.0-38B2AC.svg)](https://tailwindcss.com/)
 [![uv](https://img.shields.io/badge/uv-0.5-purple.svg)](https://github.com/astral-sh/uv)
 
-[![CI](https://github.com/SimplicityGuy/vinyldigger/workflows/CI/badge.svg)](https://github.com/SimplicityGuy/vinyldigger/actions)
-[![Build](https://github.com/SimplicityGuy/vinyldigger/workflows/Build%20and%20Push%20Docker%20Images/badge.svg)](https://github.com/SimplicityGuy/vinyldigger/actions)
+[![CI](https://github.com/SimplicityGuy/vinyldigger/actions/workflows/ci.yml/badge.svg)](https://github.com/SimplicityGuy/vinyldigger/actions/workflows/ci.yml)
+[![Build and Push Docker Images](https://github.com/SimplicityGuy/vinyldigger/actions/workflows/build.yml/badge.svg)](https://github.com/SimplicityGuy/vinyldigger/actions/workflows/build.yml)
 [![pre-commit](https://img.shields.io/badge/pre--commit-enabled-brightgreen?logo=pre-commit)](https://github.com/pre-commit/pre-commit)
 [![Ruff](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json)](https://github.com/astral-sh/ruff)
 [![mypy](https://img.shields.io/badge/mypy-checked-blue)](http://mypy-lang.org/)
