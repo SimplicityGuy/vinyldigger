@@ -119,6 +119,17 @@ class DiscogsMarketplaceScraper:
                 # Create a new page
                 page_obj = await self.browser.new_page()
 
+                # Set user agent to appear more like a real browser
+                await page_obj.set_extra_http_headers(
+                    {
+                        "User-Agent": (
+                            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+                            "AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+                        ),
+                        "Accept-Language": "en-US,en;q=0.9",
+                    }
+                )
+
                 # Block unnecessary resources to speed up scraping
                 if self.config.block_resources:
                     await page_obj.route("**/*.{png,jpg,jpeg,gif,svg,css,woff,woff2}", lambda route: route.abort())
@@ -128,8 +139,11 @@ class DiscogsMarketplaceScraper:
 
                 # Wait for search results to load with multiple possible selectors
                 try:
+                    # First wait for the page container
+                    await page_obj.wait_for_selector("#pjax_container", timeout=5000)
+                    # Then wait for either results table or no results message
                     await page_obj.wait_for_selector(
-                        "table.table_block, .no_results, .marketplace_box", timeout=self.config.selector_timeout
+                        "table.table_block, .no_results, .mpitems", timeout=self.config.selector_timeout
                     )
                 except Exception as e:
                     logger.warning(f"Timeout waiting for marketplace content, continuing anyway: {e}")
@@ -305,11 +319,14 @@ class DiscogsMarketplaceScraper:
 
             // Extract marketplace listings - try multiple selectors
             const listings = [];
-            let rows = document.querySelectorAll('table.table_block tbody tr');
+            let rows = document.querySelectorAll('table.table_block tbody tr.shortcut_navigable');
 
             // If no table rows, try alternative selectors
             if (rows.length === 0) {
-                rows = document.querySelectorAll('.marketplace_item, .shortcut_navigable, .item_listing');
+                rows = document.querySelectorAll('table.table_block tbody tr');
+            }
+            if (rows.length === 0) {
+                rows = document.querySelectorAll('.mpitems tbody tr');
             }
 
             console.log('Found rows:', rows.length);
@@ -333,10 +350,12 @@ class DiscogsMarketplaceScraper:
                     // Parse title to extract artist and album
                     let artist = '';
                     let album = titleText;
-                    if (titleText.includes(' – ')) {
-                        const parts = titleText.split(' – ');
+                    // Check for various dash types (hyphen, en dash, em dash)
+                    const dashPattern = / [-–—] /;
+                    if (dashPattern.test(titleText)) {
+                        const parts = titleText.split(dashPattern);
                         artist = cleanText(parts[0]);
-                        album = cleanText(parts.slice(1).join(' – '));
+                        album = cleanText(parts.slice(1).join(' - '));
                     }
 
                     // Extract formats

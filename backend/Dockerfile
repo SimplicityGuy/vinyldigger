@@ -32,13 +32,14 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     g++ \
     gcc \
     postgresql-client \
+    # Minimal dependencies for headless Chromium
     libnss3 \
-    libatk-bridge2.0-0 \
-    libdrm2 \
     libxkbcommon0 \
-    libgtk-3-0 \
     libgbm1 \
     libasound2 \
+    fonts-liberation \
+    libappindicator3-1 \
+    xdg-utils \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
@@ -65,11 +66,22 @@ RUN if [ "$INSTALL_DEV" = "true" ]; then \
 # Copy application code
 COPY . .
 
-# Install Playwright browsers, make startup script executable, and create non-root user
+# Create non-root user and setup permissions
+RUN useradd -m -u 1000 appuser && \
+    chmod +x start.sh
+
+# Set Playwright environment variables for consistent location
+ENV PLAYWRIGHT_BROWSERS_PATH=/opt/playwright-browsers
+
+# Install Playwright chromium headless shell only (minimal footprint)
 RUN python -m playwright install chromium && \
-    chmod +x start.sh && \
-    useradd -m -u 1000 appuser && \
+    # Create browser directory with proper permissions
+    mkdir -p /opt/playwright-browsers && \
+    chown -R appuser:appuser /opt/playwright-browsers && \
+    # Change ownership of app directory
     chown -R appuser:appuser /app
+
+# Switch to appuser
 USER appuser
 
 # Expose port
