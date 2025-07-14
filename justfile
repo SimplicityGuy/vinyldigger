@@ -191,6 +191,30 @@ install-pre-commit:
 lint:
     pre-commit run --all-files
 
+# Lint backend only
+lint-backend:
+    cd backend && uv run ruff check . && uv run ruff format --check . && uv run mypy .
+
+# Lint frontend only
+lint-frontend:
+    cd frontend && npm run lint
+
+# Type check backend only
+typecheck-backend:
+    cd backend && uv run mypy .
+
+# Type check frontend only
+typecheck-frontend:
+    cd frontend && npm run typecheck
+
+# Format backend code
+format-backend:
+    cd backend && uv run ruff format .
+
+# Format frontend code
+format-frontend:
+    cd frontend && npm run format
+
 # Update and freeze pre-commit hooks
 update-pre-commit:
     pre-commit autoupdate --freeze
