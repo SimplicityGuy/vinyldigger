@@ -14,15 +14,15 @@ from src.core.logging import get_logger
 logger = get_logger(__name__)
 
 # Global Redis client instance
-_redis_client: Redis[bytes] | None = None
+_redis_client: Redis | None = None
 
 
-async def get_redis() -> Redis[bytes]:
+async def get_redis() -> Redis:
     """Get Redis client instance."""
     global _redis_client
 
     if _redis_client is None:
-        _redis_client = redis.from_url(
+        _redis_client = redis.from_url(  # type: ignore[no-untyped-call]
             str(settings.redis_url),
             encoding="utf-8",
             decode_responses=True,
@@ -46,7 +46,7 @@ class OAuthTokenStore:
     PREFIX = "oauth:request:"
     TTL = 600  # 10 minutes
 
-    def __init__(self, redis_client: Redis[bytes]) -> None:
+    def __init__(self, redis_client: Redis) -> None:
         self.redis = redis_client
 
     async def store_request_token(

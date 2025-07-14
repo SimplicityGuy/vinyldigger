@@ -24,16 +24,28 @@ async def test_discogs_search_with_oauth():
         # Mock the OAuth auth
         mock_auth = Mock()
 
-        # Mock the API response
+        # Mock the API response with marketplace listing structure
         mock_response = {
             "results": [
                 {
                     "id": 123,
-                    "type": "release",  # Required for the service to process
-                    "title": "Test Album - Test Artist",
-                    "year": "2023",
-                    "format": ["Vinyl"],
-                    "label": ["Test Label"],
+                    "type": "listing",
+                    "release": {
+                        "id": 456,
+                        "basic_information": {
+                            "title": "Test Album - Test Artist",
+                            "year": "2023",
+                            "formats": [{"name": "Vinyl"}],
+                            "labels": [{"name": "Test Label"}],
+                            "artists": [{"name": "Test Artist"}],
+                        },
+                    },
+                    "seller": {
+                        "username": "test_seller",
+                        "rating": "100%",
+                    },
+                    "price": {"value": 25.99, "currency": "USD"},
+                    "condition": "Near Mint (NM or M-)",
                 }
             ]
         }
@@ -53,7 +65,7 @@ async def test_discogs_search_with_oauth():
 
                 assert len(results) == 1
                 assert results[0]["title"] == "Test Album - Test Artist"
-                assert results[0]["artist"] == "Test Album"
+                assert results[0]["artist"] == "Test Artist"
 
                 # Verify OAuth was used in the request
                 mock_get.assert_called_once()

@@ -155,6 +155,12 @@ class DiscogsService:
             if filters["seller_location_preference"] != "ANY":
                 params["seller_country"] = filters["seller_location_preference"]
 
+        # Add genre and style filters
+        if "genre" in filters and filters["genre"]:
+            params["genre"] = filters["genre"]
+        if "style" in filters and filters["style"]:
+            params["style"] = filters["style"]
+
         # Add price range filters
         if "min_price" in filters and filters["min_price"]:
             params["price_min"] = str(filters["min_price"])
