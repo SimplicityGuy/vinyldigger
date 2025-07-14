@@ -14,8 +14,7 @@ SEARCH → ANALYSIS FLOW:
 """
 
 import asyncio
-import threading
-from datetime import datetime
+from datetime import UTC, datetime
 from decimal import Decimal
 from typing import Any
 from uuid import UUID
@@ -43,7 +42,9 @@ logger = get_logger(__name__)
 
 class AsyncTask(Task):  # type: ignore[misc]
     def run(self, *args: Any, **kwargs: Any) -> Any:
-        # Simple asyncio.run approach - let SQLAlchemy handle greenlet internally
+        # Use asyncio.run() to create a fresh event loop for each task
+        # This ensures proper greenlet context for async SQLAlchemy operations
+        # and avoids issues with thread-local event loops in Celery workers
         return asyncio.run(self.async_run(*args, **kwargs))
 
     async def async_run(self, *args: Any, **kwargs: Any) -> None:
@@ -61,13 +62,8 @@ class RunSearchTask(AsyncTask):
         logger.info(f"Running enhanced search {search_id} for user {user_id}")
 
         # Create a fresh async engine and session for this worker task
-        # This ensures proper greenlet context for SQLAlchemy async operations
-        worker_engine = create_async_engine(
-            str(settings.database_url),
-            pool_size=5,
-            max_overflow=10,
-            pool_pre_ping=True,
-        )
+        # Using asyncio.run() ensures proper greenlet context for SQLAlchemy
+        worker_engine = create_async_engine(str(settings.database_url))
 
         WorkerAsyncSession = async_sessionmaker(
             worker_engine,
@@ -143,7 +139,7 @@ class RunSearchTask(AsyncTask):
                     logger.info(f"Analysis completed for search {search_id}")
 
                 # Update last_run_at
-                search.last_run_at = datetime.utcnow()
+                search.last_run_at = datetime.now(UTC)
                 await db.commit()
 
                 logger.info(f"Search {search_id} completed successfully. Added {results_added} new results.")
@@ -405,7 +401,7 @@ class SyncCollectionTask(AsyncTask):
                                 item_count=0,
                             )
                             db.add(collection)
-                            await db.flush()
+                            # Let SQLAlchemy handle flushing automatically
 
                         for item in collection_items:
                             release_id = item["basic_information"]["id"]
@@ -490,7 +486,7 @@ class SyncCollectionTask(AsyncTask):
                                 item_count=0,
                             )
                             db.add(wantlist)
-                            await db.flush()
+                            # Let SQLAlchemy handle flushing automatically
 
                         for item in wantlist_items:
                             release_id = item["basic_information"]["id"]
@@ -573,20 +569,6 @@ class SyncCollectionTask(AsyncTask):
                 raise
 
 
-# Create a thread-local event loop for async tasks
-_thread_local = threading.local()
-
-
-def get_or_create_eventloop() -> asyncio.AbstractEventLoop:
-    try:
-        return asyncio.get_running_loop()
-    except RuntimeError:
-        if not hasattr(_thread_local, "loop"):
-            _thread_local.loop = asyncio.new_event_loop()
-            asyncio.set_event_loop(_thread_local.loop)
-        return _thread_local.loop  # type: ignore[no-any-return]
-
-
 # Use the original task registration method
 @celery_app.task(name="src.workers.tasks.RunSearchTask")  # type: ignore[misc]
 def run_search_task(search_id: str, user_id: str) -> None:
@@ -598,6 +580,5 @@ def run_search_task(search_id: str, user_id: str) -> None:
 @celery_app.task(name="src.workers.tasks.SyncCollectionTask")  # type: ignore[misc]
 def sync_collection_task(user_id: str, sync_type: str = "both") -> None:
     """Sync a user's collection asynchronously."""
-    loop = get_or_create_eventloop()
     task = SyncCollectionTask()
-    loop.run_until_complete(task.async_run(user_id, sync_type))
+    task.run(user_id, sync_type)
