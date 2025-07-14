@@ -7,6 +7,9 @@ Welcome to the VinylDigger documentation! This index provides quick access to al
 ### Getting Started
 - **[Main README](../README.md)** - Project overview, features, and quick start guide
 - **[Contributing Guide](../CONTRIBUTING.md)** - How to contribute to the project
+- **[Security Policy](../SECURITY.md)** - Vulnerability reporting and security practices
+- **[Changelog](../CHANGELOG.md)** - Version history and release notes
+- **[License](../LICENSE)** - MIT License text
 - **[Project Context](../CLAUDE.md)** - Technical context and AI assistant configuration
 
 ### Technical Documentation
@@ -30,8 +33,9 @@ Welcome to the VinylDigger documentation! This index provides quick access to al
 - **[Docker OCI Labels](docker-oci-labels.md)** - Container labeling standards and best practices
 
 ### Backend-Specific Documentation
-- **[Database Development Workflow](backend/development_db_workflow.md)** - Database management during development
-- **[Discogs OAuth Authentication](backend/discogs_auth.md)** - Setting up and using Discogs OAuth
+- **[Database Development Workflow](../backend/docs/development_db_workflow.md)** - Database management during development
+- **[Marketplace Search Implementation](../backend/docs/marketplace_search_implementation.md)** - Real marketplace search architecture and benefits
+- **[Discogs OAuth Authentication](../backend/docs/discogs_auth.md)** - Setting up and using Discogs OAuth
 - **[eBay Developer Setup Guide](backend/ebay_developer_setup.md)** - Complete eBay OAuth setup and troubleshooting
 - **[OAuth Authentication Fixes](backend/oauth-authentication-fixes.md)** - Recent critical OAuth fixes and improvements
 - **[Testing Guide](backend/testing_guide.md)** - Backend-specific testing patterns and examples
@@ -70,6 +74,7 @@ docs/
 ├── api.md                       # API reference documentation
 ├── api-examples.md             # API client examples in multiple languages
 ├── architecture.md              # System architecture and design
+├── analysis-engine.md          # AI-powered analysis system guide
 ├── deployment.md                # Deployment and operations guide
 ├── testing.md                  # Testing strategies and guides
 ├── performance.md              # Performance tuning guide
@@ -78,12 +83,21 @@ docs/
 ├── troubleshooting.md          # Common issues and solutions
 ├── oauth-setup.md              # General OAuth authentication setup
 ├── docker-oci-labels.md        # Docker standards documentation
+├── documentation-status.md     # Documentation audit report
+├── documentation-cleanup-summary.md  # Cleanup actions summary
+├── ui-improvements-summary.md  # January 2025 UI/UX enhancements
 └── backend/                    # Backend-specific documentation
     ├── development_db_workflow.md    # Database development workflow
     ├── discogs_auth.md              # Discogs OAuth authentication guide
     ├── ebay_developer_setup.md      # eBay OAuth setup and troubleshooting
     ├── oauth-authentication-fixes.md # Recent OAuth fixes documentation
     └── testing_guide.md             # Backend testing patterns and examples
+
+Additional Backend Documentation:
+backend/docs/
+├── development_db_workflow.md  # Database development workflow
+├── discogs_auth.md             # Discogs OAuth authentication
+└── marketplace_search_implementation.md  # Marketplace search architecture
 ```
 
 ### Updating Documentation

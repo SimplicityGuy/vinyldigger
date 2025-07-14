@@ -221,15 +221,24 @@ See the [Testing Guide](docs/testing.md) for detailed testing instructions.
 - [Security Guide](docs/security.md) - Security best practices and implementation
 - [Monitoring & Observability](docs/monitoring.md) - Logging, metrics, and alerting
 - [Contributing Guidelines](CONTRIBUTING.md) - How to contribute to the project
+- [Security Policy](SECURITY.md) - Vulnerability reporting and security practices
+- [Changelog](CHANGELOG.md) - Version history and changes
 - [E2E Testing Guide](frontend/tests/e2e/README.md) - End-to-end testing documentation
 
 ### Additional Documentation
 - [OAuth Setup Guide](docs/oauth-setup.md) - Complete OAuth setup for Discogs and eBay
 - [Troubleshooting Guide](docs/troubleshooting.md) - Common issues and solutions
-- [Database Development Workflow](backend/docs/development_db_workflow.md) - Database management during development
-- [Discogs OAuth Authentication](backend/docs/discogs_auth.md) - Technical implementation details
+- [Analysis Engine Guide](docs/analysis-engine.md) - AI-powered analysis system
 - [Docker OCI Labels](docs/docker-oci-labels.md) - Container labeling standards
 - [Project Context](CLAUDE.md) - AI assistant configuration and project guidelines
+
+### Backend-Specific Documentation
+- [Database Development Workflow](backend/docs/development_db_workflow.md) - Database management during development
+- [Marketplace Search Implementation](backend/docs/marketplace_search_implementation.md) - Real marketplace search details
+- [Discogs OAuth Authentication](backend/docs/discogs_auth.md) - Technical implementation details
+- [eBay Developer Setup](docs/backend/ebay_developer_setup.md) - eBay OAuth setup guide
+- [OAuth Authentication Fixes](docs/backend/oauth-authentication-fixes.md) - Recent OAuth improvements
+- [Backend Testing Guide](docs/backend/testing_guide.md) - Testing patterns and examples
 
 ### Interactive API Documentation
 Once the application is running, visit:
