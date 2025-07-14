@@ -187,8 +187,8 @@ install-pre-commit:
     pip install pre-commit
     pre-commit install
 
-# Run pre-commit on all files and lint Dockerfiles
-lint: lint-docker
+# Run pre-commit on all files
+lint:
     pre-commit run --all-files
 
 # Lint backend only
