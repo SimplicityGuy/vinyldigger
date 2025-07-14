@@ -67,7 +67,7 @@ class SellerAnalysisService:
         # Check for US state abbreviations first (to avoid CA confusion)
         # Only match if it ends with state abbreviation or has space after
 
-        us_state_pattern = r"(, (CA|NY|TX|FL|IL|PA|OH|GA|NC|MI|MA|WA|VA|NJ|AZ|CO|OR|MD|MN|WI))(\s|$)"
+        us_state_pattern = r"(, (AZ|CA|CO|FL|GA|IL|MA|MD|MI|MN|NC|NJ|NY|OH|OR|PA|TX|VA|WA|WI))(\s|$)"
         if re.search(us_state_pattern, location_upper):
             return "US"
 
