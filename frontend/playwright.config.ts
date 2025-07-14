@@ -45,6 +45,16 @@ export default defineConfig({
       name: 'webkit',
       use: { ...devices['Desktop Safari'] },
     },
+
+    // Mobile browsers
+    {
+      name: 'mobile-safari-iphone',
+      use: { ...devices['iPhone 14'] },
+    },
+    {
+      name: 'mobile-safari-ipad',
+      use: { ...devices['iPad Pro 11'] },
+    },
   ],
 
   // Disable webServer since we're using Docker Compose

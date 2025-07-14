@@ -88,6 +88,8 @@ A convenience script is provided:
 npm run test:e2e -- --project=chromium
 npm run test:e2e -- --project=firefox
 npm run test:e2e -- --project=webkit
+npm run test:e2e -- --project=mobile-safari-iphone
+npm run test:e2e -- --project=mobile-safari-ipad
 ```
 
 ### Run specific test file
