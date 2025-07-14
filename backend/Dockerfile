@@ -26,7 +26,7 @@ ENV DEBIAN_FRONTEND=noninteractive \
 
 # Install system dependencies and tini for proper signal handling
 # hadolint ignore=DL3008
-RUN apt-get update && apt-get install -y --no-install-recommends \
+RUN apt-get update --quiet --quiet && apt-get install --yes --quiet --quiet --no-install-recommends \
     tini \
     curl \
     g++ \
@@ -40,6 +40,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     fonts-liberation \
     libappindicator3-1 \
     xdg-utils \
+    > /dev/null 2>&1 \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
@@ -55,12 +56,12 @@ COPY pyproject.toml uv.lock ./
 # Install dependencies
 # Ensure no .venv directory conflicts and install base dependencies
 RUN rm -rf .venv && \
-    uv pip install --system -e .
+    uv pip install --system -e . --quiet
 
 # Install dev dependencies for testing
 ARG INSTALL_DEV=false
 RUN if [ "$INSTALL_DEV" = "true" ]; then \
-    uv pip install --system -e ".[dev]"; \
+    uv pip install --system -e ".[dev]" --quiet; \
     fi
 
 # Copy application code
@@ -74,7 +75,7 @@ RUN useradd -m -u 1000 appuser && \
 ENV PLAYWRIGHT_BROWSERS_PATH=/opt/playwright-browsers
 
 # Install Playwright chromium headless shell only (minimal footprint)
-RUN python -m playwright install chromium && \
+RUN PLAYWRIGHT_SKIP_BROWSER_GC=1 python -m playwright install chromium > /dev/null 2>&1 && \
     # Create browser directory with proper permissions
     mkdir -p /opt/playwright-browsers && \
     chown -R appuser:appuser /opt/playwright-browsers && \

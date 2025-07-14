@@ -56,13 +56,14 @@ fi
 # Install dependencies if needed
 if [ ! -d "node_modules" ]; then
   echo -e "${YELLOW}Installing frontend dependencies...${NC}"
-  npm ci
+  npm ci --silent
 fi
 
 # Install Playwright browsers if needed
 if [ ! -d "$HOME/.cache/ms-playwright" ]; then
   echo -e "${YELLOW}Installing Playwright browsers...${NC}"
-  npx playwright install --with-deps chromium
+  PLAYWRIGHT_SKIP_BROWSER_GC=1 npx playwright install --with-deps chromium > /dev/null 2>&1
+  echo -e "${GREEN}✓ Playwright browsers installed${NC}"
 fi
 
 # Run the tests

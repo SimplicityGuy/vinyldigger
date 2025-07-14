@@ -252,7 +252,7 @@ install-backend-ci:
 
 # Install frontend dependencies
 install-frontend:
-    cd frontend && npm ci
+    cd frontend && npm ci --silent
 
 # Install all dependencies
 install: install-backend install-frontend install-pre-commit

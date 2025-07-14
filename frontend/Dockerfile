@@ -53,7 +53,7 @@ ENV NODE_ENV=development
 
 # Install wget for health checks and dumb-init for proper signal handling
 # hadolint ignore=DL3018
-RUN apk add --no-cache \
+RUN apk add --no-cache --quiet \
     wget \
     dumb-init
 
@@ -64,7 +64,7 @@ WORKDIR /app
 COPY package.json package-lock.json* ./
 
 # Install dependencies in a location that won't be overwritten by volume mounts
-RUN npm ci --include=dev
+RUN npm ci --include=dev --silent
 
 # Create a script to ensure npm is available even with volume mounts
 RUN echo '#!/bin/sh' > /usr/local/bin/docker-entrypoint.sh && \
@@ -73,7 +73,7 @@ RUN echo '#!/bin/sh' > /usr/local/bin/docker-entrypoint.sh && \
     echo '# If node_modules is empty (due to volume mount), reinstall dependencies' >> /usr/local/bin/docker-entrypoint.sh && \
     echo 'if [ ! -d "node_modules" ] || [ -z "$(ls -A node_modules 2>/dev/null)" ]; then' >> /usr/local/bin/docker-entrypoint.sh && \
     echo '    echo "Installing dependencies..."' >> /usr/local/bin/docker-entrypoint.sh && \
-    echo '    npm ci --include=dev' >> /usr/local/bin/docker-entrypoint.sh && \
+    echo '    npm ci --include=dev --silent' >> /usr/local/bin/docker-entrypoint.sh && \
     echo 'fi' >> /usr/local/bin/docker-entrypoint.sh && \
     echo '' >> /usr/local/bin/docker-entrypoint.sh && \
     echo '# Execute the command' >> /usr/local/bin/docker-entrypoint.sh && \
@@ -120,7 +120,7 @@ WORKDIR /app
 COPY package.json package-lock.json* ./
 
 # Install production dependencies only
-RUN npm ci --omit=dev
+RUN npm ci --omit=dev --silent
 
 # Build stage
 FROM base AS builder
@@ -150,7 +150,7 @@ WORKDIR /app
 COPY package.json package-lock.json* ./
 
 # Install all dependencies (including dev) for building
-RUN npm ci --include=dev
+RUN npm ci --include=dev --silent
 
 # Copy application files
 COPY . .
@@ -182,7 +182,7 @@ LABEL org.opencontainers.image.created="${BUILD_DATE}" \
 
 # Install wget for health check and dumb-init for proper signal handling
 # hadolint ignore=DL3018
-RUN apk add --no-cache \
+RUN apk add --no-cache --quiet \
     wget \
     dumb-init \
     && rm -rf /tmp/* /var/tmp/*

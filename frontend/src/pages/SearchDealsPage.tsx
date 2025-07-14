@@ -76,17 +76,35 @@ interface MultiItemDeal {
 
 // Helper function to create URLs
 const createListingUrl = (listing: Listing): string | undefined => {
-  if (listing.platform === 'ebay' && listing.item_data?.item_web_url) {
+  const platform = listing.platform.toLowerCase()
+
+  if (platform === 'ebay' && listing.item_data?.item_web_url) {
     return listing.item_data.item_web_url
   }
-  if (listing.platform === 'discogs' && listing.item_data?.item_url) {
-    return listing.item_data.item_url
+  if (platform === 'discogs') {
+    // Try different possible URL fields
+    if (listing.item_data?.uri) {
+      const uri = listing.item_data.uri
+      // Check if URI is already a full URL
+      if (typeof uri === 'string' && uri.startsWith('http')) {
+        return uri
+      }
+      return `https://www.discogs.com${uri}`
+    }
+    if (listing.item_data?.item_url) {
+      return listing.item_data.item_url
+    }
+    // If we have a listing ID, construct the marketplace URL
+    if (listing.item_data?.id) {
+      return `https://www.discogs.com/sell/item/${listing.item_data.id}`
+    }
   }
   return undefined
 }
 
 const createDiscogsReleaseUrl = (listing: Listing): string | undefined => {
-  if (listing.platform === 'discogs' && listing.item_data) {
+  const platform = listing.platform.toLowerCase()
+  if (platform === 'discogs' && listing.item_data) {
     const itemData = listing.item_data
     // First check if we have release_id directly
     if (itemData.release_id) {
@@ -109,10 +127,22 @@ const createDiscogsReleaseUrl = (listing: Listing): string | undefined => {
 }
 
 const createSellerUrl = (listing: Listing): string | undefined => {
-  if (listing.platform === 'discogs' && listing.item_data?.seller?.url) {
-    return listing.item_data.seller.url
+  const platform = listing.platform.toLowerCase()
+  if (platform === 'discogs') {
+    // Try seller URL from item_data first
+    if (listing.item_data?.seller?.url) {
+      return listing.item_data.seller.url
+    }
+    // Try seller username to construct URL
+    if (listing.item_data?.seller?.username) {
+      return `https://www.discogs.com/seller/${listing.item_data.seller.username}`
+    }
+    // Fallback to main seller object
+    if (listing.seller?.name) {
+      return `https://www.discogs.com/seller/${listing.seller.name}`
+    }
   }
-  if (listing.platform === 'ebay' && listing.seller?.name) {
+  if (platform === 'ebay' && listing.seller?.name) {
     return `https://www.ebay.com/usr/${listing.seller.name}`
   }
   return undefined
@@ -314,7 +344,16 @@ export const SearchDealsPage = memo(function SearchDealsPage() {
             </div>
           ) : (
             <div className="space-y-6">
-              {priceData.price_comparisons.map((comparison: PriceComparison, index: number) => {
+              {priceData.price_comparisons
+                // Sort comparisons so that items in wantlist appear first
+                .sort((a: PriceComparison, b: PriceComparison) => {
+                  const aHasWantlist = a.listings.some((l) => l.is_in_wantlist)
+                  const bHasWantlist = b.listings.some((l) => l.is_in_wantlist)
+                  if (aHasWantlist && !bHasWantlist) return -1
+                  if (!aHasWantlist && bHasWantlist) return 1
+                  return 0
+                })
+                .map((comparison: PriceComparison, index: number) => {
                 const isExpanded = expandedSections.has(index)
 
                 return (
@@ -326,11 +365,16 @@ export const SearchDealsPage = memo(function SearchDealsPage() {
                       <div className="flex items-center justify-between">
                         <div className="flex-1">
                           <div className="flex items-center gap-2">
+                            {comparison.listings.some((l) => l.is_in_wantlist) && (
+                              <span title="In your wantlist">
+                                <Star className="h-4 w-4 text-yellow-500 fill-current" />
+                              </span>
+                            )}
                             <h4 className="font-medium">{comparison.item_match.canonical_title}</h4>
                             {(() => {
                               // Find any Discogs listing to get the release link
                               const discogsListing = comparison.listings.find(
-                                (listing) => listing.platform === 'discogs'
+                                (listing) => listing.platform.toLowerCase() === 'discogs'
                               )
                               if (discogsListing) {
                                 const releaseUrl = createDiscogsReleaseUrl(discogsListing)
@@ -366,9 +410,6 @@ export const SearchDealsPage = memo(function SearchDealsPage() {
                           </div>
                         </div>
                         <div className="flex items-center gap-2">
-                          {comparison.listings[0]?.is_in_wantlist && (
-                            <Star className="h-4 w-4 text-yellow-500 fill-current" />
-                          )}
                           {isExpanded ? (
                             <ChevronUp className="h-4 w-4 text-muted-foreground" />
                           ) : (
@@ -381,27 +422,49 @@ export const SearchDealsPage = memo(function SearchDealsPage() {
                     {isExpanded && (
                       <div className="border-t">
                         <div className="p-4 space-y-2">
-                          {comparison.listings.map((listing, listingIndex: number) => {
+                          {comparison.listings
+                            // Sort listings so wantlist items appear first
+                            .sort((a, b) => {
+                              if (a.is_in_wantlist && !b.is_in_wantlist) return -1
+                              if (!a.is_in_wantlist && b.is_in_wantlist) return 1
+                              // Then sort by price
+                              const priceA = a.price ?? Number.MAX_VALUE
+                              const priceB = b.price ?? Number.MAX_VALUE
+                              return priceA - priceB
+                            })
+                            .map((listing, listingIndex: number) => {
                             const sellerName = getSellerName(listing)
                             const sellerUrl = createSellerUrl(listing)
                             const listingUrl = createListingUrl(listing)
+
+                            // Find the listing with the lowest price
+                            const lowestPriceListing = comparison.listings.reduce((min, current) => {
+                              const minPrice = min.price ?? Number.MAX_VALUE
+                              const currentPrice = current.price ?? Number.MAX_VALUE
+                              return currentPrice < minPrice ? current : min
+                            })
+                            const isLowestPrice = listing.id === lowestPriceListing.id
 
                             return (
                               <div
                                 key={listingIndex}
                                 className={`flex items-center justify-between p-3 rounded border ${
-                                  listingIndex === 0 ? 'bg-green-50 border-green-200' : 'bg-gray-50'
+                                  listing.is_in_wantlist
+                                    ? 'bg-yellow-50 border-yellow-200'
+                                    : isLowestPrice
+                                    ? 'bg-green-50 border-green-200'
+                                    : 'bg-gray-50'
                                 }`}
                               >
                                 <div className="flex items-center gap-4">
-                                  {listingIndex === 0 && (
+                                  {isLowestPrice && (
                                     <div className="text-green-600 font-medium text-sm">
                                       BEST PRICE
                                     </div>
                                   )}
                                   <div className="flex items-center gap-2">
-                                    <span className="px-2 py-1 bg-white rounded text-xs font-medium uppercase">
-                                      {listing.platform}
+                                    <span className="px-2 py-1 bg-white rounded text-xs font-medium">
+                                      {listing.platform.charAt(0).toUpperCase() + listing.platform.slice(1).toLowerCase()}
                                     </span>
                                     {listing.is_in_wantlist && (
                                       <Star className="h-3 w-3 text-yellow-500 fill-current" />
@@ -421,7 +484,7 @@ export const SearchDealsPage = memo(function SearchDealsPage() {
                                           <ExternalLink className="h-3 w-3" />
                                         </a>
                                       ) : (
-                                        sellerName
+                                        <span className="font-medium">{sellerName}</span>
                                       )}
                                     </div>
                                     {listing.seller?.location && (
@@ -453,16 +516,19 @@ export const SearchDealsPage = memo(function SearchDealsPage() {
                                       </div>
                                     )}
                                   </div>
-                                  {listingUrl && (
+                                  {listingUrl ? (
                                     <a
                                       href={listingUrl}
                                       target="_blank"
                                       rel="noopener noreferrer"
-                                      className="text-blue-600 hover:text-blue-800 p-1"
+                                      className="text-blue-600 hover:text-blue-800 p-2 rounded hover:bg-blue-50 transition-colors flex items-center gap-1"
                                       title="View listing"
                                     >
                                       <ExternalLink className="h-4 w-4" />
+                                      <span className="text-xs">View</span>
                                     </a>
+                                  ) : (
+                                    <div className="text-xs text-muted-foreground p-2">No link</div>
                                   )}
                                 </div>
                               </div>
