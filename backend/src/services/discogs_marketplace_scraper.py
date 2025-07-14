@@ -277,13 +277,6 @@ class DiscogsMarketplaceScraper:
         """JavaScript code to extract marketplace listing data from the page."""
         return """
         () => {
-            // Helper function to safely parse integers
-            function safeParseInt(text) {
-                if (!text) return 0;
-                const cleaned = text.replace(/[^0-9]/g, '');
-                return cleaned ? parseInt(cleaned, 10) : 0;
-            }
-
             // Helper function to safely parse floats
             function safeParseFloat(text) {
                 if (!text) return 0.0;
@@ -291,158 +284,191 @@ class DiscogsMarketplaceScraper:
                 return cleaned ? parseFloat(cleaned) : 0.0;
             }
 
+            // Helper function to safely parse integers
+            function safeParseInt(text) {
+                if (!text) return 0;
+                const cleaned = text.replace(/[^0-9]/g, '');
+                return cleaned ? parseInt(cleaned, 10) : 0;
+            }
+
             // Helper function to clean text
             function cleanText(text) {
                 return text ? text.trim() : '';
             }
 
-            // Debug: Log page structure
-            console.log('Page title:', document.title);
-            console.log('Table blocks found:', document.querySelectorAll('table.table_block').length);
-            const marketplaceItems = document.querySelectorAll('.marketplace_item, .shortcut_navigable');
-            console.log('Marketplace items found:', marketplaceItems.length);
-
-            // Extract total number of results from multiple possible locations
+            // Extract total number of results
             let total = 0;
-            const totalSelectors = ['.pagination_total', '.pagination .pagination_info', '.search_summary'];
-            for (const selector of totalSelectors) {
-                const totalElement = document.querySelector(selector);
-                if (totalElement) {
-                    const totalText = totalElement.textContent || '';
-                    const match = totalText.match(/([0-9,]+)/);
-                    if (match) {
-                        total = safeParseInt(match[1].replace(/,/g, ''));
-                        break;
-                    }
+            const paginationEl = document.querySelector('.pagination_total');
+            if (paginationEl) {
+                const totalMatch = paginationEl.textContent.match(/of\\s+([0-9,]+)/);
+                if (totalMatch) {
+                    total = parseInt(totalMatch[1].replace(/,/g, ''), 10);
                 }
             }
 
-            // Extract marketplace listings - try multiple selectors
+            // Extract marketplace listings
             const listings = [];
-            let rows = document.querySelectorAll('table.table_block tbody tr.shortcut_navigable');
-
-            // If no table rows, try alternative selectors
-            if (rows.length === 0) {
-                rows = document.querySelectorAll('table.table_block tbody tr');
-            }
-            if (rows.length === 0) {
-                rows = document.querySelectorAll('.mpitems tbody tr');
-            }
-
-            console.log('Found rows:', rows.length);
+            const rows = document.querySelectorAll('table.table_block tbody tr.shortcut_navigable');
 
             rows.forEach((row, index) => {
                 try {
-                    // Skip header rows or empty rows
-                    if (!row.querySelector('.item_description')) return;
+                    // Get the main cells - structure is:
+                    // 0: item_picture, 1: item_description, 2: seller_info,
+                    // 3: mobile-description, 4: item_price, 5: add_to_cart
+                    const cells = row.querySelectorAll('td');
+                    if (cells.length < 5) return;
 
-                    // Extract item ID from the row
-                    const itemLink = row.querySelector('.item_description_title a');
-                    const itemUrl = itemLink ? itemLink.href : '';
-                    const itemId = itemUrl.match(/\\/release\\/(\\d+)/)?.[1] ||
-                                 itemUrl.match(/\\/listing\\/(\\d+)/)?.[1] ||
-                                 String(Date.now() + index); // Fallback ID
+                    // === TITLE AND RELEASE INFO ===
+                    const titleLink = cells[1].querySelector('.item_description_title');
+                    const titleText = titleLink ? cleanText(titleLink.textContent) : '';
+                    const itemUrl = titleLink ? titleLink.href : '';
 
-                    // Extract title and artist information
-                    const titleElement = row.querySelector('.item_description_title a');
-                    const titleText = titleElement ? cleanText(titleElement.textContent) : '';
+                    // Extract listing ID from URL (it's after /item/)
+                    const listingMatch = itemUrl.match(/\\/item\\/(\\d+)/);
+                    const listingId = listingMatch ? listingMatch[1] : (Date.now() + index).toString();
 
-                    // Parse title to extract artist and album
+                    // Extract release ID from the release link if available
+                    const releaseLink = cells[1].querySelector('a.item_release_link');
+                    let releaseId = null;
+                    if (releaseLink) {
+                        const releaseMatch = releaseLink.href.match(/\\/release\\/(\\d+)/);
+                        releaseId = releaseMatch ? releaseMatch[1] : null;
+                    }
+
+                    // Parse artist and album from title
                     let artist = '';
                     let album = titleText;
-                    // Check for various dash types (hyphen, en dash, em dash)
-                    const dashPattern = / [-–—] /;
-                    if (dashPattern.test(titleText)) {
-                        const parts = titleText.split(dashPattern);
-                        artist = cleanText(parts[0]);
-                        album = cleanText(parts.slice(1).join(' - '));
+                    // Match various dash types and formats like "Artist - Album (Format)"
+                    const titleMatch = titleText.match(/^(.+?)\\s*[-–—]\\s*(.+?)(?:\\s*\\([^)]+\\))?$/);
+                    if (titleMatch) {
+                        artist = cleanText(titleMatch[1]);
+                        album = cleanText(titleMatch[2]);
                     }
 
-                    // Extract formats
-                    const formatElements = row.querySelectorAll('.item_description .item_description_title');
-                    let formats = [];
-                    formatElements.forEach(el => {
-                        const formatText = cleanText(el.textContent);
-                        if (formatText && formatText !== titleText) {
-                            formats.push(formatText);
-                        }
-                    });
+                    // Extract label and catalog number
+                    const labelEl = cells[1].querySelector('.label_and_cat a');
+                    const label = labelEl ? cleanText(labelEl.textContent) : '';
+                    const catnoEl = cells[1].querySelector('.item_catno');
+                    const catno = catnoEl ? cleanText(catnoEl.textContent) : '';
 
-                    // Extract condition information
-                    const conditionElement = row.querySelector('.item_condition');
+                    // === CONDITION INFO ===
+                    const conditionEl = cells[1].querySelector('.item_condition');
                     let mediaCondition = '';
                     let sleeveCondition = '';
-                    if (conditionElement) {
-                        const conditionText = cleanText(conditionElement.textContent);
-                        const conditionParts = conditionText.split('/');
-                        mediaCondition = conditionParts[0] ? cleanText(conditionParts[0]) : '';
-                        sleeveCondition = conditionParts[1] ? cleanText(conditionParts[1]) : '';
-                    }
 
-                    // Extract seller information
-                    const sellerElement = row.querySelector('.seller_info a');
-                    const sellerName = sellerElement ? cleanText(sellerElement.textContent) : '';
-                    const sellerUrl = sellerElement ? sellerElement.href : '';
-                    const sellerId = sellerUrl.match(/\\/user\\/(.*?)(?:\\?|$)/)?.[1] || '';
+                    if (conditionEl) {
+                        // Get all spans (not just labeled ones)
+                        const allSpans = conditionEl.querySelectorAll('span');
 
-                    // Extract seller rating
-                    const ratingElement = row.querySelector('.seller_info .star_rating');
-                    let sellerRating = 0;
-                    if (ratingElement) {
-                        const ratingText = cleanText(ratingElement.textContent);
-                        sellerRating = safeParseFloat(ratingText.replace('%', ''));
-                    }
+                        // The structure is usually:
+                        // span[0]: "Media Condition:" (desktop label)
+                        // span[1]: "Media:" (mobile label)
+                        // span[2]: The actual media condition
+                        // span[3]: Tooltip trigger
+                        // span[4]: "Sleeve Condition:" (desktop label)
+                        // span[5]: "Sleeve:" (mobile label)
+                        // span[6]: The actual sleeve condition
 
-                    // Extract price information
-                    const priceElement = row.querySelector('.price');
-                    let price = 0;
-                    let currency = 'USD';
-                    if (priceElement) {
-                        const priceText = cleanText(priceElement.textContent);
-                        const priceMatch = priceText.match(/([A-Z]{3})\\s*([0-9,.]+)/);
-                        if (priceMatch) {
-                            currency = priceMatch[1];
-                            price = safeParseFloat(priceMatch[2].replace(/,/g, ''));
+                        if (allSpans.length >= 3) {
+                            // Extract media condition from span[2]
+                            const mediaText = allSpans[2] ? cleanText(allSpans[2].textContent) : '';
+                            // Extract just the condition grade (before any newline)
+                            const mediaMatch = mediaText.match(/^([^\\n]+)/);
+                            mediaCondition = mediaMatch ? cleanText(mediaMatch[1]) : mediaText;
+                        }
+
+                        if (allSpans.length >= 9) {
+                            // Extract sleeve condition from span[8] (after sleeve labels)
+                            const sleeveText = allSpans[8] ? cleanText(allSpans[8].textContent) : '';
+                            // Extract just the condition grade (before any newline)
+                            const sleeveMatch = sleeveText.match(/^([^\\n]+)/);
+                            sleeveCondition = sleeveMatch ? cleanText(sleeveMatch[1]) : sleeveText;
                         }
                     }
 
-                    // Extract shipping information
-                    const shippingElement = row.querySelector('.shipping_price');
-                    let shippingPrice = 0;
-                    if (shippingElement) {
-                        const shippingText = cleanText(shippingElement.textContent);
-                        shippingPrice = safeParseFloat(shippingText.replace(/[^0-9.]/g, ''));
+                    // === SELLER INFO ===
+                    const sellerLink = cells[2].querySelector('a');
+                    const sellerName = sellerLink ? cleanText(sellerLink.textContent) : '';
+                    const sellerUrl = sellerLink ? sellerLink.href : '';
+                    // Extract seller ID from URL - it's after /seller/
+                    const sellerIdMatch = sellerUrl.match(/\\/seller\\/([^/?]+)/);
+                    const sellerId = sellerIdMatch ? sellerIdMatch[1] : '';
+
+                    // Extract rating - it's in the text after the seller name
+                    const sellerText = cells[2].textContent || '';
+                    const ratingMatch = sellerText.match(/([0-9.]+)%/);
+                    const sellerRating = ratingMatch ? parseFloat(ratingMatch[1]) : 0;
+
+                    // === PRICE INFO ===
+                    const priceCell = cells[4];
+                    const priceEl = priceCell.querySelector('span.price');
+                    let price = 0;
+                    let currency = 'USD';
+                    let shippingPrice = null;
+
+                    if (priceEl) {
+                        const priceText = cleanText(priceEl.textContent);
+                        // Handle different currency formats
+                        const priceMatch = priceText.match(/([€£$¥])?\\s*([0-9,]+\\.?[0-9]*)/);
+                        if (priceMatch) {
+                            // Map currency symbols
+                            const currencyMap = {'$': 'USD', '€': 'EUR', '£': 'GBP', '¥': 'JPY'};
+                            if (priceMatch[1]) {
+                                currency = currencyMap[priceMatch[1]] || 'USD';
+                            }
+                            price = parseFloat(priceMatch[2].replace(/,/g, ''));
+                        }
+                    }
+
+                    // Check for shipping cost (usually after price)
+                    const priceText = priceCell.textContent || '';
+                    const shippingMatch = priceText.match(/\\+[€£$¥]?\\s*([0-9,]+\\.?[0-9]*)/);
+                    if (shippingMatch) {
+                        shippingPrice = parseFloat(shippingMatch[1].replace(/,/g, ''));
                     }
 
                     // Extract community information (have/want counts)
-                    const communityElement = row.querySelector('.community_summary');
+                    const communityEl = cells[1].querySelector('.community_summary');
                     let haveCount = 0;
                     let wantCount = 0;
-                    if (communityElement) {
-                        const haveElement = communityElement.querySelector('.have');
-                        const wantElement = communityElement.querySelector('.want');
-                        if (haveElement) haveCount = safeParseInt(haveElement.textContent);
-                        if (wantElement) wantCount = safeParseInt(wantElement.textContent);
+                    if (communityEl) {
+                        const haveEl = communityEl.querySelector('.have_indicator');
+                        const wantEl = communityEl.querySelector('.want_indicator');
+                        if (haveEl) {
+                            const haveMatch = haveEl.textContent.match(/\\d+/);
+                            haveCount = haveMatch ? parseInt(haveMatch[0]) : 0;
+                        }
+                        if (wantEl) {
+                            const wantMatch = wantEl.textContent.match(/\\d+/);
+                            wantCount = wantMatch ? parseInt(wantMatch[0]) : 0;
+                        }
                     }
 
-                    // Extract image
-                    const imageElement = row.querySelector('.item_picture img');
-                    const imageUrl = imageElement ? imageElement.src : '';
+                    // Extract image URL
+                    const imageEl = cells[0].querySelector('img');
+                    const imageUrl = imageEl ? imageEl.src : '';
 
-                    // Extract label and catalog number
-                    const labelElements = row.querySelectorAll('.item_description .label');
-                    const labels = Array.from(labelElements).map(el => cleanText(el.textContent));
+                    // Extract format information
+                    const formatEl = cells[1].querySelector('.item_release_format');
+                    const formats = formatEl ? [cleanText(formatEl.textContent)] : ['Vinyl'];
+
+                    // Extract year if available
+                    let year = null;
+                    const yearMatch = titleText.match(/\\((\\d{4})\\)/);
+                    if (yearMatch) {
+                        year = parseInt(yearMatch[1]);
+                    }
 
                     // Create the listing object
                     const listing = {
-                        id: itemId,
+                        id: listingId,
                         title: titleText,
                         artist: artist,
                         album: album,
-                        year: null, // Would need additional parsing
-                        format: formats.length > 0 ? formats : ['Vinyl'],
-                        label: labels,
-                        catno: '', // Would need additional parsing
+                        year: year,
+                        format: formats,
+                        label: label ? [label] : [],
+                        catno: catno,
                         condition: mediaCondition,
                         sleeve_condition: sleeveCondition,
                         price: price,
@@ -461,16 +487,17 @@ class DiscogsMarketplaceScraper:
                         image_url: imageUrl,
                         item_url: itemUrl,
                         // Additional fields for compatibility
-                        release_id: itemId,
+                        release_id: releaseId,
+                        listing_id: listingId,
                         thumb: imageUrl,
                         cover_image: imageUrl,
                         resource_url: itemUrl,
                         uri: itemUrl,
-                        location: '', // Would need additional parsing
-                        posted: '', // Would need additional parsing
+                        location: '', // Could extract from seller info if needed
+                        posted: '', // Could extract from listing date if available
                         allow_offers: false,
                         status: 'For Sale',
-                        ships_from: ''
+                        ships_from: '' // Could extract from seller location if available
                     };
 
                     listings.push(listing);
