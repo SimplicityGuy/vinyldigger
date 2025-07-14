@@ -75,7 +75,12 @@ jobs:
       - name: Install Playwright browsers
         run: |
           cd frontend
-          npx playwright install --with-deps ${{ matrix.project }}
+          # Map project names to actual browser names
+          if [[ "${{ matrix.project }}" == "mobile-safari-iphone" ]] || [[ "${{ matrix.project }}" == "mobile-safari-ipad" ]]; then
+            npx playwright install --with-deps webkit
+          else
+            npx playwright install --with-deps ${{ matrix.project }}
+          fi
 
       - name: Setup test environment
         run: |
