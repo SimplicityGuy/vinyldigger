@@ -260,7 +260,7 @@ class TestScheduler:
         """Test that the database query has correct structure."""
         with (
             patch("src.workers.scheduler.AsyncSessionLocal") as mock_session_local,
-            patch("src.workers.scheduler.run_search_task") as mock_task,
+            patch("src.workers.scheduler.run_search_task"),
         ):
             mock_db = AsyncMock()
             mock_session_local.return_value.__aenter__.return_value = mock_db
@@ -363,7 +363,7 @@ class TestScheduler:
         """Test that appropriate log messages are generated."""
         with (
             patch("src.workers.scheduler.AsyncSessionLocal") as mock_session_local,
-            patch("src.workers.scheduler.run_search_task") as mock_task,
+            patch("src.workers.scheduler.run_search_task"),
             patch("src.workers.scheduler.logger") as mock_logger,
         ):
             mock_db = AsyncMock()
