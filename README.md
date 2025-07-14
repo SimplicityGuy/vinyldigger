@@ -74,10 +74,10 @@ A powerful web application that automates vinyl record discovery and comparison 
 - **Forms**: React Hook Form with Zod validation
 
 ### DevOps & Tooling
-- **Containerization**: Docker & Docker Compose
+- **Containerization**: Docker & Docker Compose with OCI standard labels
 - **CI/CD**: GitHub Actions with Dependabot
-- **Code Quality**: Pre-commit hooks, Ruff, mypy, ESLint
-- **Testing**: pytest, Vitest, Playwright
+- **Code Quality**: Pre-commit hooks, Ruff, mypy, ESLint, Hadolint
+- **Testing**: pytest, Vitest, Playwright (multi-browser E2E)
 - **Package Management**: uv (Python), npm (Node.js)
 - **Task Runner**: Just
 
@@ -290,9 +290,12 @@ After registering and logging in, authorize VinylDigger to access your accounts:
    - Authorize VinylDigger to access your Discogs data
    - See [Discogs OAuth Guide](backend/docs/discogs_auth.md) for details
 
-2. **eBay Authorization** (Coming Soon)
-   - OAuth integration for eBay is in development
-   - Will follow similar authorization flow as Discogs
+2. **eBay Authorization**
+   - Go to Settings > Platform Authorizations
+   - Click "Connect eBay Account"
+   - Authorize VinylDigger to access your eBay data
+   - Manual code entry supported for environments without redirects
+   - See [OAuth Setup Guide](docs/oauth-setup.md) for details
 
 ### Environment Variables
 Key environment variables in `.env`:
@@ -349,6 +352,7 @@ vinyldigger/
 - **Port conflicts**: Ensure ports 3000, 8000, 5432, 6379 are free
 - **Volume permissions**: Check Docker has proper file permissions
 - **Inter-container networking**: Use service names (e.g., `backend:8000`) not localhost
+- **Redis Type Errors (Python 3.13)**: Already fixed with `from __future__ import annotations`
 
 #### Development Issues
 - **Import errors**: Check for circular imports, use TYPE_CHECKING
@@ -365,6 +369,10 @@ vinyldigger/
 - **401 Unauthorized**: Token may be expired, try logging in again
 - **500 Internal Server Error**: Check backend logs with `just logs backend`
 - **CORS errors**: Check FRONTEND_URL in backend .env
+- **Platform Name Errors**: Always use lowercase platform names (`"discogs"`, `"ebay"`)
+- **OAuth Token Length**: Database supports 5000-character tokens (auto-migrated)
+
+For detailed troubleshooting, see the [Troubleshooting Guide](docs/troubleshooting.md).
 
 
 ## 🤝 Contributing

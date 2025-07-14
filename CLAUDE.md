@@ -12,12 +12,17 @@ VinylDigger is a web application that automates vinyl record discovery across Di
 4. **Dashboard Improvements**: 4-card stats grid, recent activity feed, and real-time sync status
 5. **Profile Management**: Editable email addresses with proper validation
 6. **Member Since Fix**: Proper account creation date display in settings
+7. **OAuth Authentication**: Full OAuth support for both Discogs and eBay platforms
 
 ### Technical Improvements
 - **Backend API Enhancements**: New PUT endpoint for search updates with partial update support
 - **Frontend State Management**: Improved React Query usage with better invalidation patterns
 - **Real-time Updates**: Intelligent sync completion detection without manual page refreshes
 - **Enhanced Error Handling**: Better user feedback and error states throughout the application
+- **Python 3.13 Compatibility**: Fixed Redis type annotation issues with `from __future__ import annotations`
+- **Database Constraints**: Enhanced foreign key validation with proper enum usage
+- **Docker Standards**: Implemented OCI labels compliance with hadolint validation
+- **Test Coverage**: Comprehensive test suite with proper mocking patterns
 
 ## Key Technical Decisions
 
@@ -33,12 +38,13 @@ VinylDigger is a web application that automates vinyl record discovery across Di
 - **React 19**: Latest React with concurrent features
 - **TypeScript 5.7**: Type safety for the frontend
 - **PostgreSQL 16**: Robust relational database with JSON support
-- **Redis 7**: Cache and message broker for Celery
-- **Docker**: Containerization for consistent environments
+- **Redis 7**: Cache and message broker for Celery (with Python 3.13 compatibility fixes)
+- **Docker**: Containerization with OCI standard labels compliance
 - **Tailwind CSS v4**: Utility-first CSS framework
 - **Vite 6**: Fast build tool and dev server
 - **uv**: Fast Python package installer and resolver
 - **Just**: Command runner for project tasks
+- **Hadolint**: Docker best practices enforcement
 
 ### Code Organization
 
@@ -337,6 +343,10 @@ See `backend/docs/testing_guide.md` for comprehensive testing patterns and examp
 8. **Lint before committing**: Running `just lint` before commits saves time by catching issues early
 9. **Consistent naming**: Use lowercase for platform names in code (`"discogs"`, not `"Discogs"` or `"DISCOGS"`)
 10. **Test with mocks**: All external API calls should be mocked in tests
+11. **UUID handling in tests**: Use UUID objects (`uuid4()`), not string UUIDs
+12. **Async test patterns**: Use AsyncMock for async database operations
+13. **Docker builds**: Use `./scripts/docker-build.sh` for OCI-compliant images
+14. **Type annotations**: Include `from __future__ import annotations` when using Redis
 
 ### Quick Command Reference
 ```bash
@@ -369,6 +379,9 @@ just clean            # Clean up everything
   - Dependabot for automatic dependency updates
   - SHA pinning for all third-party actions
   - Separate jobs for backend, frontend, and E2E tests
+  - Docker image builds with OCI standard labels
+  - Hadolint validation for Dockerfile best practices
+  - Multi-browser E2E testing with Playwright
 
 ### Troubleshooting Tips
 1. **Pre-commit failures**: Run `just lint` to see all issues
@@ -380,6 +393,9 @@ just clean            # Clean up everything
 7. **Test failures**: Check if mocks match actual API responses
 8. **Database schema mismatches**: Verify SQLAlchemy models match migration files exactly
 9. **Platform name errors**: Ensure using lowercase platform names in backend code
+10. **Redis Type Errors**: Add `from __future__ import annotations` for Python 3.13 compatibility
+11. **Foreign Key Errors**: Use proper SearchPlatform enums, not string values
+12. **OAuth Token Length**: Database supports 5000-character tokens (auto-migrated)
 
 ## UI/UX Design Patterns
 

@@ -177,6 +177,24 @@ python -c "from cryptography.fernet import Fernet; print(Fernet.generate_key().d
    git push heroku main
    ```
 
+## Docker Image Standards
+
+### OCI Labels Compliance
+
+All VinylDigger Docker images implement [OCI standard labels](https://github.com/opencontainers/image-spec/blob/main/annotations.md) for better traceability and compliance:
+
+- Images include metadata like version, git commit SHA, build date
+- Use `./scripts/docker-build.sh` for building with proper labels
+- Validation is enforced with hadolint and build scripts
+- See [Docker OCI Labels Documentation](docker-oci-labels.md) for details
+
+### Security Best Practices
+
+- **Non-root users**: Backend runs as `appuser`, frontend as `nginx` user
+- **Pinned base images**: All base images use specific versions
+- **Multi-stage builds**: Minimizes final image size and attack surface
+- **Health checks**: All services include health check endpoints
+
 ## Production Configuration
 
 ### Nginx Configuration

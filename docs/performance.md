@@ -202,6 +202,8 @@ preload_app = True
 
 ```python
 # backend/src/core/cache.py
+from __future__ import annotations  # Required for Python 3.13+ compatibility
+
 from typing import Optional, Any
 import json
 import redis.asyncio as redis
@@ -602,6 +604,18 @@ locust -f locustfile.py -H http://localhost:8000 -u 100 -r 10
 | Time to Interactive | < 5s | Lighthouse |
 | Search Execution Time | < 30s | Celery metrics |
 | Cache Hit Rate | > 80% | Redis metrics |
+
+## Recent Performance Improvements
+
+### Python 3.13 Compatibility
+- **Redis Type Annotations**: Fixed runtime errors with `from __future__ import annotations`
+- **Performance Impact**: Minimal - only affects import time, not runtime performance
+- **Best Practice**: Always include future annotations import when using Redis with Python 3.13+
+
+### Database Constraint Optimizations
+- **Foreign Key Validation**: Improved with proper enum usage for platform fields
+- **Index Usage**: Better query planning with consistent lowercase platform values
+- **Bulk Operations**: Enhanced error handling for batch inserts
 
 ## Troubleshooting Performance Issues
 

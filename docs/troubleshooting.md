@@ -424,7 +424,8 @@ If you're still experiencing issues:
 1. Check the [GitHub Issues](https://github.com/SimplicityGuy/vinyldigger/issues)
 2. Review the [API Documentation](api.md)
 3. Consult the [Architecture Guide](architecture.md)
-4. Create a new issue with:
+4. Check the [Backend Testing Guide](backend/testing_guide.md) for test-related issues
+5. Create a new issue with:
    - Description of the problem
    - Steps to reproduce
    - Error messages/logs

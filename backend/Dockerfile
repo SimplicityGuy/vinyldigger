@@ -45,7 +45,9 @@ COPY --from=ghcr.io/astral-sh/uv:latest /uv /usr/local/bin/uv
 COPY pyproject.toml uv.lock ./
 
 # Install dependencies
-RUN uv pip install --system -e .
+# Ensure no .venv directory conflicts and install base dependencies
+RUN rm -rf .venv && \
+    uv pip install --system -e .
 
 # Install dev dependencies for testing
 ARG INSTALL_DEV=false
