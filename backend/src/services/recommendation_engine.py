@@ -85,7 +85,8 @@ class RecommendationEngine:
         )
 
         db.add(analysis)
-        # No need to flush here - SQLAlchemy will handle it when needed
+        # Flush to ensure analysis gets an ID before we use it in related queries
+        await db.flush()
 
         # Analyze individual sellers
         await self._analyze_sellers(db, analysis, search_results, search, user_id)
@@ -191,6 +192,9 @@ class RecommendationEngine:
         seller_analyses.sort(key=lambda x: x.overall_score, reverse=True)
         for rank, seller_analysis in enumerate(seller_analyses, 1):
             seller_analysis.recommendation_rank = rank
+
+        # Flush to ensure all seller analyses are persisted before querying them
+        await db.flush()
 
     async def _calculate_price_competitiveness(
         self, db: AsyncSession, seller_results: list[SearchResult], analysis: SearchResultAnalysis
@@ -299,6 +303,10 @@ class RecommendationEngine:
         # Add recommendations to database
         for rec in recommendations:
             db.add(rec)
+
+        # Log the number of recommendations created
+        if recommendations:
+            logger.info(f"Created {len(recommendations)} recommendations for search {search.id}")
 
     def _create_multi_item_recommendation(
         self,

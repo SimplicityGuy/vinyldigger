@@ -24,7 +24,6 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 
 from src.core.config import settings
-from src.core.database import AsyncSessionLocal
 from src.core.logging import get_logger
 from src.models.collection import Collection, WantList
 from src.models.collection_item import CollectionItem, WantListItem
@@ -69,6 +68,7 @@ class RunSearchTask(AsyncTask):
             worker_engine,
             class_=AsyncSession,
             expire_on_commit=False,
+            autoflush=False,  # Disable autoflush to prevent implicit flushes that can trigger lazy loading
         )
 
         async with WorkerAsyncSession() as db:
@@ -121,7 +121,8 @@ class RunSearchTask(AsyncTask):
                         db, search, user_id, collection_releases, wantlist_releases
                     )
 
-                # Commit search results before analysis
+                # Flush and commit search results before analysis
+                await db.flush()
                 await db.commit()
 
                 # Run enhanced analysis if we have new results
@@ -135,11 +136,14 @@ class RunSearchTask(AsyncTask):
                     # Generate recommendations
                     await self._generate_recommendations(db, search_id, user_id)
 
+                    # Flush before commit to ensure all changes are written
+                    await db.flush()
                     await db.commit()
                     logger.info(f"Analysis completed for search {search_id}")
 
                 # Update last_run_at
                 search.last_run_at = datetime.now(UTC)
+                await db.flush()
                 await db.commit()
 
                 logger.info(f"Search {search_id} completed successfully. Added {results_added} new results.")
@@ -166,11 +170,15 @@ class RunSearchTask(AsyncTask):
                 items = await service.search(search.query, search.filters, db, user_id)
 
                 for item in items:
+                    # For marketplace listings, use listing ID as item_id to avoid duplicates
+                    listing_id = str(item["id"])
+                    release_id = str(item.get("release_id", item.get("id")))
+
                     # Check if we already have this result
                     existing = await db.execute(
                         select(SearchResult).where(
                             SearchResult.search_id == search.id,
-                            SearchResult.item_id == str(item["id"]),
+                            SearchResult.item_id == listing_id,
                             SearchResult.platform == SearchPlatform.DISCOGS,
                         )
                     )
@@ -184,14 +192,18 @@ class RunSearchTask(AsyncTask):
                     # Extract item information for pricing and condition
                     item_info = self.item_matcher.extract_item_info(item, "discogs")
 
+                    # Check collection/wantlist using release_id (not listing_id)
+                    is_in_collection = release_id in collection_releases
+                    is_in_wantlist = release_id in wantlist_releases
+
                     # Create search result with enhanced data
                     result = SearchResult(
                         search_id=search.id,
                         platform=SearchPlatform.DISCOGS,
-                        item_id=str(item["id"]),
+                        item_id=listing_id,  # Use listing ID for uniqueness
                         item_data=item,
-                        is_in_collection=item.get("id") in collection_releases,
-                        is_in_wantlist=item.get("id") in wantlist_releases,
+                        is_in_collection=is_in_collection,
+                        is_in_wantlist=is_in_wantlist,
                         seller_id=seller.id,
                         item_price=Decimal(str(item_info.get("price", 0))) if item_info.get("price") else None,
                         item_condition=item_info.get("condition"),
@@ -359,12 +371,11 @@ class RunSearchTask(AsyncTask):
 
         try:
             # Use recommendation engine to analyze results and generate recommendations
-            analysis = await self.recommendation_engine.analyze_search_results(db, search_id, user_id)
+            await self.recommendation_engine.analyze_search_results(db, search_id, user_id)
 
-            if analysis and hasattr(analysis, "recommendations"):
-                logger.info(f"Generated {len(analysis.recommendations)} recommendations for search {search_id}")
-            else:
-                logger.info(f"Analysis completed for search {search_id} (no recommendations generated)")
+            # Note: We avoid accessing returned analysis object as it has lazy-loaded relationships
+            # that would trigger a database query in an async context, causing greenlet_spawn errors
+            logger.info(f"Analysis completed for search {search_id}")
 
         except Exception as e:
             logger.error(f"Error generating recommendations for search {search_id}: {str(e)}")
@@ -373,7 +384,18 @@ class RunSearchTask(AsyncTask):
 class SyncCollectionTask(AsyncTask):
     async def async_run(self, user_id: str, sync_type: str = "both") -> None:
         logger.info(f"Syncing {sync_type} for user {user_id}")
-        async with AsyncSessionLocal() as db:
+
+        # Create a fresh async engine and session for this worker task
+        worker_engine = create_async_engine(str(settings.database_url))
+
+        WorkerAsyncSession = async_sessionmaker(
+            worker_engine,
+            class_=AsyncSession,
+            expire_on_commit=False,
+            autoflush=False,  # Disable autoflush to prevent implicit flushes
+        )
+
+        async with WorkerAsyncSession() as db:
             try:
                 async with DiscogsService() as service:
                     collection_added = 0
@@ -543,6 +565,8 @@ class SyncCollectionTask(AsyncTask):
                         wantlist.item_count = wantlist_added + wantlist_updated
                         wantlist.last_sync_at = datetime.utcnow()
 
+                    # Flush before commit
+                    await db.flush()
                     await db.commit()
 
                     if sync_type == "collection":
@@ -567,6 +591,9 @@ class SyncCollectionTask(AsyncTask):
                 logger.error(f"Error syncing collection for user {user_id}: {str(e)}")
                 await db.rollback()
                 raise
+            finally:
+                # Clean up the worker engine
+                await worker_engine.dispose()
 
 
 # Use the original task registration method

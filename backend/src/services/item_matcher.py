@@ -168,8 +168,10 @@ class ItemMatchingService:
             "year": year,
             "format": ", ".join(format_names),
             "catalog_number": catalog_number,
+            # For marketplace listings, price comes directly from the listing
             "price": item_data.get("price"),
             "condition": item_data.get("condition"),
+            "sleeve_condition": item_data.get("sleeve_condition"),
         }
 
     @staticmethod

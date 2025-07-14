@@ -62,6 +62,8 @@ class SavedSearchResponse(BaseModel):
     is_active: bool
     check_interval_hours: int
     last_run_at: str | None
+    created_at: str
+    updated_at: str
     min_record_condition: str | None
     min_sleeve_condition: str | None
     seller_location_preference: str | None
@@ -76,6 +78,13 @@ class SavedSearchResponse(BaseModel):
     @field_validator("last_run_at", mode="before")
     @classmethod
     def convert_datetime_to_str(cls, v: datetime | str | None) -> str | None:
+        if isinstance(v, datetime):
+            return v.isoformat()
+        return v
+
+    @field_validator("created_at", "updated_at", mode="before")
+    @classmethod
+    def convert_datetimes_to_str(cls, v: datetime | str) -> str:
         if isinstance(v, datetime):
             return v.isoformat()
         return v

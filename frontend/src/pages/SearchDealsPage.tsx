@@ -358,7 +358,7 @@ export const SearchDealsPage = memo(function SearchDealsPage() {
                                   </div>
                                 )}
                                 <div className="flex items-center gap-2">
-                                  <span className="px-2 py-1 bg-white rounded text-xs font-medium">
+                                  <span className="px-2 py-1 bg-white rounded text-xs font-medium uppercase">
                                     {listing.platform}
                                   </span>
                                   {listing.is_in_wantlist && (

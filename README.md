@@ -18,12 +18,13 @@
 [![mypy](https://img.shields.io/badge/mypy-checked-blue)](http://mypy-lang.org/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-A powerful web application that automates vinyl record discovery and comparison across Discogs and eBay, helping collectors find the best deals while considering their collection and want list.
+A powerful web application that automates vinyl record discovery and comparison across Discogs marketplace and eBay, helping collectors find the best deals by searching actual listings with real prices while considering their collection and want list.
 
 ## 🚀 Features
 
 ### 🔍 Smart Search Integration
-- **Cross-Platform Search**: Search both eBay and Discogs simultaneously
+- **Marketplace Search**: Search actual marketplace listings on both eBay and Discogs
+- **Real Pricing Data**: Get actual asking prices from live listings, not catalog estimates
 - **Want List Matching**: Automatically identify items from your Discogs want list
 - **Collection Awareness**: Skip items you already own
 - **Intelligent Item Matching**: Advanced algorithms match identical items across platforms

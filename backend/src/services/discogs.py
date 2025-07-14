@@ -81,12 +81,15 @@ class DiscogsService:
             self.logger.error("Discogs OAuth is not configured in app settings")
             return None
 
-        # Get user's OAuth token
+        # Get user's OAuth token (most recent if multiple exist)
         token_result = await db.execute(
-            select(OAuthToken).where(
+            select(OAuthToken)
+            .where(
                 OAuthToken.user_id == UUID(user_id),
                 OAuthToken.provider == OAuthProvider.DISCOGS,
             )
+            .order_by(OAuthToken.created_at.desc())
+            .limit(1)
         )
         oauth_token = token_result.scalar_one_or_none()
 
@@ -106,6 +109,28 @@ class DiscogsService:
         )
 
     async def search(self, query: str, filters: dict[str, Any], db: AsyncSession, user_id: str) -> list[dict[str, Any]]:
+        """
+        Search Discogs marketplace for vinyl records.
+
+        This method searches actual marketplace listings (items for sale) rather than
+        the catalog database, ensuring results include real prices and seller information.
+
+        Args:
+            query: Search query string
+            filters: Search filters including condition, location, price range
+            db: Database session for OAuth token retrieval
+            user_id: User ID for authentication
+
+        Returns:
+            List of marketplace listing dictionaries with pricing and seller data
+
+        Note:
+            Uses /marketplace/search endpoint to get live listings with:
+            - Actual asking prices
+            - Seller information (username, rating, location)
+            - Media and sleeve conditions
+            - Shipping costs where available
+        """
         if not self.client:
             raise RuntimeError("Service not initialized. Use async with context.")
 
@@ -118,17 +143,23 @@ class DiscogsService:
             "q": query,
             "per_page": filters.get("limit", 50),
             "page": filters.get("page", 1),
+            "format": "Vinyl",  # Focus on vinyl records
         }
 
-        # Add format filter if specified
-        if "format" in filters:
-            params["format"] = filters["format"]
+        # Add condition filters for record and sleeve
+        if "min_record_condition" in filters:
+            params["condition"] = filters["min_record_condition"]
 
-        # Add genre/style filters
-        if "genre" in filters:
-            params["genre"] = filters["genre"]
-        if "style" in filters:
-            params["style"] = filters["style"]
+        # Add seller location filter
+        if "seller_location_preference" in filters and filters["seller_location_preference"]:
+            if filters["seller_location_preference"] != "ANY":
+                params["seller_country"] = filters["seller_location_preference"]
+
+        # Add price range filters
+        if "min_price" in filters and filters["min_price"]:
+            params["price_min"] = str(filters["min_price"])
+        if "max_price" in filters and filters["max_price"]:
+            params["price_max"] = str(filters["max_price"])
 
         # Add year range
         if "year_from" in filters:
@@ -137,18 +168,18 @@ class DiscogsService:
             params["year"] = f"-{filters['year_to']}"
 
         try:
-            response = await self.client.get("/database/search", params=params, auth=auth)
+            # Use marketplace search instead of database search
+            response = await self.client.get("/marketplace/search", params=params, auth=auth)
             response.raise_for_status()
 
             data = response.json()
             results = []
 
-            for item in data.get("results", []):
-                # Only process marketplace listings
-                if item.get("type") in ["release", "master"]:
-                    formatted = self._format_discogs_item(item)
-                    if formatted:
-                        results.append(formatted)
+            # Process marketplace listings directly
+            for listing in data.get("results", []):
+                formatted = self._format_marketplace_listing(listing)
+                if formatted:
+                    results.append(formatted)
 
             return results
 
@@ -214,12 +245,15 @@ class DiscogsService:
             return []
 
         try:
-            # Get user's OAuth token to retrieve username
+            # Get user's OAuth token to retrieve username (most recent if multiple exist)
             token_result = await db.execute(
-                select(OAuthToken).where(
+                select(OAuthToken)
+                .where(
                     OAuthToken.user_id == UUID(user_id),
                     OAuthToken.provider == OAuthProvider.DISCOGS,
                 )
+                .order_by(OAuthToken.created_at.desc())
+                .limit(1)
             )
             oauth_token = token_result.scalar_one_or_none()
 
@@ -286,12 +320,15 @@ class DiscogsService:
             return []
 
         try:
-            # Get user's OAuth token to retrieve username
+            # Get user's OAuth token to retrieve username (most recent if multiple exist)
             token_result = await db.execute(
-                select(OAuthToken).where(
+                select(OAuthToken)
+                .where(
                     OAuthToken.user_id == UUID(user_id),
                     OAuthToken.provider == OAuthProvider.DISCOGS,
                 )
+                .order_by(OAuthToken.created_at.desc())
+                .limit(1)
             )
             oauth_token = token_result.scalar_one_or_none()
 
@@ -346,7 +383,92 @@ class DiscogsService:
             self.logger.error(f"Discogs API error syncing wantlist: {str(e)}")
             return []
 
+    def _format_marketplace_listing(self, listing: dict[str, Any]) -> dict[str, Any] | None:
+        """Format a marketplace listing from Discogs API."""
+        try:
+            # Extract release information
+            release = listing.get("release", {})
+            basic_info = release.get("basic_information", {})
+
+            # Extract title and artist
+            title = basic_info.get("title", "")
+            artists = basic_info.get("artists", [])
+            artist_names = []
+            for artist in artists:
+                if isinstance(artist, dict):
+                    artist_names.append(artist.get("name", ""))
+                else:
+                    artist_names.append(str(artist))
+            artist = ", ".join(artist_names)
+
+            # Extract seller information
+            seller_info = listing.get("seller", {})
+            seller = {
+                "id": seller_info.get("id"),
+                "username": seller_info.get("username", "Unknown"),
+                "rating": seller_info.get("rating"),
+                "stats": seller_info.get("stats", {}),
+                "location": seller_info.get("location"),
+                "shipping": seller_info.get("shipping"),
+            }
+
+            # Extract price information
+            price_info = listing.get("price", {})
+            price = None
+            currency = "USD"
+            if price_info:
+                price = price_info.get("value")
+                currency = price_info.get("currency", "USD")
+
+            # Extract shipping information
+            shipping_price = listing.get("shipping_price", {})
+            shipping_cost = None
+            if shipping_price:
+                shipping_cost = shipping_price.get("value")
+
+            # Extract format information
+            formats = basic_info.get("formats", [])
+            format_names = []
+            for fmt in formats:
+                if isinstance(fmt, dict):
+                    format_names.append(fmt.get("name", ""))
+
+            return {
+                "id": listing.get("id"),  # Listing ID
+                "release_id": release.get("id"),  # Release ID for cross-referencing
+                "title": title,
+                "artist": artist,
+                "album": title,  # For compatibility
+                "year": basic_info.get("year"),
+                "country": basic_info.get("country"),
+                "format": format_names,
+                "label": [label.get("name", "") for label in basic_info.get("labels", [])],
+                "catno": basic_info.get("labels", [{}])[0].get("catno") if basic_info.get("labels") else None,
+                "thumb": basic_info.get("thumb"),
+                "cover_image": basic_info.get("cover_image"),
+                "resource_url": release.get("resource_url"),
+                "uri": listing.get("uri"),
+                # Actual marketplace data
+                "price": price,
+                "currency": currency,
+                "condition": listing.get("condition"),
+                "sleeve_condition": listing.get("sleeve_condition"),
+                "seller": seller,
+                "shipping_price": shipping_cost,
+                "location": listing.get("location"),
+                "posted": listing.get("posted"),
+                "allow_offers": listing.get("allow_offers", False),
+                "status": listing.get("status"),
+                "ships_from": listing.get("ships_from"),
+                # For compatibility with existing code
+                "master_id": basic_info.get("master_id"),
+            }
+        except Exception as e:
+            self.logger.error(f"Error formatting Discogs marketplace listing: {str(e)}")
+            return None
+
     def _format_discogs_item(self, item: dict[str, Any]) -> dict[str, Any] | None:
+        """Legacy method for formatting catalog items (kept for compatibility)."""
         try:
             # Extract basic info
             title = item.get("title", "")
@@ -372,6 +494,9 @@ class DiscogsService:
                 "cover_image": item.get("cover_image"),
                 "resource_url": item.get("resource_url"),
                 "uri": item.get("uri"),
+                # Note: No price/seller info in catalog data
+                "price": None,
+                "seller": None,
             }
         except Exception as e:
             self.logger.error(f"Error formatting Discogs item: {str(e)}")

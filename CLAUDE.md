@@ -23,6 +23,7 @@ VinylDigger is a web application that automates vinyl record discovery across Di
 - **Database Constraints**: Enhanced foreign key validation with proper enum usage
 - **Docker Standards**: Implemented OCI labels compliance with hadolint validation
 - **Test Coverage**: Comprehensive test suite with proper mocking patterns
+- **Marketplace Search Implementation**: Complete rewrite of Discogs search to use marketplace API instead of catalog database
 
 ## Key Technical Decisions
 
@@ -104,10 +105,34 @@ frontend/
 #### Search Execution
 1. **User creates saved search** with criteria and frequency preference
 2. **Scheduler checks for due searches** every hour via APScheduler
-3. **Worker executes search** across Discogs/eBay platforms
+3. **Worker executes marketplace search** across Discogs marketplace and eBay platforms
 4. **Analysis runs immediately** after search completion
 5. **Results stored** with collection/want list matching and analysis data
 6. **Price history tracked** for trends over time
+
+#### Marketplace Search Implementation (January 2025)
+
+**Critical Architecture Change**: VinylDigger now searches actual marketplace listings instead of catalog databases.
+
+**Discogs Integration**:
+- **Endpoint**: `/marketplace/search` (was `/database/search`)
+- **Data Source**: Live marketplace listings with real prices and sellers
+- **Filters**: Condition (media/sleeve), seller location, price range
+- **Results**: Actual items for sale with asking prices
+
+**Key Benefits**:
+- **Real Pricing**: Actual asking prices instead of "Price TBD"
+- **Seller Information**: Complete seller details, ratings, and location
+- **Marketplace Filters**: Filter by condition, location, and price range
+- **Multi-item Detection**: Identify sellers with multiple wanted items
+- **Accurate Analysis**: Price comparisons use real marketplace data
+
+**Data Structure Changes**:
+- **Listing IDs**: Use marketplace listing IDs for uniqueness
+- **Release IDs**: Cross-reference collection/wantlist using release IDs
+- **Seller Data**: Extract comprehensive seller information from listings
+- **Condition Data**: Capture both media and sleeve condition ratings
+- **Shipping Costs**: Include estimated shipping where available
 
 #### Analysis Frequency & Execution Model
 

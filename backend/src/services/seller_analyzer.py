@@ -120,18 +120,34 @@ class SellerAnalysisService:
             return {}
 
     def _extract_discogs_seller(self, item_data: dict[str, Any]) -> dict[str, Any]:
-        """Extract seller info from Discogs item data."""
+        """Extract seller info from Discogs marketplace listing data."""
         seller_info = item_data.get("seller", {})
 
-        return {
-            "platform_seller_id": seller_info.get("id", ""),
-            "seller_name": seller_info.get("username", "Unknown"),
-            "location": seller_info.get("location", ""),
-            "feedback_score": seller_info.get("rating", 0),
-            "total_feedback_count": seller_info.get("num_ratings", 0),
-            "ships_internationally": seller_info.get("ships_to", {}).get("international", False),
-            "seller_metadata": seller_info,
-        }
+        # Handle both old catalog format and new marketplace format
+        if isinstance(seller_info, dict):
+            # New marketplace format with detailed seller info
+            return {
+                "platform_seller_id": str(seller_info.get("id", "")),
+                "seller_name": seller_info.get("username", "Unknown"),
+                "location": seller_info.get("location", ""),
+                "feedback_score": seller_info.get("rating", 0),
+                "total_feedback_count": seller_info.get("stats", {}).get("total", 0),
+                "positive_feedback_percentage": seller_info.get("rating", 0),
+                "ships_internationally": True,  # Assume true for marketplace listings
+                "seller_metadata": seller_info,
+            }
+        else:
+            # Fallback for old format or missing seller info
+            return {
+                "platform_seller_id": "unknown",
+                "seller_name": "Unknown Seller",
+                "location": "",
+                "feedback_score": 0,
+                "total_feedback_count": 0,
+                "positive_feedback_percentage": 0,
+                "ships_internationally": True,
+                "seller_metadata": {},
+            }
 
     def _extract_ebay_seller(self, item_data: dict[str, Any]) -> dict[str, Any]:
         """Extract seller info from eBay item data."""
