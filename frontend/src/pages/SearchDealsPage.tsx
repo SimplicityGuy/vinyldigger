@@ -29,7 +29,14 @@ interface ListingItemData {
   release_id?: string
   resource_url?: string
   title?: string
+  artist?: string
   year?: number
+  item_url?: string
+  seller?: {
+    id?: string
+    username?: string
+    url?: string
+  }
   [key: string]: unknown
 }
 
@@ -72,12 +79,19 @@ const createListingUrl = (listing: Listing): string | undefined => {
   if (listing.platform === 'ebay' && listing.item_data?.item_web_url) {
     return listing.item_data.item_web_url
   }
+  if (listing.platform === 'discogs' && listing.item_data?.item_url) {
+    return listing.item_data.item_url
+  }
   return undefined
 }
 
 const createDiscogsReleaseUrl = (listing: Listing): string | undefined => {
   if (listing.platform === 'discogs' && listing.item_data) {
     const itemData = listing.item_data
+    // First check if we have release_id directly
+    if (itemData.release_id) {
+      return `https://www.discogs.com/release/${itemData.release_id}`
+    }
     // Check if it's a release or master based on the resource_url
     if (itemData.resource_url) {
       if (itemData.resource_url.includes('/releases/')) {
@@ -92,6 +106,29 @@ const createDiscogsReleaseUrl = (listing: Listing): string | undefined => {
     }
   }
   return undefined
+}
+
+const createSellerUrl = (listing: Listing): string | undefined => {
+  if (listing.platform === 'discogs' && listing.item_data?.seller?.url) {
+    return listing.item_data.seller.url
+  }
+  if (listing.platform === 'ebay' && listing.seller?.name) {
+    return `https://www.ebay.com/usr/${listing.seller.name}`
+  }
+  return undefined
+}
+
+// Helper to get seller name from listing data
+const getSellerName = (listing: Listing): string => {
+  // First check if we have seller info in the main seller object
+  if (listing.seller?.name) {
+    return listing.seller.name
+  }
+  // Then check in item_data for marketplace seller info
+  if (listing.item_data?.seller?.username) {
+    return listing.item_data.seller.username
+  }
+  return 'Unknown Seller'
 }
 
 export const SearchDealsPage = memo(function SearchDealsPage() {
@@ -316,7 +353,7 @@ export const SearchDealsPage = memo(function SearchDealsPage() {
                             })()}
                           </div>
                           <p className="text-sm text-muted-foreground">
-                            by {comparison.item_match.canonical_artist}
+                            by {comparison.item_match.canonical_artist || 'Unknown Artist'}
                           </p>
                           <div className="flex items-center gap-4 mt-2 text-xs text-muted-foreground">
                             <span>{comparison.item_match.total_matches} listings found</span>
@@ -344,74 +381,93 @@ export const SearchDealsPage = memo(function SearchDealsPage() {
                     {isExpanded && (
                       <div className="border-t">
                         <div className="p-4 space-y-2">
-                          {comparison.listings.map((listing, listingIndex: number) => (
-                            <div
-                              key={listingIndex}
-                              className={`flex items-center justify-between p-3 rounded border ${
-                                listingIndex === 0 ? 'bg-green-50 border-green-200' : 'bg-gray-50'
-                              }`}
-                            >
-                              <div className="flex items-center gap-4">
-                                {listingIndex === 0 && (
-                                  <div className="text-green-600 font-medium text-sm">
-                                    BEST PRICE
-                                  </div>
-                                )}
-                                <div className="flex items-center gap-2">
-                                  <span className="px-2 py-1 bg-white rounded text-xs font-medium uppercase">
-                                    {listing.platform}
-                                  </span>
-                                  {listing.is_in_wantlist && (
-                                    <Star className="h-3 w-3 text-yellow-500 fill-current" />
-                                  )}
-                                </div>
-                                <div>
-                                  <div className="text-sm">
-                                    {listing.seller?.name || 'Unknown Seller'}
-                                  </div>
-                                  {listing.seller?.location && (
-                                    <div className="text-xs text-muted-foreground">
-                                      {listing.seller.location}
+                          {comparison.listings.map((listing, listingIndex: number) => {
+                            const sellerName = getSellerName(listing)
+                            const sellerUrl = createSellerUrl(listing)
+                            const listingUrl = createListingUrl(listing)
+
+                            return (
+                              <div
+                                key={listingIndex}
+                                className={`flex items-center justify-between p-3 rounded border ${
+                                  listingIndex === 0 ? 'bg-green-50 border-green-200' : 'bg-gray-50'
+                                }`}
+                              >
+                                <div className="flex items-center gap-4">
+                                  {listingIndex === 0 && (
+                                    <div className="text-green-600 font-medium text-sm">
+                                      BEST PRICE
                                     </div>
                                   )}
-                                </div>
-                                {listing.condition && (
-                                  <div className="text-sm text-muted-foreground">
-                                    Condition: {listing.condition}
+                                  <div className="flex items-center gap-2">
+                                    <span className="px-2 py-1 bg-white rounded text-xs font-medium uppercase">
+                                      {listing.platform}
+                                    </span>
+                                    {listing.is_in_wantlist && (
+                                      <Star className="h-3 w-3 text-yellow-500 fill-current" />
+                                    )}
                                   </div>
-                                )}
-                              </div>
-                              <div className="text-right flex items-center gap-2">
-                                <div>
-                                  <div className="font-medium">
-                                    {listing.price ? `$${listing.price.toFixed(2)}` : 'Price TBD'}
-                                  </div>
-                                  {listing.shipping_price !== undefined &&
-                                    listing.shipping_price !== null && (
+                                  <div>
+                                    <div className="text-sm flex items-center gap-2">
+                                      {sellerUrl ? (
+                                        <a
+                                          href={sellerUrl}
+                                          target="_blank"
+                                          rel="noopener noreferrer"
+                                          className="text-blue-600 hover:text-blue-800 flex items-center gap-1"
+                                          onClick={(e) => e.stopPropagation()}
+                                        >
+                                          {sellerName}
+                                          <ExternalLink className="h-3 w-3" />
+                                        </a>
+                                      ) : (
+                                        sellerName
+                                      )}
+                                    </div>
+                                    {listing.seller?.location && (
                                       <div className="text-xs text-muted-foreground">
-                                        + ${listing.shipping_price.toFixed(2)} shipping
+                                        {listing.seller.location}
                                       </div>
                                     )}
-                                  {listing.seller?.feedback_score && (
-                                    <div className="text-xs text-muted-foreground">
-                                      {listing.seller.feedback_score.toFixed(1)}% feedback
+                                  </div>
+                                  {listing.condition && (
+                                    <div className="text-sm text-muted-foreground">
+                                      Condition: {listing.condition}
                                     </div>
                                   )}
                                 </div>
-                                {createListingUrl(listing) && (
-                                  <a
-                                    href={createListingUrl(listing)}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    className="text-blue-600 hover:text-blue-800 p-1"
-                                    title="View listing"
-                                  >
-                                    <ExternalLink className="h-4 w-4" />
-                                  </a>
-                                )}
+                                <div className="text-right flex items-center gap-2">
+                                  <div>
+                                    <div className="font-medium">
+                                      {listing.price ? `$${listing.price.toFixed(2)}` : 'Price TBD'}
+                                    </div>
+                                    {listing.shipping_price !== undefined &&
+                                      listing.shipping_price !== null && (
+                                        <div className="text-xs text-muted-foreground">
+                                          + ${listing.shipping_price.toFixed(2)} shipping
+                                        </div>
+                                      )}
+                                    {listing.seller?.feedback_score && (
+                                      <div className="text-xs text-muted-foreground">
+                                        {listing.seller.feedback_score.toFixed(1)}% feedback
+                                      </div>
+                                    )}
+                                  </div>
+                                  {listingUrl && (
+                                    <a
+                                      href={listingUrl}
+                                      target="_blank"
+                                      rel="noopener noreferrer"
+                                      className="text-blue-600 hover:text-blue-800 p-1"
+                                      title="View listing"
+                                    >
+                                      <ExternalLink className="h-4 w-4" />
+                                    </a>
+                                  )}
+                                </div>
                               </div>
-                            </div>
-                          ))}
+                            )
+                          })}
                         </div>
                       </div>
                     )}
