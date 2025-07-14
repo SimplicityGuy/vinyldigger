@@ -90,19 +90,9 @@ jobs:
           echo "REDIS_URL=redis://localhost:6379/0" >> backend/.env
           echo "SECRET_KEY=test-secret-key-for-ci" >> backend/.env
 
-      - name: Start services
-        run: |
-          just test-services-up
-
       - name: Run E2E tests
         run: |
-          cd frontend
-          # Add retry logic for flaky tests
-          npm run test:e2e -- --project=${{ matrix.project }} --retries=2
-        env:
-          CI: true
-          BASE_URL: http://localhost:3000
-          PLAYWRIGHT_SLOW_MO: 100  # Add slight delay between actions to reduce flakiness
+          just test-e2e-ci project=${{ matrix.project }} retries=2
 
       - name: Upload test results
         if: always()
@@ -126,9 +116,7 @@ jobs:
           echo "E2E tests failed - collecting debug information"
           ./scripts/debug-ci-failure.sh || true
 
-      - name: Stop services
-        if: always()
-        run: just test-down
+      # Services cleanup is handled by test-e2e-ci command
 
   # Summary job to check all matrix jobs passed
   test-summary:

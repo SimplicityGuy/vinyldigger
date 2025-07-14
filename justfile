@@ -37,10 +37,14 @@ test:
 test-docker-backend:
     {{docker_compose}} -f docker-compose.test.yml run --rm backend-test
 
-# Run e2e tests (starts all services)
-test-e2e:
+# Run e2e tests (starts all services) with optional project and retries
+test-e2e project="" retries="0":
     {{docker_compose}} -f docker-compose.test.yml up -d
-    cd frontend && npm run test:e2e
+    @if [ -n "{{project}}" ]; then \
+        cd frontend && npm run test:e2e -- --project={{project}} --retries={{retries}}; \
+    else \
+        cd frontend && npm run test:e2e; \
+    fi
     {{docker_compose}} -f docker-compose.test.yml down -v
 
 # Run e2e tests locally with automatic service management
@@ -50,6 +54,16 @@ test-e2e-local:
 # Run e2e tests in UI mode for debugging
 test-e2e-ui:
     cd frontend && npm run test:e2e:ui
+
+# Run e2e tests for CI environment with specific project and retries
+test-e2e-ci project="" retries="2":
+    just test-services-up
+    @if [ -n "{{project}}" ]; then \
+        cd frontend && CI=true BASE_URL=http://localhost:3000 PLAYWRIGHT_SLOW_MO=100 npm run test:e2e -- --project={{project}} --retries={{retries}}; \
+    else \
+        cd frontend && CI=true BASE_URL=http://localhost:3000 PLAYWRIGHT_SLOW_MO=100 npm run test:e2e -- --retries={{retries}}; \
+    fi
+    just test-down
 
 # Start test services for manual testing
 test-services-up:
