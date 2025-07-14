@@ -54,4 +54,4 @@ class Settings(BaseSettings):
     debug: bool = False
 
 
-settings = Settings()  # type: ignore[call-arg]
+settings = Settings()

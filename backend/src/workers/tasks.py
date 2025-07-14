@@ -20,6 +20,7 @@ from typing import Any
 from uuid import UUID
 
 from celery import Task
+from celery.app.task import Task as CeleryTask
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 
@@ -36,10 +37,15 @@ from src.services.recommendation_engine import RecommendationEngine
 from src.services.seller_analyzer import SellerAnalysisService
 from src.workers.celery_app import celery_app
 
+# Enable generic type parameters for Celery Tasks after imports
+CeleryTask.__class_getitem__ = classmethod(lambda cls, *args, **kwargs: cls)  # type: ignore[attr-defined]
+
 logger = get_logger(__name__)
 
 
-class AsyncTask(Task):  # type: ignore[misc]
+class AsyncTask(Task):  # type: ignore[type-arg]  # celery-types incomplete generic support
+    """Base class for async Celery tasks."""
+
     def run(self, *args: Any, **kwargs: Any) -> Any:
         # Use asyncio.run() to create a fresh event loop for each task
         # This ensures proper greenlet context for async SQLAlchemy operations
@@ -597,14 +603,14 @@ class SyncCollectionTask(AsyncTask):
 
 
 # Use the original task registration method
-@celery_app.task(name="src.workers.tasks.RunSearchTask")  # type: ignore[misc]
+@celery_app.task(name="src.workers.tasks.RunSearchTask")
 def run_search_task(search_id: str, user_id: str) -> None:
     """Run search task using the class-based approach."""
     task = RunSearchTask()
     task.run(search_id, user_id)
 
 
-@celery_app.task(name="src.workers.tasks.SyncCollectionTask")  # type: ignore[misc]
+@celery_app.task(name="src.workers.tasks.SyncCollectionTask")
 def sync_collection_task(user_id: str, sync_type: str = "both") -> None:
     """Sync a user's collection asynchronously."""
     task = SyncCollectionTask()

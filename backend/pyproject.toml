@@ -100,11 +100,8 @@ namespace_packages = true
 disallow_untyped_defs = true
 ignore_missing_imports = false
 exclude = ["alembic/", "tests/"]
-plugins = ["sqlalchemy.ext.mypy.plugin"]
+plugins = ["sqlalchemy.ext.mypy.plugin", "pydantic.mypy"]
 
-[[tool.mypy.overrides]]
-module = "celery.*"
-ignore_missing_imports = true
 
 [[tool.mypy.overrides]]
 module = "apscheduler.*"
@@ -138,9 +135,11 @@ exclude_lines = [
 
 [dependency-groups]
 dev = [
+    "celery-types>=0.23.0",
     "mypy>=1.16.1",
     "types-oauthlib>=3.3.0.20250708",
     "types-passlib>=1.7.7.20250602",
     "types-python-jose>=3.5.0.20250531",
+    "types-redis>=4.6.0.20241004",
     "types-requests-oauthlib>=2.0.0.20250516",
 ]

@@ -169,6 +169,18 @@ wheels = [
 ]
 
 [[package]]
+name = "celery-types"
+version = "0.23.0"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "typing-extensions" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/e9/d1/0823e71c281e4ad0044e278cf1577d1a68e05f2809424bf94e1614925c5d/celery_types-0.23.0.tar.gz", hash = "sha256:402ed0555aea3cd5e1e6248f4632e4f18eec8edb2435173f9e6dc08449fa101e", size = 31479, upload-time = "2025-03-03T23:56:51.547Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/6f/8b/92bb54dd74d145221c3854aa245c84f4dc04cc9366147496182cec8e88e3/celery_types-0.23.0-py3-none-any.whl", hash = "sha256:0cc495b8d7729891b7e070d0ec8d4906d2373209656a6e8b8276fe1ed306af9a", size = 50189, upload-time = "2025-03-03T23:56:50.458Z" },
+]
+
+[[package]]
 name = "certifi"
 version = "2025.7.9"
 source = { registry = "https://pypi.org/simple" }
@@ -1264,10 +1276,12 @@ dev = [
 
 [package.dev-dependencies]
 dev = [
+    { name = "celery-types" },
     { name = "mypy" },
     { name = "types-oauthlib" },
     { name = "types-passlib" },
     { name = "types-python-jose" },
+    { name = "types-redis" },
     { name = "types-requests-oauthlib" },
 ]
 
@@ -1316,10 +1330,12 @@ provides-extras = ["dev"]
 
 [package.metadata.requires-dev]
 dev = [
+    { name = "celery-types", specifier = ">=0.23.0" },
     { name = "mypy", specifier = ">=1.16.1" },
     { name = "types-oauthlib", specifier = ">=3.3.0.20250708" },
     { name = "types-passlib", specifier = ">=1.7.7.20250602" },
     { name = "types-python-jose", specifier = ">=3.5.0.20250531" },
+    { name = "types-redis", specifier = ">=4.6.0.20241004" },
     { name = "types-requests-oauthlib", specifier = ">=2.0.0.20250516" },
 ]
 

@@ -14,15 +14,15 @@ from src.core.logging import get_logger
 logger = get_logger(__name__)
 
 # Global Redis client instance
-_redis_client: Redis | None = None
+_redis_client: Redis[str] | None = None
 
 
-async def get_redis() -> Redis:
+async def get_redis() -> Redis[str]:
     """Get Redis client instance."""
     global _redis_client
 
     if _redis_client is None:
-        _redis_client = redis.from_url(  # type: ignore[no-untyped-call]
+        _redis_client = redis.from_url(
             str(settings.redis_url),
             encoding="utf-8",
             decode_responses=True,
@@ -46,7 +46,7 @@ class OAuthTokenStore:
     PREFIX = "oauth:request:"
     TTL = 600  # 10 minutes
 
-    def __init__(self, redis_client: Redis) -> None:
+    def __init__(self, redis_client: Redis[str]) -> None:
         self.redis = redis_client
 
     async def store_request_token(
@@ -80,7 +80,12 @@ class OAuthTokenStore:
 
         if data:
             logger.debug(f"Retrieved OAuth request token for state: {state}")
-            return json.loads(data)  # type: ignore[no-any-return]
+            result = json.loads(data)
+            if isinstance(result, dict):
+                return result
+            else:
+                logger.error(f"Invalid OAuth token data format for state: {state}")
+                return None
 
         logger.warning(f"No OAuth request token found for state: {state}")
         return None

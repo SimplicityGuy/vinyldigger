@@ -23,7 +23,7 @@ down:
 
 # Show logs from all services
 logs:
-    {{docker_compose}} logs -f
+    {{docker_compose}} logs -f || true
 
 # Show running services
 ps:
