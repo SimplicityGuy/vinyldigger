@@ -187,8 +187,8 @@ install-pre-commit:
     pip install pre-commit
     pre-commit install
 
-# Run pre-commit on all files
-lint:
+# Run pre-commit on all files and lint Dockerfiles
+lint: lint-docker
     pre-commit run --all-files
 
 # Lint backend only
@@ -198,6 +198,11 @@ lint-backend:
 # Lint frontend only
 lint-frontend:
     cd frontend && npm run lint
+
+# Lint all Dockerfiles using hadolint
+lint-docker:
+    hadolint backend/Dockerfile
+    hadolint frontend/Dockerfile
 
 # Type check backend only
 typecheck-backend:
