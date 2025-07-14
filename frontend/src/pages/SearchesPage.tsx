@@ -36,6 +36,7 @@ function SearchesPageComponent() {
   const queryClient = useQueryClient()
   const [isCreating, setIsCreating] = useState(false)
   const [editingSearch, setEditingSearch] = useState<Search | null>(null)
+  const [runningSearchId, setRunningSearchId] = useState<string | null>(null)
   const {
     register,
     handleSubmit,
@@ -59,11 +60,17 @@ function SearchesPageComponent() {
 
   const runSearchMutation = useMutation({
     mutationFn: searchApi.runSearch,
+    onMutate: (searchId: string) => {
+      setRunningSearchId(searchId)
+    },
     onSuccess: () => {
       toast({
         title: 'Search started',
         description: 'Your search is running in the background.',
       })
+    },
+    onSettled: () => {
+      setRunningSearchId(null)
     },
   })
 
@@ -193,18 +200,13 @@ function SearchesPageComponent() {
                         size="sm"
                         variant="outline"
                         onClick={() => runSearchMutation.mutate(search.id)}
-                        disabled={runSearchMutation.isPending}
+                        disabled={runningSearchId === search.id}
                         className="gap-2"
                       >
                         <Play className="h-3 w-3" />
-                        Run
+                        {runningSearchId === search.id ? 'Running...' : 'Run'}
                       </Button>
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        asChild
-                        className="gap-2"
-                      >
+                      <Button size="sm" variant="outline" asChild className="gap-2">
                         <Link to={`/searches/${search.id}`}>
                           <Eye className="h-3 w-3" />
                           View
@@ -219,23 +221,13 @@ function SearchesPageComponent() {
                         <Edit className="h-3 w-3" />
                         Edit
                       </Button>
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        asChild
-                        className="gap-2"
-                      >
+                      <Button size="sm" variant="outline" asChild className="gap-2">
                         <Link to={`/searches/${search.id}/analysis`}>
                           <BarChart3 className="h-3 w-3" />
                           Analysis
                         </Link>
                       </Button>
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        asChild
-                        className="gap-2"
-                      >
+                      <Button size="sm" variant="outline" asChild className="gap-2">
                         <Link to={`/searches/${search.id}/deals`}>
                           <Users className="h-3 w-3" />
                           Deals
@@ -284,19 +276,24 @@ function SearchesPageComponent() {
         )}
       </div>
 
-      <Dialog open={isCreating || !!editingSearch} onOpenChange={(open) => {
-        if (!open) {
-          setIsCreating(false)
-          setEditingSearch(null)
-          reset()
-        }
-      }}>
-        <DialogContent>
-          <DialogClose onClose={() => {
+      <Dialog
+        open={isCreating || !!editingSearch}
+        onOpenChange={(open) => {
+          if (!open) {
             setIsCreating(false)
             setEditingSearch(null)
             reset()
-          }} />
+          }
+        }}
+      >
+        <DialogContent>
+          <DialogClose
+            onClose={() => {
+              setIsCreating(false)
+              setEditingSearch(null)
+              reset()
+            }}
+          />
           <DialogHeader>
             <DialogTitle>{editingSearch ? 'Edit Search' : 'Create New Search'}</DialogTitle>
             <DialogDescription>
@@ -387,18 +384,28 @@ function SearchesPageComponent() {
               </Select>
             </div>
             <div className="flex justify-end gap-3 pt-4">
-              <Button type="button" variant="outline" onClick={() => {
-                setIsCreating(false)
-                setEditingSearch(null)
-                reset()
-              }}>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => {
+                  setIsCreating(false)
+                  setEditingSearch(null)
+                  reset()
+                }}
+              >
                 Cancel
               </Button>
-              <Button type="submit" disabled={createSearchMutation.isPending || updateSearchMutation.isPending}>
+              <Button
+                type="submit"
+                disabled={createSearchMutation.isPending || updateSearchMutation.isPending}
+              >
                 {editingSearch
-                  ? (updateSearchMutation.isPending ? 'Updating...' : 'Update Search')
-                  : (createSearchMutation.isPending ? 'Creating...' : 'Create Search')
-                }
+                  ? updateSearchMutation.isPending
+                    ? 'Updating...'
+                    : 'Update Search'
+                  : createSearchMutation.isPending
+                    ? 'Creating...'
+                    : 'Create Search'}
               </Button>
             </div>
           </form>
