@@ -27,18 +27,17 @@ ENV DEBIAN_FRONTEND=noninteractive \
 # Install system dependencies and tini for proper signal handling
 # hadolint ignore=DL3008
 RUN apt-get update --quiet --quiet && apt-get install --yes --quiet --quiet --no-install-recommends \
-    tini \
     curl \
+    fonts-liberation \
     g++ \
     gcc \
-    postgresql-client \
-    # Minimal dependencies for headless Chromium
+    libasound2 \
+    libappindicator3-1 \
+    libgbm1 \
     libnss3 \
     libxkbcommon0 \
-    libgbm1 \
-    libasound2 \
-    fonts-liberation \
-    libappindicator3-1 \
+    postgresql-client \
+    tini \
     xdg-utils \
     > /dev/null 2>&1 \
     && apt-get clean \

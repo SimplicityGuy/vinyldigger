@@ -54,8 +54,8 @@ ENV NODE_ENV=development
 # Install wget for health checks and dumb-init for proper signal handling
 # hadolint ignore=DL3018
 RUN apk add --no-cache --quiet \
-    wget \
-    dumb-init
+    dumb-init \
+    wget
 
 # Set working directory
 WORKDIR /app
@@ -183,8 +183,8 @@ LABEL org.opencontainers.image.created="${BUILD_DATE}" \
 # Install wget for health check and dumb-init for proper signal handling
 # hadolint ignore=DL3018
 RUN apk add --no-cache --quiet \
-    wget \
     dumb-init \
+    wget \
     && rm -rf /tmp/* /var/tmp/*
 
 # Copy built assets
