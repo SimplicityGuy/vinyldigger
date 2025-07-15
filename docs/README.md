@@ -138,4 +138,4 @@ backend/docs/
 
 ---
 
-*Last updated: January 2025*
+*Last updated: July 2025*
