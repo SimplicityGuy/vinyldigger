@@ -193,7 +193,7 @@ lint:
 
 # Lint backend only
 lint-backend:
-    cd backend && uv run ruff check . && uv run ruff format --check . && uv run mypy .
+    cd backend && uv run ruff check . && uv run ruff format --check .
 
 # Lint frontend only
 lint-frontend:
@@ -271,11 +271,7 @@ dev-frontend:
     cd frontend && npm run dev
 
 # Format code
-format:
-    cd backend && uv run ruff format .
-    cd frontend && npm run format
+format: format-backend format-frontend
 
 # Type check
-typecheck:
-    cd backend && uv run mypy .
-    cd frontend && npm run typecheck
+typecheck: typecheck-backend typecheck-frontend
