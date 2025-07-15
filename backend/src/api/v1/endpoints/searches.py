@@ -210,6 +210,9 @@ async def delete_search(
         await db.delete(search)
         await db.commit()
         return {"message": "Search deleted successfully"}
+    except HTTPException:
+        # Re-raise HTTPException without wrapping it
+        raise
     except Exception as e:
         await db.rollback()
         raise HTTPException(

@@ -173,7 +173,9 @@ class TestSellerAnalysisService:
         """Test finding existing seller."""
         # Mock database query
         mock_result = MagicMock()
-        mock_result.scalar_one_or_none.return_value = sample_seller
+        mock_scalars = MagicMock()
+        mock_scalars.all.return_value = [sample_seller]
+        mock_result.scalars.return_value = mock_scalars
         mock_db.execute.return_value = mock_result
 
         seller_info = {

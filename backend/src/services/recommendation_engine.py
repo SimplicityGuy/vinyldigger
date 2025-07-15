@@ -58,10 +58,11 @@ class RecommendationEngine:
         total_results = len(search_results)
         wantlist_matches = sum(1 for r in search_results if r.is_in_wantlist)
         collection_duplicates = sum(1 for r in search_results if r.is_in_collection)
-        new_discoveries = total_results - wantlist_matches - collection_duplicates
+        # Items can be in both wantlist and collection, so we need to count unique non-collection items
+        new_discoveries = sum(1 for r in search_results if not r.is_in_collection and not r.is_in_wantlist)
 
-        # Price analysis
-        prices = [r.item_price for r in search_results if r.item_price]
+        # Price analysis (exclude collection items from price stats)
+        prices = [r.item_price for r in search_results if r.item_price and not r.is_in_collection]
         min_price = min(prices) if prices else None
         max_price = max(prices) if prices else None
         avg_price = sum(prices) / len(prices) if prices else None
@@ -278,6 +279,8 @@ class RecommendationEngine:
             )
             seller_items = list(items_result.scalars().all())
 
+            logger.debug(f"Processing seller {seller.seller_name}: {len(seller_items)} items found")
+
             # Generate recommendations based on seller characteristics
             # Multi-item deals: either multiple wantlist items OR multiple non-collection items
             non_collection_items = seller_analysis.total_items - seller_analysis.collection_duplicates
@@ -309,9 +312,15 @@ class RecommendationEngine:
         for rec in recommendations:
             db.add(rec)
 
+        # Flush to ensure recommendations are persisted
+        if recommendations:
+            await db.flush()
+
         # Log the number of recommendations created
         if recommendations:
             logger.info(f"Created {len(recommendations)} recommendations for search {search.id}")
+        else:
+            logger.warning(f"No recommendations created for search {search.id}")
 
     def _create_multi_item_recommendation(
         self,
