@@ -279,8 +279,10 @@ class RecommendationEngine:
             seller_items = list(items_result.scalars().all())
 
             # Generate recommendations based on seller characteristics
-            if seller_analysis.wantlist_items >= 2:
-                # Multi-item want list deal
+            # Multi-item deals: either multiple wantlist items OR multiple non-collection items
+            non_collection_items = seller_analysis.total_items - seller_analysis.collection_duplicates
+            if seller_analysis.wantlist_items >= 2 or (seller_analysis.total_items >= 2 and non_collection_items >= 2):
+                # Multi-item deal (prioritize wantlist items, but also include other valuable multi-item opportunities)
                 recommendation = self._create_multi_item_recommendation(analysis, seller, seller_analysis, seller_items)
                 recommendations.append(recommendation)
 
@@ -321,12 +323,29 @@ class RecommendationEngine:
         """Create recommendation for multi-item deals."""
 
         wantlist_items = [item for item in seller_items if item.is_in_wantlist]
+        non_collection_items = [item for item in seller_items if not item.is_in_collection]
         total_cost = seller_analysis.total_value + (seller_analysis.estimated_shipping or Decimal("0.00"))
 
         # Calculate shipping savings
         savings = self.seller_analyzer.calculate_shipping_savings(len(seller_items), seller)
 
         deal_score = self._determine_deal_score(seller_analysis.overall_score)
+
+        # Create dynamic description based on item mix
+        if len(wantlist_items) >= 2:
+            description = (
+                f"Get {len(wantlist_items)} want list items"
+                + (
+                    f" plus {len(non_collection_items) - len(wantlist_items)} other records"
+                    if len(non_collection_items) > len(wantlist_items)
+                    else ""
+                )
+                + " from one seller"
+            )
+        else:
+            description = f"Get {len(non_collection_items)} records you don't own from one seller" + (
+                f" (including {len(wantlist_items)} from your want list)" if len(wantlist_items) > 0 else ""
+            )
 
         return DealRecommendation(
             analysis_id=analysis.id,
@@ -341,14 +360,11 @@ class RecommendationEngine:
             total_cost=total_cost,
             potential_savings=savings,
             title=f"Multi-Item Deal from {seller.seller_name}",
-            description=(
-                f"Get {len(wantlist_items)} want list items plus "
-                f"{seller_analysis.total_items - len(wantlist_items)} other records from one seller"
-            ),
+            description=description,
             recommendation_reason=(
-                f"Save ${savings:.2f} on shipping by buying {seller_analysis.total_items} items together"
+                f"Save ${savings:.2f} on shipping by buying {len(non_collection_items)} items together"
             ),
-            item_ids=[str(item.id) for item in seller_items],
+            item_ids=[str(item.id) for item in non_collection_items],  # Only include non-collection items
         )
 
     def _create_best_price_recommendation(

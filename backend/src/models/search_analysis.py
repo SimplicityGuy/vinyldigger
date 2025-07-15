@@ -46,7 +46,9 @@ class SearchResultAnalysis(Base):
     __tablename__ = "search_result_analyses"
 
     id: Mapped[UUID] = mapped_column(PGUUID(as_uuid=True), primary_key=True, default=uuid4)
-    search_id: Mapped[UUID] = mapped_column(PGUUID(as_uuid=True), ForeignKey("saved_searches.id"), nullable=False)
+    search_id: Mapped[UUID] = mapped_column(
+        PGUUID(as_uuid=True), ForeignKey("saved_searches.id", ondelete="CASCADE"), nullable=False
+    )
 
     # Analysis metadata
     total_results: Mapped[int] = mapped_column(default=0)
@@ -86,7 +88,7 @@ class DealRecommendation(Base):
 
     id: Mapped[UUID] = mapped_column(PGUUID(as_uuid=True), primary_key=True, default=uuid4)
     analysis_id: Mapped[UUID] = mapped_column(
-        PGUUID(as_uuid=True), ForeignKey("search_result_analyses.id"), nullable=False
+        PGUUID(as_uuid=True), ForeignKey("search_result_analyses.id", ondelete="CASCADE"), nullable=False
     )
     seller_id: Mapped[UUID] = mapped_column(PGUUID(as_uuid=True), ForeignKey("sellers.id"), nullable=False)
 
@@ -130,7 +132,7 @@ class SellerAnalysis(Base):
 
     id: Mapped[UUID] = mapped_column(PGUUID(as_uuid=True), primary_key=True, default=uuid4)
     search_analysis_id: Mapped[UUID] = mapped_column(
-        PGUUID(as_uuid=True), ForeignKey("search_result_analyses.id"), nullable=False
+        PGUUID(as_uuid=True), ForeignKey("search_result_analyses.id", ondelete="CASCADE"), nullable=False
     )
     seller_id: Mapped[UUID] = mapped_column(PGUUID(as_uuid=True), ForeignKey("sellers.id"), nullable=False)
 

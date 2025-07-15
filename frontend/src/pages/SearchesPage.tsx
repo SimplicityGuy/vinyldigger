@@ -83,6 +83,14 @@ function SearchesPageComponent() {
         description: 'The search has been removed.',
       })
     },
+    onError: (error: unknown) => {
+      console.error('Delete search error:', error)
+      toast({
+        title: 'Error',
+        description: 'Failed to delete search. Please try again.',
+        variant: 'destructive',
+      })
+    },
   })
 
   const createSearchMutation = useMutation({

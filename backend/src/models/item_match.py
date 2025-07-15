@@ -71,7 +71,7 @@ class ItemMatchResult(Base):
     id: Mapped[UUID] = mapped_column(PGUUID(as_uuid=True), primary_key=True, default=uuid4)
     item_match_id: Mapped[UUID] = mapped_column(PGUUID(as_uuid=True), ForeignKey("item_matches.id"), nullable=False)
     search_result_id: Mapped[UUID] = mapped_column(
-        PGUUID(as_uuid=True), ForeignKey("search_results.id"), nullable=False
+        PGUUID(as_uuid=True), ForeignKey("search_results.id", ondelete="CASCADE"), nullable=False
     )
 
     # Match quality

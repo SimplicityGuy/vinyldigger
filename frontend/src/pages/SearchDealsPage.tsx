@@ -366,8 +366,9 @@ export const SearchDealsPage = memo(function SearchDealsPage() {
                         <div className="flex-1">
                           <div className="flex items-center gap-2">
                             {comparison.listings.some((l) => l.is_in_wantlist) && (
-                              <span title="In your wantlist">
+                              <span title="In your wantlist" className="flex items-center gap-1">
                                 <Star className="h-4 w-4 text-yellow-500 fill-current" />
+                                <span className="text-xs text-yellow-600 font-medium">WANT LIST</span>
                               </span>
                             )}
                             <h4 className="font-medium">{comparison.item_match.canonical_title}</h4>
@@ -466,8 +467,15 @@ export const SearchDealsPage = memo(function SearchDealsPage() {
                                     <span className="px-2 py-1 bg-white rounded text-xs font-medium">
                                       {listing.platform.charAt(0).toUpperCase() + listing.platform.slice(1).toLowerCase()}
                                     </span>
-                                    {listing.is_in_wantlist && (
-                                      <Star className="h-3 w-3 text-yellow-500 fill-current" />
+                                    {listing.is_in_wantlist ? (
+                                      <span className="flex items-center gap-1 px-2 py-1 bg-yellow-100 text-yellow-700 rounded text-xs font-medium">
+                                        <Star className="h-3 w-3 fill-current" />
+                                        WANT LIST
+                                      </span>
+                                    ) : (
+                                      <span className="px-2 py-1 bg-blue-100 text-blue-700 rounded text-xs font-medium">
+                                        NEW DISCOVERY
+                                      </span>
                                     )}
                                   </div>
                                   <div>

@@ -20,6 +20,8 @@ services:
     ports:
       - "6379:6379"
     command: redis-server --save 60 1 --loglevel warning
+    # Note: Memory overcommit warning is normal in Docker development environments
+    # Production deployment should configure vm.overcommit_memory=1 at the host level
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
       interval: 5s

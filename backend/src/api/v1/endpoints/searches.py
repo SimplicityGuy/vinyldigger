@@ -193,22 +193,29 @@ async def delete_search(
     current_user: Annotated[User, Depends(get_current_user)],
     db: AsyncSession = Depends(get_db),
 ) -> dict[str, str]:
-    result = await db.execute(
-        select(SavedSearch).where(
-            SavedSearch.id == search_id,
-            SavedSearch.user_id == current_user.id,
+    try:
+        result = await db.execute(
+            select(SavedSearch).where(
+                SavedSearch.id == search_id,
+                SavedSearch.user_id == current_user.id,
+            )
         )
-    )
-    search = result.scalar_one_or_none()
-    if not search:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Search not found",
-        )
+        search = result.scalar_one_or_none()
+        if not search:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Search not found",
+            )
 
-    await db.delete(search)
-    await db.commit()
-    return {"message": "Search deleted successfully"}
+        await db.delete(search)
+        await db.commit()
+        return {"message": "Search deleted successfully"}
+    except Exception as e:
+        await db.rollback()
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to delete search: {str(e)}",
+        ) from e
 
 
 @router.post("/{search_id}/run")
@@ -256,11 +263,17 @@ async def get_search_results(
             detail="Search not found",
         )
 
-    # Get results
+    # Get results, filtering out collection items and prioritizing wantlist items
     result = await db.execute(
         select(SearchResult)
-        .where(SearchResult.search_id == search_id)
-        .order_by(SearchResult.created_at.desc())
+        .where(
+            SearchResult.search_id == search_id,
+            ~SearchResult.is_in_collection,  # Exclude items already in collection
+        )
+        .order_by(
+            SearchResult.is_in_wantlist.desc(),  # Wantlist items first
+            SearchResult.created_at.desc(),  # Then by recency
+        )
         .limit(100)
     )
     return list(result.scalars().all())

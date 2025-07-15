@@ -44,9 +44,8 @@ def upgrade() -> None:
         sa.Column("created_at", sa.DateTime(timezone=True), server_default=sa.text("now()"), nullable=False),
         sa.Column("updated_at", sa.DateTime(timezone=True), server_default=sa.text("now()"), nullable=False),
         sa.PrimaryKeyConstraint("id"),
-        sa.UniqueConstraint("email"),
     )
-    op.create_index(op.f("ix_users_email"), "users", ["email"], unique=False)
+    op.create_index(op.f("ix_users_email"), "users", ["email"], unique=True)
 
     # Create app_config table
     op.create_table(
@@ -87,7 +86,7 @@ def upgrade() -> None:
             ["users.id"],
         ),
         sa.PrimaryKeyConstraint("id"),
-        sa.UniqueConstraint("user_id", "service"),
+        # Note: Unique constraint removed per later migration
     )
 
     # Create oauth_tokens table
@@ -111,7 +110,7 @@ def upgrade() -> None:
             ["users.id"],
         ),
         sa.PrimaryKeyConstraint("id"),
-        sa.UniqueConstraint("user_id", "provider"),
+        sa.UniqueConstraint("user_id", "provider", name="unique_user_provider"),
     )
 
     # Create saved_searches table
@@ -145,7 +144,7 @@ def upgrade() -> None:
         sa.PrimaryKeyConstraint("id"),
     )
     op.create_index(op.f("ix_saved_searches_next_run_at"), "saved_searches", ["next_run_at"], unique=False)
-    op.create_index(op.f("ix_saved_searches_user_id"), "saved_searches", ["user_id"], unique=False)
+    # Note: ix_saved_searches_user_id index removed per later migration
 
     # Create search_results table
     op.create_table(
@@ -167,33 +166,11 @@ def upgrade() -> None:
             ["saved_searches.id"],
         ),
         sa.PrimaryKeyConstraint("id"),
-        sa.UniqueConstraint("search_id", "platform", "item_id"),
+        # Note: Unique constraint removed per later migration
     )
-    op.create_index(op.f("ix_search_results_search_id"), "search_results", ["search_id"], unique=False)
+    # Note: ix_search_results_search_id index removed per later migration
 
-    # Create search_runs table
-    op.create_table(
-        "search_runs",
-        sa.Column("id", postgresql.UUID(as_uuid=True), nullable=False),
-        sa.Column("search_id", postgresql.UUID(as_uuid=True), nullable=False),
-        sa.Column(
-            "status",
-            postgresql.ENUM("PENDING", "RUNNING", "COMPLETED", "FAILED", name="searchstatus", create_type=False),
-            nullable=False,
-        ),
-        sa.Column("started_at", sa.DateTime(timezone=True), nullable=True),
-        sa.Column("completed_at", sa.DateTime(timezone=True), nullable=True),
-        sa.Column("results_count", sa.Integer(), nullable=False, server_default="0"),
-        sa.Column("error_message", sa.Text(), nullable=True),
-        sa.Column("created_at", sa.DateTime(timezone=True), server_default=sa.text("now()"), nullable=False),
-        sa.ForeignKeyConstraint(
-            ["search_id"],
-            ["saved_searches.id"],
-        ),
-        sa.PrimaryKeyConstraint("id"),
-    )
-    op.create_index(op.f("ix_search_runs_search_id"), "search_runs", ["search_id"], unique=False)
-    op.create_index(op.f("ix_search_runs_started_at"), "search_runs", ["started_at"], unique=False)
+    # Note: search_runs table removed per later migration
 
     # Create collections table
     op.create_table(
@@ -241,7 +218,7 @@ def upgrade() -> None:
         sa.PrimaryKeyConstraint("id"),
         sa.UniqueConstraint("collection_id", "item_id"),
     )
-    op.create_index(op.f("ix_collection_items_collection_id"), "collection_items", ["collection_id"], unique=False)
+    # Note: ix_collection_items_collection_id index removed per later migration
 
     # Create want_lists table
     op.create_table(
@@ -287,7 +264,7 @@ def upgrade() -> None:
         sa.PrimaryKeyConstraint("id"),
         sa.UniqueConstraint("want_list_id", "item_id"),
     )
-    op.create_index(op.f("ix_want_list_items_want_list_id"), "want_list_items", ["want_list_id"], unique=False)
+    # Note: ix_want_list_items_want_list_id index removed per later migration
 
     # Create price_history table
     op.create_table(
@@ -342,7 +319,7 @@ def upgrade() -> None:
         sa.Column("positive_feedback_percentage", sa.Numeric(precision=5, scale=2), nullable=True),
         sa.Column("ships_internationally", sa.Boolean(), nullable=False, server_default="false"),
         sa.Column("estimated_shipping_cost", sa.Numeric(precision=10, scale=2), nullable=True),
-        sa.Column("seller_metadata", postgresql.JSONB(astext_type=sa.Text()), nullable=True),
+        sa.Column("seller_metadata", postgresql.JSON(astext_type=sa.Text()), nullable=True),
         sa.Column("created_at", sa.DateTime(timezone=True), server_default=sa.text("now()"), nullable=False),
         sa.Column("updated_at", sa.DateTime(timezone=True), server_default=sa.text("now()"), nullable=False),
         sa.PrimaryKeyConstraint("id"),
@@ -365,7 +342,7 @@ def upgrade() -> None:
         sa.Column("analysis_completed_at", sa.DateTime(timezone=True), nullable=True),
         sa.Column("analysis_version", sa.String(length=50), nullable=False, server_default="'1.0'"),
         sa.Column("created_at", sa.DateTime(timezone=True), server_default=sa.text("now()"), nullable=False),
-        sa.ForeignKeyConstraint(["search_id"], ["saved_searches.id"]),
+        sa.ForeignKeyConstraint(["search_id"], ["saved_searches.id"], ondelete="CASCADE"),
         sa.PrimaryKeyConstraint("id"),
     )
 
@@ -404,9 +381,9 @@ def upgrade() -> None:
         sa.Column("title", sa.String(length=255), nullable=False),
         sa.Column("description", sa.String(length=1000), nullable=False),
         sa.Column("recommendation_reason", sa.String(length=500), nullable=False),
-        sa.Column("item_ids", postgresql.JSONB(astext_type=sa.Text()), nullable=False),
+        sa.Column("item_ids", postgresql.JSON(astext_type=sa.Text()), nullable=False),
         sa.Column("created_at", sa.DateTime(timezone=True), server_default=sa.text("now()"), nullable=False),
-        sa.ForeignKeyConstraint(["analysis_id"], ["search_result_analyses.id"]),
+        sa.ForeignKeyConstraint(["analysis_id"], ["search_result_analyses.id"], ondelete="CASCADE"),
         sa.ForeignKeyConstraint(["seller_id"], ["sellers.id"]),
         sa.PrimaryKeyConstraint("id"),
     )
@@ -431,10 +408,10 @@ def upgrade() -> None:
         sa.Column("requires_review", sa.Boolean(), nullable=False, server_default="false"),
         sa.Column("reviewed_by_user", sa.Boolean(), nullable=False, server_default="false"),
         sa.Column("user_confirmed", sa.Boolean(), nullable=True),
-        sa.Column("match_metadata", postgresql.JSONB(astext_type=sa.Text()), nullable=True),
+        sa.Column("match_metadata", postgresql.JSON(astext_type=sa.Text()), nullable=True),
         sa.Column("created_at", sa.DateTime(timezone=True), server_default=sa.text("now()"), nullable=False),
         sa.ForeignKeyConstraint(["item_match_id"], ["item_matches.id"]),
-        sa.ForeignKeyConstraint(["search_result_id"], ["search_results.id"]),
+        sa.ForeignKeyConstraint(["search_result_id"], ["search_results.id"], ondelete="CASCADE"),
         sa.PrimaryKeyConstraint("id"),
     )
 
@@ -457,7 +434,7 @@ def upgrade() -> None:
         sa.Column("overall_score", sa.Numeric(precision=5, scale=2), nullable=False, server_default="0.0"),
         sa.Column("recommendation_rank", sa.Integer(), nullable=False, server_default="0"),
         sa.Column("created_at", sa.DateTime(timezone=True), server_default=sa.text("now()"), nullable=False),
-        sa.ForeignKeyConstraint(["search_analysis_id"], ["search_result_analyses.id"]),
+        sa.ForeignKeyConstraint(["search_analysis_id"], ["search_result_analyses.id"], ondelete="CASCADE"),
         sa.ForeignKeyConstraint(["seller_id"], ["sellers.id"]),
         sa.PrimaryKeyConstraint("id"),
     )
@@ -516,22 +493,20 @@ def downgrade() -> None:
     op.drop_index(op.f("ix_price_history_item_id"), table_name="price_history")
     op.drop_table("price_history")
 
-    op.drop_index(op.f("ix_want_list_items_want_list_id"), table_name="want_list_items")
+    # Note: want_list_items index was removed
     op.drop_table("want_list_items")
     op.drop_table("want_lists")
 
-    op.drop_index(op.f("ix_collection_items_collection_id"), table_name="collection_items")
+    # Note: collection_items index was removed
     op.drop_table("collection_items")
     op.drop_table("collections")
 
-    op.drop_index(op.f("ix_search_runs_started_at"), table_name="search_runs")
-    op.drop_index(op.f("ix_search_runs_search_id"), table_name="search_runs")
-    op.drop_table("search_runs")
+    # Note: search_runs table was removed in later migrations
 
-    op.drop_index(op.f("ix_search_results_search_id"), table_name="search_results")
+    # Note: search_results index was removed
     op.drop_table("search_results")
 
-    op.drop_index(op.f("ix_saved_searches_user_id"), table_name="saved_searches")
+    # Note: saved_searches user_id index was removed
     op.drop_index(op.f("ix_saved_searches_next_run_at"), table_name="saved_searches")
     op.drop_table("saved_searches")
 

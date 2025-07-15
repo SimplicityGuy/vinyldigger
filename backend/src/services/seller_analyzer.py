@@ -1,6 +1,9 @@
 """Seller analysis service for multi-seller optimization and scoring."""
 
+import hashlib
+import json
 import re
+import time
 from decimal import Decimal
 from typing import Any
 
@@ -138,8 +141,19 @@ class SellerAnalysisService:
             }
         else:
             # Fallback for old format or missing seller info
+            # Create a unique ID based on item data to avoid duplicates
+
+            # Use item ID or generate hash from available data
+            item_id = item_data.get("id", "")
+            if item_id:
+                unique_id = f"unknown_discogs_{item_id}"
+            else:
+                # Fallback: hash the item data to create a unique identifier
+                data_hash = hashlib.md5(json.dumps(item_data, sort_keys=True).encode()).hexdigest()[:8]
+                unique_id = f"unknown_discogs_{data_hash}"
+
             return {
-                "platform_seller_id": "unknown",
+                "platform_seller_id": unique_id,
                 "seller_name": "Unknown Seller",
                 "location": "",
                 "feedback_score": 0,
@@ -181,13 +195,27 @@ class SellerAnalysisService:
 
         if not platform_seller_id:
             # Create anonymous seller for missing seller info
-            platform_seller_id = f"anonymous_{hash(seller_info.get('seller_name', 'unknown'))}"
+            # Create a unique ID using seller name and timestamp to avoid collisions
+            seller_name = seller_info.get("seller_name", "unknown")
+            timestamp = str(int(time.time() * 1000))  # millisecond timestamp
+            data_to_hash = f"{seller_name}_{timestamp}_{id(seller_info)}"
+            hash_id = hashlib.md5(data_to_hash.encode()).hexdigest()[:8]
+            platform_seller_id = f"anonymous_{platform.value.lower()}_{hash_id}"
 
         # Try to find existing seller
         result = await db.execute(
             select(Seller).where(Seller.platform == platform, Seller.platform_seller_id == platform_seller_id)
         )
-        existing_seller = result.scalar_one_or_none()
+        existing_sellers = list(result.scalars().all())
+
+        if len(existing_sellers) > 1:
+            # Handle duplicates: use the most recent one and log the issue
+            logger.warning(f"Found {len(existing_sellers)} duplicate sellers for {platform.value}:{platform_seller_id}")
+            existing_seller = max(existing_sellers, key=lambda s: s.created_at)
+        elif len(existing_sellers) == 1:
+            existing_seller = existing_sellers[0]
+        else:
+            existing_seller = None
 
         if existing_seller:
             # Update seller info with latest data
@@ -224,9 +252,60 @@ class SellerAnalysisService:
             seller_metadata=seller_info.get("seller_metadata"),
         )
 
-        db.add(new_seller)
-        # Let SQLAlchemy handle flushing automatically
-        return new_seller
+        try:
+            db.add(new_seller)
+            await db.flush()  # Force the insert to catch unique constraint violations
+            return new_seller
+        except Exception as e:
+            # Handle race condition where another process created the same seller
+            error_str = str(e).lower()
+            if (
+                "unique_platform_seller_id" in error_str
+                or "unique constraint" in error_str
+                or "duplicate key" in error_str
+            ):
+                logger.info(
+                    f"Seller {platform.value}:{platform_seller_id} created by another process, fetching existing"
+                )
+                try:
+                    # Rollback the failed transaction
+                    await db.rollback()
+
+                    # Try to fetch the existing seller in a new transaction context
+                    result = await db.execute(
+                        select(Seller).where(
+                            Seller.platform == platform, Seller.platform_seller_id == platform_seller_id
+                        )
+                    )
+                    existing_sellers = list(result.scalars().all())
+                    if existing_sellers:
+                        logger.info(f"Successfully found existing seller: {platform.value}:{platform_seller_id}")
+                        return existing_sellers[0]
+                    else:
+                        # Wait briefly and try once more (race condition edge case)
+                        import asyncio
+
+                        await asyncio.sleep(0.1)
+                        result = await db.execute(
+                            select(Seller).where(
+                                Seller.platform == platform, Seller.platform_seller_id == platform_seller_id
+                            )
+                        )
+                        existing_sellers = list(result.scalars().all())
+                        if existing_sellers:
+                            logger.info(f"Found existing seller after retry: {platform.value}:{platform_seller_id}")
+                            return existing_sellers[0]
+                        else:
+                            seller_id = f"{platform.value}:{platform_seller_id}"
+                            logger.error(f"Failed to find seller after unique constraint violation: {seller_id}")
+                            raise Exception(f"Seller not found after unique constraint violation: {seller_id}")
+                except Exception as recovery_error:
+                    logger.error(f"Error during seller recovery: {recovery_error}")
+                    raise recovery_error
+            else:
+                # Re-raise other exceptions
+                logger.error(f"Unexpected error creating seller {platform.value}:{platform_seller_id}: {e}")
+                raise
 
     async def analyze_seller_inventory(self, db: AsyncSession, seller: Seller, user_id: str) -> dict[str, Any]:
         """Analyze a seller's inventory for want list matches and value."""
