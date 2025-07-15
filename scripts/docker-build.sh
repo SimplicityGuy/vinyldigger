@@ -47,12 +47,12 @@ echo "Build complete!"
 if command -v jq &> /dev/null; then
     echo -e "\nImage labels:"
     for service in backend frontend; do
-        if docker image inspect "virtualdigger-$service:latest" &>/dev/null; then
+        if docker image inspect "vinyldigger-$service:latest" &>/dev/null; then
             echo -e "\n$service:"
             # Check if labels exist and are not null
-            LABELS=$(docker inspect "virtualdigger-$service:latest" 2>/dev/null | jq -r '.[0].Config.Labels')
+            LABELS=$(docker inspect "vinyldigger-$service:latest" 2>/dev/null | jq -r '.[0].Config.Labels')
             if [ "$LABELS" != "null" ] && [ -n "$LABELS" ]; then
-                docker inspect "virtualdigger-$service:latest" 2>/dev/null | jq -r '.[0].Config.Labels | to_entries | .[] | "\(.key): \(.value)"' | grep "org.opencontainers" || true
+                docker inspect "vinyldigger-$service:latest" 2>/dev/null | jq -r '.[0].Config.Labels | to_entries | .[] | "\(.key): \(.value)"' | grep "org.opencontainers" || true
             else
                 echo "No labels found (labels are null or empty)"
             fi
@@ -63,9 +63,9 @@ fi
 # Validate that images were built with required labels
 echo -e "\nValidating OCI compliance..."
 for service in backend frontend; do
-    if docker image inspect "virtualdigger-$service:latest" &>/dev/null; then
+    if docker image inspect "vinyldigger-$service:latest" &>/dev/null; then
         # Check if labels exist and are not null
-        LABELS_JSON=$(docker inspect "virtualdigger-$service:latest" 2>/dev/null | jq -r '.[0].Config.Labels')
+        LABELS_JSON=$(docker inspect "vinyldigger-$service:latest" 2>/dev/null | jq -r '.[0].Config.Labels')
         if [ "$LABELS_JSON" != "null" ] && [ -n "$LABELS_JSON" ]; then
             LABELS=$(echo "$LABELS_JSON" | jq -r 'keys[]' | grep "org.opencontainers" | wc -l)
             if [ "$LABELS" -ge 8 ]; then

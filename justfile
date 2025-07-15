@@ -130,7 +130,7 @@ clean-docker:
     {{docker_compose}} -f docker-compose.test.yml down -v 2>/dev/null || true
     # Remove project-specific images
     @echo "Removing project images..."
-    @docker images --format "{{{{.Repository}}}}:{{{{.Tag}}}}" | grep -E "(virtualdigger|vinyldigger)" | while read image; do \
+    @docker images --format "{{{{.Repository}}}}:{{{{.Tag}}}}" | grep -E "vinyldigger" | while read image; do \
         if [ -n "$$image" ]; then \
             echo "  - Removing image: $$image"; \
             docker rmi -f "$$image" 2>/dev/null || true; \
