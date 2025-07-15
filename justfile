@@ -69,13 +69,13 @@ test-e2e-ci project="" retries="2":
 test-services-up:
     {{docker_compose}} -f docker-compose.test.yml up -d
     @echo "Waiting for PostgreSQL..."
-    @timeout 120 bash -c 'until {{docker_compose}} -f docker-compose.test.yml exec -T postgres pg_isready -U test; do echo "PostgreSQL not ready, waiting..."; sleep 2; done'
+    @timeout 180 bash -c 'until {{docker_compose}} -f docker-compose.test.yml exec -T postgres pg_isready -U test -d vinyldigger_test; do echo "PostgreSQL not ready, waiting..."; sleep 2; done'
     @echo "✓ PostgreSQL is ready"
     @echo "Waiting for Redis..."
-    @timeout 120 bash -c 'until {{docker_compose}} -f docker-compose.test.yml exec -T redis redis-cli ping; do echo "Redis not ready, waiting..."; sleep 2; done'
+    @timeout 180 bash -c 'until {{docker_compose}} -f docker-compose.test.yml exec -T redis redis-cli ping; do echo "Redis not ready, waiting..."; sleep 2; done'
     @echo "✓ Redis is ready"
     @echo "Waiting for backend API..."
-    @timeout 180 bash -c 'until curl -f http://localhost:8000/health 2>/dev/null; do echo "Backend not ready, waiting..."; sleep 2; done'
+    @timeout 300 bash -c 'until curl -f http://localhost:8000/health 2>/dev/null; do echo "Backend not ready, waiting..."; sleep 3; done'
     @echo "✓ Backend API is ready"
     @echo "Waiting for frontend..."
     @timeout 180 bash -c 'until curl -f http://localhost:3000 2>/dev/null; do echo "Frontend not ready, waiting..."; sleep 2; done'

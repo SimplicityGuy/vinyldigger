@@ -1,5 +1,6 @@
 import { test, expect } from '@playwright/test'
 import type { Page } from '@playwright/test'
+import { CI_TIMEOUT } from './test-config'
 
 // Helper to set up authenticated state
 async function setupAuthentication(page: Page) {
@@ -114,13 +115,13 @@ test.describe('Dashboard Page', () => {
     await expect(page.getByText('Records in your collection')).toBeVisible()
 
     // Check want list stats
-    await expect(page.getByText('Want List')).toBeVisible()
+    await expect(page.getByRole('heading', { name: 'Want List' })).toBeVisible()
 
     // Check last sync
-    await expect(page.getByText('Last Sync')).toBeVisible()
+    await expect(page.getByRole('heading', { name: 'Last Sync' })).toBeVisible()
 
     // Check quick actions section
-    await expect(page.getByText('Quick Actions')).toBeVisible()
+    await expect(page.getByRole('heading', { name: 'Quick Actions' })).toBeVisible()
     await expect(page.getByText('Common tasks to manage your collection')).toBeVisible()
     await expect(page.getByRole('button', { name: 'Sync All' })).toBeVisible()
   })
@@ -149,8 +150,8 @@ test.describe('Dashboard Page', () => {
     await page.getByRole('button', { name: 'Sync All' }).click()
 
     // Should show success toast
-    await expect(page.getByText('Sync started')).toBeVisible()
-    await expect(page.getByText('Your collection and want list are being synced with Discogs.')).toBeVisible()
+    await expect(page.getByText('Sync started')).toBeVisible({ timeout: CI_TIMEOUT })
+    await expect(page.getByText('Your collection and want list are being synced with Discogs.')).toBeVisible({ timeout: CI_TIMEOUT })
   })
 
   test('should navigate to searches page from navigation', async ({ page }) => {
@@ -270,16 +271,19 @@ test.describe('Dashboard Mobile View', () => {
     await page.goto('/dashboard')
 
     // Check that layout is responsive
-    await expect(page.getByRole('heading', { name: 'Dashboard' })).toBeVisible()
+    await expect(page.getByRole('heading', { name: 'Dashboard' })).toBeVisible({ timeout: CI_TIMEOUT })
+
+    // Wait for cards to load
+    await expect(page.locator('.card').first()).toBeVisible({ timeout: CI_TIMEOUT })
 
     // Cards should stack vertically on mobile
     const cards = page.locator('.grid > .card')
-    const firstCard = cards.first()
-    const secondCard = cards.nth(1)
+    await expect(cards.first()).toBeVisible()
+    await expect(cards.nth(1)).toBeVisible()
 
     // Get bounding boxes to verify vertical stacking
-    const firstBox = await firstCard.boundingBox()
-    const secondBox = await secondCard.boundingBox()
+    const firstBox = await cards.first().boundingBox()
+    const secondBox = await cards.nth(1).boundingBox()
 
     if (firstBox && secondBox) {
       // Second card should be below first card
@@ -335,13 +339,13 @@ test('should allow keyboard users to skip to main content', async ({ page }) => 
 
   // The skip link should be visible when focused
   const skipLink = page.getByText('Skip to main content')
-  await expect(skipLink).toBeFocused()
-  await expect(skipLink).toBeVisible()
+  await expect(skipLink).toBeFocused({ timeout: CI_TIMEOUT })
+  await expect(skipLink).toBeVisible({ timeout: CI_TIMEOUT })
 
   // Click the skip link
   await skipLink.click()
 
   // Main content should be focused
   const mainContent = page.locator('#main-content')
-  await expect(mainContent).toBeFocused()
+  await expect(mainContent).toBeFocused({ timeout: CI_TIMEOUT })
 })

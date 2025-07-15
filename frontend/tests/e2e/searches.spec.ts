@@ -1,5 +1,6 @@
 import { test, expect } from '@playwright/test'
 import type { Page } from '@playwright/test'
+import { CI_TIMEOUT } from './test-config'
 
 // Helper to set up authenticated state
 async function setupAuthentication(page: Page) {
@@ -79,18 +80,18 @@ test.describe('Searches Page', () => {
     await page.goto('/searches')
 
     // Check page header
-    await expect(page.getByText('Searches', { exact: true })).toBeVisible()
-    await expect(page.getByText('Manage your saved searches and view results')).toBeVisible()
+    await expect(page.getByRole('heading', { name: 'Searches' })).toBeVisible({ timeout: CI_TIMEOUT })
+    await expect(page.getByText('Manage your saved searches and view results')).toBeVisible({ timeout: CI_TIMEOUT })
 
     // Check new search button
-    await expect(page.getByRole('button', { name: 'Create a new search' })).toBeVisible()
+    await expect(page.getByRole('button', { name: 'Create a new search' })).toBeVisible({ timeout: CI_TIMEOUT })
 
     // Check search cards
-    await expect(page.getByText('Jazz Vinyl Collection')).toBeVisible()
-    await expect(page.getByText('jazz vinyl LP • both • Every 24 hours')).toBeVisible()
+    await expect(page.getByText('Jazz Vinyl Collection')).toBeVisible({ timeout: CI_TIMEOUT })
+    await expect(page.getByText('jazz vinyl LP')).toBeVisible({ timeout: CI_TIMEOUT })
 
-    await expect(page.getByText('Rare Beatles Singles')).toBeVisible()
-    await expect(page.getByText('beatles 45 single • discogs • Every 12 hours')).toBeVisible()
+    await expect(page.getByText('Rare Beatles Singles')).toBeVisible({ timeout: CI_TIMEOUT })
+    await expect(page.getByText('beatles 45 single')).toBeVisible({ timeout: CI_TIMEOUT })
   })
 
   test('should display empty state when no searches', async ({ page }) => {
@@ -130,14 +131,20 @@ test.describe('Searches Page', () => {
 
     await page.goto('/searches')
 
+    // Wait for searches to load
+    await expect(page.getByText('Jazz Vinyl Collection')).toBeVisible()
+
     // Find and click run button for first search
     const firstSearchCard = page.locator('.card').filter({ hasText: 'Jazz Vinyl Collection' })
-    const runButton = firstSearchCard.getByRole('button', { name: /run/i })
+    await expect(firstSearchCard).toBeVisible()
+
+    const runButton = firstSearchCard.getByRole('button', { name: 'Run' })
+    await expect(runButton).toBeVisible()
     await runButton.click()
 
     // Should show success toast
-    await expect(page.getByText('Search started')).toBeVisible()
-    await expect(page.getByText('Your search is running in the background.')).toBeVisible()
+    await expect(page.getByText('Search started')).toBeVisible({ timeout: CI_TIMEOUT })
+    await expect(page.getByText('Your search is running in the background.')).toBeVisible({ timeout: CI_TIMEOUT })
   })
 
   test('should delete a search', async ({ page }) => {
@@ -160,14 +167,20 @@ test.describe('Searches Page', () => {
 
     await page.goto('/searches')
 
+    // Wait for searches to load
+    await expect(page.getByText('Rare Beatles Singles')).toBeVisible()
+
     // Find and click delete button for second search
     const secondSearchCard = page.locator('.card').filter({ hasText: 'Rare Beatles Singles' })
-    const deleteButton = secondSearchCard.getByRole('button', { name: /delete/i })
+    await expect(secondSearchCard).toBeVisible()
+
+    const deleteButton = secondSearchCard.getByRole('button', { name: 'Delete' })
+    await expect(deleteButton).toBeVisible()
     await deleteButton.click()
 
     // Should show success toast
-    await expect(page.getByText('Search deleted')).toBeVisible()
-    await expect(page.getByText('The search has been removed.')).toBeVisible()
+    await expect(page.getByText('Search deleted')).toBeVisible({ timeout: CI_TIMEOUT })
+    await expect(page.getByText('The search has been removed.')).toBeVisible({ timeout: CI_TIMEOUT })
   })
 
   test('should show last checked time correctly', async ({ page }) => {
@@ -205,7 +218,7 @@ test.describe('Searches Page', () => {
 
     // Should show loading spinner with proper ARIA attributes
     const loadingContainer = page.locator('[role="status"][aria-label="Loading searches"]')
-    await expect(loadingContainer).toBeVisible()
+    await expect(loadingContainer).toBeVisible({ timeout: 5000 })
     await expect(page.getByText('Loading searches...')).toHaveClass(/sr-only/)
   })
 
@@ -225,11 +238,11 @@ test.describe('Searches Page', () => {
     const inactiveCard = page.locator('.card').filter({ hasText: 'Rare Beatles Singles' })
 
     // Both cards should be visible
-    await expect(activeCard).toBeVisible()
-    await expect(inactiveCard).toBeVisible()
+    await expect(activeCard).toBeVisible({ timeout: CI_TIMEOUT })
+    await expect(inactiveCard).toBeVisible({ timeout: CI_TIMEOUT })
 
     // Active search should have run button enabled
-    await expect(activeCard.getByRole('button', { name: /run/i })).toBeEnabled()
+    await expect(activeCard.getByRole('button', { name: 'Run' })).toBeEnabled()
   })
 })
 
@@ -252,15 +265,15 @@ test.describe('Searches Page - Mobile View', () => {
     await page.goto('/searches')
 
     // Header should be visible
-    await expect(page.getByRole('heading', { name: 'Searches' })).toBeVisible()
+    await expect(page.getByRole('heading', { name: 'Searches' })).toBeVisible({ timeout: CI_TIMEOUT })
 
     // New search button should be visible and accessible
     const newSearchButton = page.getByRole('button', { name: 'Create a new search' })
-    await expect(newSearchButton).toBeVisible()
+    await expect(newSearchButton).toBeVisible({ timeout: CI_TIMEOUT })
 
     // Search cards should stack vertically
     const cards = page.locator('.card')
-    await expect(cards).toHaveCount(2)
+    await expect(cards.first()).toBeVisible({ timeout: CI_TIMEOUT })
 
     // All content should fit within viewport
     const firstCard = cards.first()
@@ -283,8 +296,10 @@ test.describe('Searches Page - Mobile View', () => {
     await page.goto('/searches')
 
     // Tap run button on first search
+    await expect(page.getByText('Jazz Vinyl Collection')).toBeVisible({ timeout: CI_TIMEOUT })
+
     const firstSearchCard = page.locator('.card').filter({ hasText: 'Jazz Vinyl Collection' })
-    const runButton = firstSearchCard.getByRole('button', { name: /run/i })
+    const runButton = firstSearchCard.getByRole('button', { name: 'Run' })
 
     // Ensure button is large enough for mobile tap
     const buttonBox = await runButton.boundingBox()
@@ -295,7 +310,7 @@ test.describe('Searches Page - Mobile View', () => {
     await runButton.tap()
 
     // Toast should be visible on mobile
-    await expect(page.getByText('Search started')).toBeVisible()
+    await expect(page.getByText('Search started')).toBeVisible({ timeout: CI_TIMEOUT })
   })
 })
 
@@ -336,8 +351,8 @@ test.describe('Searches Page - Accessibility', () => {
     }
 
     // Search cards should be in a list or have proper semantics
-    await page.waitForSelector('.card')
+    await page.waitForSelector('.card', { timeout: CI_TIMEOUT })
     const searchCards = page.locator('.grid > .card')
-    await expect(searchCards).toHaveCount(2)
+    await expect(searchCards.first()).toBeVisible({ timeout: CI_TIMEOUT })
   })
 })

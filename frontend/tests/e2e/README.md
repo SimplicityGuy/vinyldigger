@@ -2,6 +2,19 @@
 
 Comprehensive end-to-end tests for VinylDigger using Playwright.
 
+## Global Configuration
+
+### Timeouts
+- Tests use global timeout constants from `test-config.ts`
+- `CI_TIMEOUT`: Automatically adjusted for CI environments (15s) vs local (10s)
+- `NETWORK_TIMEOUT`: 30s for API calls
+- All test assertions should use `{ timeout: CI_TIMEOUT }` for consistency
+
+### Test Configuration
+- Tests always run in headless mode for consistency between CI and local
+- Improved timeouts for better reliability in CI environments
+- Centralized timeout configuration for easy adjustment
+
 ## Test Coverage
 
 ### Authentication Flow (`auth.spec.ts`)
@@ -26,11 +39,16 @@ Comprehensive end-to-end tests for VinylDigger using Playwright.
 - **Accessibility**: Screen reader announcements, focus management
 
 ### Settings Page (`settings.spec.ts`)
-- **API Configuration**: Discogs and eBay API key management
+- **OAuth Integration**: Platform authorization management
 - **Preferences Display**: User settings and preferences
-- **Form Handling**: Validation, error states, success messages
-- **Mobile Forms**: Touch-friendly inputs, proper keyboard handling
-- **Security**: Password field handling, credential masking
+- **Loading States**: Proper loading indicators
+- **Mobile Views**: Responsive design on mobile devices
+
+### OAuth Flows (`settings-oauth.spec.ts`)
+- **Authorization Flows**: Discogs and eBay OAuth authorization
+- **Verification Codes**: Manual verification flow handling
+- **Connection Management**: Connect, disconnect, and status display
+- **Error Handling**: Failed authorization flows
 
 ## Running Tests
 

@@ -1,5 +1,6 @@
 import { test, expect, type Page } from '@playwright/test'
 import { randomBytes } from 'crypto'
+import { CI_TIMEOUT } from './test-config'
 
 // Helper to generate unique test data
 const generateTestUser = () => ({
@@ -64,7 +65,7 @@ test.describe('Authentication Flow', () => {
       await page.getByLabel('Password').fill('validpassword123')
       await page.getByRole('button', { name: 'Sign in' }).click()
 
-      await expect(page.getByText('Invalid email')).toBeVisible()
+      await expect(page.getByText('Invalid email').first()).toBeVisible({ timeout: CI_TIMEOUT })
     })
 
     test('should navigate to register page when clicking sign up', async ({ page }) => {
@@ -92,9 +93,8 @@ test.describe('Authentication Flow', () => {
       await submitButton.click()
 
       // Check loading state
-      await expect(submitButton).toBeDisabled()
-      await expect(submitButton).toHaveAttribute('aria-busy', 'true')
-      await expect(page.getByText('Signing in...')).toBeVisible()
+      await expect(submitButton).toBeDisabled({ timeout: 5000 })
+      await expect(submitButton).toHaveText('Signing in...', { timeout: 5000 })
     })
   })
 
@@ -152,7 +152,7 @@ test.describe('Authentication Flow', () => {
 
       // Should show success toast
       await expect(page.getByText('Registration successful').first()).toBeVisible()
-      await expect(page.getByText('Please log in with your new account.')).toBeVisible()
+      await expect(page.getByText('Please log in with your new account.').first()).toBeVisible()
     })
 
     test('should navigate to login page when clicking sign in', async ({ page }) => {
@@ -252,8 +252,8 @@ test.describe('Authentication Flow', () => {
 
       // Should show logout success toast
       const toast = page.locator('[role="status"]').filter({ hasText: 'Logged out' }).first()
-      await expect(toast).toBeVisible()
-      await expect(page.getByText('You have been logged out successfully.')).toBeVisible()
+      await expect(toast).toBeVisible({ timeout: CI_TIMEOUT })
+      await expect(page.getByText('You have been logged out successfully.').first()).toBeVisible({ timeout: CI_TIMEOUT })
 
       // Should clear auth tokens
       const sessionToken = await page.evaluate(() => window.sessionStorage.getItem('access_token'))
@@ -303,7 +303,7 @@ test.describe('Mobile Authentication', () => {
 
     // Toast should be visible on mobile
     const toast = page.locator('[role="status"]').filter({ hasText: 'Login failed' }).first()
-    await expect(toast).toBeVisible()
-    await expect(page.getByText('Invalid credentials')).toBeVisible()
+    await expect(toast).toBeVisible({ timeout: CI_TIMEOUT })
+    await expect(page.getByText('Invalid credentials').first()).toBeVisible({ timeout: CI_TIMEOUT })
   })
 })

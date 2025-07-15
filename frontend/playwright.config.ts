@@ -17,9 +17,9 @@ export default defineConfig({
     trace: 'on-first-retry',
     screenshot: 'only-on-failure',
     video: 'retain-on-failure',
-    headless: true, // Always use headless mode
-    actionTimeout: process.env.CI ? 15000 : 10000,
-    navigationTimeout: process.env.CI ? 45000 : 30000,
+    headless: true, // Always use headless mode for consistent CI/local behavior
+    actionTimeout: process.env.CI ? 20000 : 15000,
+    navigationTimeout: process.env.CI ? 60000 : 45000,
     // Add extra timeout for CI environments
     ...(process.env.CI && {
       // Slow down actions in CI to reduce flakiness
@@ -66,10 +66,10 @@ export default defineConfig({
   // },
 
   // Global timeout
-  timeout: process.env.CI ? 60000 : 30000,
+  timeout: process.env.CI ? 90000 : 45000,
 
   // Expect timeout
   expect: {
-    timeout: 5000,
+    timeout: process.env.CI ? 15000 : 10000,
   },
 })

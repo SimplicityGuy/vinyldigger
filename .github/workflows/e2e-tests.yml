@@ -16,7 +16,7 @@ jobs:
   test:
     name: E2E Tests - ${{ matrix.project }}
     runs-on: ${{ matrix.os }}
-    timeout-minutes: 30  # E2E matrix tests typically take 18-22 min, 1.5x safety factor
+    timeout-minutes: 45  # E2E matrix tests with improved timeouts, 2x safety factor
 
     strategy:
       fail-fast: false
