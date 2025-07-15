@@ -101,6 +101,11 @@ jobs:
       - name: Install dependencies
         run: just install-backend-ci
 
+      - name: Install Playwright browsers
+        run: |
+          cd backend
+          uv run playwright install chromium
+
       - name: Wait for services
         run: |
           echo "Waiting for PostgreSQL..."

@@ -5,7 +5,7 @@ This module provides configuration settings for the web scraper,
 allowing customization of timeouts, retries, and rate limiting.
 """
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 
 class ScraperConfig(BaseModel):
@@ -39,10 +39,7 @@ class ScraperConfig(BaseModel):
         default=0.3, description="Failure rate threshold for alerting (0.0-1.0)", ge=0.1, le=0.5
     )
 
-    class Config:
-        """Pydantic config."""
-
-        validate_assignment = True
+    model_config = ConfigDict(validate_assignment=True)
 
 
 # Default configuration instance

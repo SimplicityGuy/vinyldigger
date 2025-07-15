@@ -283,7 +283,8 @@ class RecommendationEngine:
 
             # Generate recommendations based on seller characteristics
             # Multi-item deals: either multiple wantlist items OR multiple non-collection items
-            non_collection_items = seller_analysis.total_items - seller_analysis.collection_duplicates
+            collection_duplicates = seller_analysis.collection_duplicates or 0
+            non_collection_items = seller_analysis.total_items - collection_duplicates
             if seller_analysis.wantlist_items >= 2 or (seller_analysis.total_items >= 2 and non_collection_items >= 2):
                 # Multi-item deal (prioritize wantlist items, but also include other valuable multi-item opportunities)
                 recommendation = self._create_multi_item_recommendation(analysis, seller, seller_analysis, seller_items)

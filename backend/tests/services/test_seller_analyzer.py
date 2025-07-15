@@ -186,7 +186,9 @@ class TestSellerAnalysisService:
 
         result = await service.find_or_create_seller(mock_db, SearchPlatform.DISCOGS, seller_info)
 
-        assert result == sample_seller
+        assert result.id == sample_seller.id
+        assert result.platform_seller_id == sample_seller.platform_seller_id
+        assert result.seller_name == sample_seller.seller_name
         mock_db.add.assert_not_called()  # Should not create new seller
 
     @pytest.mark.asyncio
