@@ -442,3 +442,12 @@ just test
 just test-down
 just test-services-up
 ```
+
+## Related Documentation
+
+- **[Backend Testing Guide](backend/testing-guide.md)** - Detailed backend testing patterns and examples
+- **[E2E Testing Guide](../frontend/tests/e2e/README.md)** - Comprehensive Playwright testing documentation
+- **[Architecture Guide](architecture.md)** - Understanding the system architecture for better testing
+- **[API Documentation](api.md)** - API reference for integration testing
+- **[Troubleshooting Guide](troubleshooting.md)** - Common testing issues and solutions
+- **[Contributing Guide](../CONTRIBUTING.md)** - Development workflow including testing requirements

@@ -61,9 +61,9 @@ Project Documentation Structure:
 │   ├── Status Reports (3 files)
 │   └── Backend Specific (5 files)
 ├── backend/docs/ (3 files)
-│   ├── development_db_workflow.md
+│   ├── development-db-workflow.md
 │   ├── discogs_auth.md
-│   └── marketplace_search_implementation.md
+│   └── marketplace-search-implementation.md
 └── frontend/tests/e2e/
     └── README.md (E2E testing guide)
 ```

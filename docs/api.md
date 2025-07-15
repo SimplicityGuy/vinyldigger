@@ -898,3 +898,14 @@ const priceComparison = await fetch(`${API_URL}/analysis/search/${search.id}/pri
 
 console.log(`Price comparisons for ${priceComparison.price_comparisons.length} unique items`);
 ```
+
+## Related Documentation
+
+- **[API Client Examples](api-examples.md)** - Example code in Python, JavaScript/TypeScript, Go, and cURL
+- **[Architecture Guide](architecture.md)** - Understanding the system architecture and data flow
+- **[OAuth Setup Guide](oauth-setup.md)** - Setting up OAuth authentication for Discogs and eBay
+- **[Analysis Engine Guide](analysis-engine.md)** - Detailed explanation of the AI-powered analysis system
+- **[Security Guide](security.md)** - Security implementation details and best practices
+- **[Testing Guide](testing.md)** - How to test API integrations and endpoints
+- **[Troubleshooting Guide](troubleshooting.md)** - Common API issues and solutions
+- **[Deployment Guide](deployment.md)** - Production deployment considerations for the API

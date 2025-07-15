@@ -333,7 +333,7 @@ frontend:
 - **Cause**: eBay requires HTTPS public URLs (no localhost/HTTP)
 - **Solutions**:
   1. Use ngrok: `ngrok http 8000` → `https://abc123.ngrok-free.app`
-  2. Deploy static HTML redirect page (see [eBay Setup Guide](backend/ebay_developer_setup.md))
+  2. Deploy static HTML redirect page (see [eBay Setup Guide](backend/ebay-developer-setup.md))
   3. Use cloud tunneling service
 
 #### OAuth Token Too Long Error
@@ -424,7 +424,7 @@ If you're still experiencing issues:
 1. Check the [GitHub Issues](https://github.com/SimplicityGuy/vinyldigger/issues)
 2. Review the [API Documentation](api.md)
 3. Consult the [Architecture Guide](architecture.md)
-4. Check the [Backend Testing Guide](backend/testing_guide.md) for test-related issues
+4. Check the [Backend Testing Guide](backend/testing-guide.md) for test-related issues
 5. Create a new issue with:
    - Description of the problem
    - Steps to reproduce

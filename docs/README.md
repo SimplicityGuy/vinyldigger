@@ -33,12 +33,12 @@ Welcome to the VinylDigger documentation! This index provides quick access to al
 - **[Docker OCI Labels](docker-oci-labels.md)** - Container labeling standards and best practices
 
 ### Backend-Specific Documentation
-- **[Database Development Workflow](../backend/docs/development_db_workflow.md)** - Database management during development
-- **[Marketplace Search Implementation](../backend/docs/marketplace_search_implementation.md)** - Real marketplace search architecture and benefits
+- **[Database Development Workflow](../backend/docs/development-db-workflow.md)** - Database management during development
+- **[Marketplace Search Implementation](../backend/docs/marketplace-search-implementation.md)** - Real marketplace search architecture and benefits
 - **[Discogs OAuth Authentication](../backend/docs/discogs_auth.md)** - Setting up and using Discogs OAuth
-- **[eBay Developer Setup Guide](backend/ebay_developer_setup.md)** - Complete eBay OAuth setup and troubleshooting
+- **[eBay Developer Setup Guide](backend/ebay-developer-setup.md)** - Complete eBay OAuth setup and troubleshooting
 - **[OAuth Authentication Fixes](backend/oauth-authentication-fixes.md)** - Recent critical OAuth fixes and improvements
-- **[Testing Guide](backend/testing_guide.md)** - Backend-specific testing patterns and examples
+- **[Testing Guide](backend/testing-guide.md)** - Backend-specific testing patterns and examples
 
 ## 🗺️ Quick Navigation
 
@@ -56,7 +56,7 @@ Welcome to the VinylDigger documentation! This index provides quick access to al
 ### For DevOps
 1. Follow the [Deployment Guide](deployment.md)
 2. Review [Docker OCI Labels](docker-oci-labels.md)
-3. Understand the [Database Development Workflow](backend/development_db_workflow.md)
+3. Understand the [Database Development Workflow](backend/development-db-workflow.md)
 4. Configure [OAuth Authentication](oauth-setup.md) for external APIs
 
 ## 📋 Documentation Standards
@@ -87,17 +87,17 @@ docs/
 ├── documentation-cleanup-summary.md  # Cleanup actions summary
 ├── ui-ux-design.md             # UI/UX design documentation
 └── backend/                    # Backend-specific documentation
-    ├── development_db_workflow.md    # Database development workflow
+    ├── development-db-workflow.md    # Database development workflow
     ├── discogs_auth.md              # Discogs OAuth authentication guide
-    ├── ebay_developer_setup.md      # eBay OAuth setup and troubleshooting
+    ├── ebay-developer-setup.md      # eBay OAuth setup and troubleshooting
     ├── oauth-authentication-fixes.md # Recent OAuth fixes documentation
-    └── testing_guide.md             # Backend testing patterns and examples
+    └── testing-guide.md             # Backend testing patterns and examples
 
 Additional Backend Documentation:
 backend/docs/
-├── development_db_workflow.md  # Database development workflow
+├── development-db-workflow.md  # Database development workflow
 ├── discogs_auth.md             # Discogs OAuth authentication
-└── marketplace_search_implementation.md  # Marketplace search architecture
+└── marketplace-search-implementation.md  # Marketplace search architecture
 ```
 
 ### Updating Documentation

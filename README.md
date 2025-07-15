@@ -233,12 +233,12 @@ See the [Testing Guide](docs/testing.md) for detailed testing instructions.
 - [Project Context](CLAUDE.md) - AI assistant configuration and project guidelines
 
 ### Backend-Specific Documentation
-- [Database Development Workflow](backend/docs/development_db_workflow.md) - Database management during development
-- [Marketplace Search Implementation](backend/docs/marketplace_search_implementation.md) - Real marketplace search details
+- [Database Development Workflow](backend/docs/development-db-workflow.md) - Database management during development
+- [Marketplace Search Implementation](backend/docs/marketplace-search-implementation.md) - Real marketplace search details
 - [Discogs OAuth Authentication](backend/docs/discogs_auth.md) - Technical implementation details
-- [eBay Developer Setup](docs/backend/ebay_developer_setup.md) - eBay OAuth setup guide
+- [eBay Developer Setup](docs/backend/ebay-developer-setup.md) - eBay OAuth setup guide
 - [OAuth Authentication Fixes](docs/backend/oauth-authentication-fixes.md) - Recent OAuth improvements
-- [Backend Testing Guide](docs/backend/testing_guide.md) - Testing patterns and examples
+- [Backend Testing Guide](docs/backend/testing-guide.md) - Testing patterns and examples
 
 ### Interactive API Documentation
 Once the application is running, visit:
@@ -371,7 +371,7 @@ vinyldigger/
 
 #### Database Issues
 - **Missing tables error**: Run `just migrate` to apply migrations
-- **Development changes**: See [Database Development Workflow](backend/docs/development_db_workflow.md)
+- **Development changes**: See [Database Development Workflow](backend/docs/development-db-workflow.md)
 - **Connection errors**: Check DATABASE_URL in backend/.env matches docker-compose
 - **Clean slate**: Use `just clean` to remove all containers and volumes
 

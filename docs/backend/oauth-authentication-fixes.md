@@ -193,7 +193,7 @@ async def _rate_limited_request(self, method: str, url: str, **kwargs):
 
 ## Related Documentation
 
-- [eBay Developer Setup Guide](./ebay_developer_setup.md)
+- [eBay Developer Setup Guide](./ebay-developer-setup.md)
 - [OAuth Setup Guide](../oauth-setup.md)
 - [Troubleshooting Guide](../troubleshooting.md)
-- [Testing Guide](./testing_guide.md)
+- [Testing Guide](./testing-guide.md)

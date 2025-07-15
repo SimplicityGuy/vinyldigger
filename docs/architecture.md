@@ -522,3 +522,14 @@ Consistent error format:
 6. **Service Mesh**: Inter-service communication
 7. **Multi-tenancy**: Organization support
 8. **Mobile Apps**: Native iOS/Android apps
+
+## Related Documentation
+
+- **[API Documentation](api.md)** - Complete REST API reference and examples
+- **[Deployment Guide](deployment.md)** - Production deployment architecture considerations
+- **[Performance Guide](performance.md)** - Performance optimization strategies for the architecture
+- **[Security Guide](security.md)** - Security implementation details across system components
+- **[Testing Guide](testing.md)** - Testing strategies for the distributed architecture
+- **[Analysis Engine Guide](analysis-engine.md)** - Detailed analysis system architecture
+- **[OAuth Setup Guide](oauth-setup.md)** - External API integration architecture
+- **[Database Development Workflow](../backend/docs/development-db-workflow.md)** - Database architecture and migration patterns
