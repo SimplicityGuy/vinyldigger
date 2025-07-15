@@ -27,13 +27,14 @@ jobs:
             project: chromium
           - os: ubuntu-latest
             project: firefox
-          - os: macos-latest
-            project: webkit
-          # Mobile browsers
-          - os: ubuntu-latest
-            project: mobile-safari-iphone
-          - os: ubuntu-latest
-            project: mobile-safari-ipad
+          # Unfortunately the Docker step is currently not supported on macos-latest
+          # - os: macos-latest
+          #   project: webkit
+          # # Mobile browsers
+          # - os: macos-latest
+          #   project: mobile-safari-iphone
+          # - os: macos-latest
+          #   project: mobile-safari-ipad
 
     steps:
       - name: Checkout code
