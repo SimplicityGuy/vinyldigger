@@ -11,7 +11,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from src.api.v1.endpoints.auth import get_current_user
 from src.core.database import get_db
 from src.models.search import SavedSearch
-from src.models.search_analysis import DealRecommendation, SearchResultAnalysis, SellerAnalysis
+from src.models.search_analysis import DealRecommendation, RecommendationType, SearchResultAnalysis, SellerAnalysis
 from src.models.seller import Seller
 from src.models.user import User
 
@@ -71,7 +71,7 @@ async def get_search_analysis(
         formatted_recommendations.append(
             {
                 "id": str(rec.id),
-                "type": rec.recommendation_type.value,
+                "type": rec.recommendation_type.display_name,
                 "deal_score": rec.deal_score.value,
                 "score_value": float(rec.score_value),
                 "title": rec.title,
@@ -181,7 +181,8 @@ async def get_multi_item_deals(
     multi_item_recs_result = await db.execute(
         select(DealRecommendation)
         .where(
-            DealRecommendation.analysis_id == analysis.id, DealRecommendation.recommendation_type == "MULTI_ITEM_DEAL"
+            DealRecommendation.analysis_id == analysis.id,
+            DealRecommendation.recommendation_type == RecommendationType.MULTI_ITEM_DEAL,
         )
         .order_by(DealRecommendation.score_value.desc())
     )

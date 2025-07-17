@@ -29,6 +29,11 @@ class RecommendationType(str, Enum):
     LOCATION_PREFERENCE = "LOCATION_PREFERENCE"  # Preferred seller location
     HIGH_FEEDBACK = "HIGH_FEEDBACK"  # Seller with excellent reputation
 
+    @property
+    def display_name(self) -> str:
+        """Return a user-friendly display name for the recommendation type."""
+        return self.value.replace("_", " ")
+
 
 class DealScore(str, Enum):
     """Overall deal quality scores."""

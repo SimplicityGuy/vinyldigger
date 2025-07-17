@@ -28,6 +28,22 @@ All endpoints except authentication endpoints and health check require JWT authe
 Authorization: Bearer <access_token>
 ```
 
+## Data Types
+
+### Recommendation Types
+
+The API returns recommendation types in user-friendly format:
+
+| API Response | Internal Value | Description |
+|--------------|----------------|-------------|
+| `"BEST PRICE"` | `BEST_PRICE` | Single item with best price+shipping |
+| `"MULTI ITEM DEAL"` | `MULTI_ITEM_DEAL` | Seller with multiple wantlist items |
+| `"CONDITION VALUE"` | `CONDITION_VALUE` | Better condition at slight price premium |
+| `"LOCATION PREFERENCE"` | `LOCATION_PREFERENCE` | Preferred seller location |
+| `"HIGH FEEDBACK"` | `HIGH_FEEDBACK` | Seller with excellent reputation |
+
+**Note**: API responses use space-separated format for better readability, while internal code uses underscore format for consistency.
+
 ## Authentication Endpoints
 
 ### Register New User
@@ -659,7 +675,7 @@ Authorization: Bearer <access_token>
   "recommendations": [
     {
       "id": "770e8400-e29b-41d4-a716-446655440002",
-      "type": "MULTI_ITEM_DEAL",
+      "type": "MULTI ITEM DEAL",
       "deal_score": "EXCELLENT",
       "score_value": 92.5,
       "title": "Great Multi-Item Deal",

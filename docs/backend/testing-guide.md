@@ -131,6 +131,35 @@ def test_discogs_search(mock_get: MagicMock, db: Session):
 6. **Platform name consistency** - Always use lowercase (e.g., `platform="discogs"`)
 7. **UUID handling** - Use UUID objects in fixtures, not strings: `uuid4()` not `str(uuid4())`
 8. **Async test patterns** - Use proper AsyncMock for async database operations
+9. **Enum display formatting** - Use `.display_name` for user-facing text, test enum values with direct comparison
+
+### Enum Display Formatting
+
+VinylDigger uses enums for consistent data representation, with special handling for user-facing display:
+
+```python
+from src.models.search_analysis import RecommendationType
+
+# Internal enum value (for database and code logic)
+rec.recommendation_type == RecommendationType.MULTI_ITEM_DEAL  # "MULTI_ITEM_DEAL"
+
+# User-facing display value (for API responses and UI)
+rec.recommendation_type.display_name  # "MULTI ITEM DEAL"
+```
+
+**Testing Pattern**:
+```python
+def test_recommendation_display():
+    # Test internal enum value
+    assert rec.recommendation_type == RecommendationType.MULTI_ITEM_DEAL
+
+    # Test user-facing display format
+    assert rec.recommendation_type.display_name == "MULTI ITEM DEAL"
+
+    # API responses should use display_name for user-facing fields
+    api_response = format_recommendation(rec)
+    assert api_response["type"] == "MULTI ITEM DEAL"
+```
 
 ## Analysis Engine Testing
 
@@ -268,6 +297,8 @@ class TestRecommendationEngine:
         )
 
         assert rec.recommendation_type == RecommendationType.MULTI_ITEM_DEAL
+        # Note: For user-facing display, use rec.recommendation_type.display_name
+        # which returns "MULTI ITEM DEAL" instead of "MULTI_ITEM_DEAL"
         assert rec.total_items == len(seller_items)
         assert rec.deal_score in [DealScore.EXCELLENT, DealScore.VERY_GOOD,
                                   DealScore.GOOD, DealScore.FAIR, DealScore.POOR]
