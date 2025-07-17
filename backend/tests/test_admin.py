@@ -98,7 +98,7 @@ async def test_admin_create_app_config(client: AsyncClient):
     )
     assert response.status_code == 200
     data = response.json()
-    assert data["provider"] == "DISCOGS"
+    assert data["provider"] == "discogs"
     assert data["consumer_key"].startswith("test_consu")
     assert data["consumer_key"].endswith("...")
     assert "consumer_secret" not in data  # Should not be returned
@@ -186,7 +186,7 @@ async def test_admin_delete_app_config(client: AsyncClient, db_session: AsyncSes
     )
     assert response.status_code == 200
     data = response.json()
-    assert data["message"] == "Configuration for DISCOGS deleted successfully."
+    assert data["message"] == "Configuration for discogs deleted successfully."
 
     # Verify it's deleted
     response = await client.get(
@@ -224,4 +224,4 @@ async def test_admin_delete_nonexistent_config(client: AsyncClient):
     )
     assert response.status_code == 404
     data = response.json()
-    assert data["detail"] == "Configuration for DISCOGS not found."
+    assert data["detail"] == "Configuration for discogs not found."

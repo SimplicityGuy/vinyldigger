@@ -54,7 +54,7 @@ async def test_create_search_with_auth(client: AsyncClient, db_session: AsyncSes
     data = response.json()
     assert data["name"] == "Rare Jazz Vinyl"
     assert data["query"] == "blue note jazz vinyl"
-    assert data["platform"] == "BOTH"
+    assert data["platform"] == "both"
     assert data["check_interval_hours"] == 12
 
 
@@ -96,7 +96,7 @@ async def test_create_search_with_preferences(client: AsyncClient, db_session: A
     data = response.json()
     assert data["name"] == "High Quality Jazz"
     assert data["query"] == "blue note jazz mint"
-    assert data["platform"] == "DISCOGS"
+    assert data["platform"] == "discogs"
     assert data["check_interval_hours"] == 6
     assert data["min_record_condition"] == "NM"
     assert data["min_sleeve_condition"] == "VG+"
@@ -325,7 +325,7 @@ async def test_update_search(client: AsyncClient, db_session: AsyncSession):
     assert updated_data["name"] == "Updated Search"
     assert updated_data["check_interval_hours"] == 12
     assert updated_data["query"] == "original query"  # Should remain unchanged
-    assert updated_data["platform"] == "DISCOGS"  # Should remain unchanged
+    assert updated_data["platform"] == "discogs"  # Should remain unchanged
 
 
 @pytest.mark.asyncio

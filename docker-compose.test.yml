@@ -51,6 +51,9 @@ services:
       SECRET_KEY: test-secret-key-for-testing
       DEBUG: "true"
       CORS_ORIGINS: '["http://localhost:3000", "http://localhost:8000"]'
+      POSTGRES_HOST: postgres
+      POSTGRES_PORT: 5432
+      POSTGRES_USER: test
     ports:
       - "8000:8000"
     depends_on:
@@ -81,6 +84,9 @@ services:
       CELERY_RESULT_BACKEND: redis://redis:6379/0
       SECRET_KEY: test-secret-key-for-testing
       DEBUG: "true"
+      POSTGRES_HOST: postgres
+      POSTGRES_PORT: 5432
+      POSTGRES_USER: test
     depends_on:
       postgres:
         condition: service_healthy
@@ -100,6 +106,9 @@ services:
       CELERY_BROKER_URL: redis://redis:6379/0
       CELERY_RESULT_BACKEND: redis://redis:6379/0
       SECRET_KEY: test-secret-key-for-testing
+      POSTGRES_HOST: postgres
+      POSTGRES_PORT: 5432
+      POSTGRES_USER: test
     depends_on:
       postgres:
         condition: service_healthy
@@ -129,12 +138,11 @@ services:
         condition: service_healthy
     environment:
       - NODE_ENV=test
-      - API_URL=http://backend:8000
+      - VITE_API_URL=http://backend:8000
     volumes:
       - ./frontend:/app
       - /app/node_modules
-    command: >
-      sh -c "npm install && npm run dev"
+    # Use default command from Dockerfile
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:3000"]
       interval: 5s
