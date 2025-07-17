@@ -1,5 +1,7 @@
 # Docker OCI Labels
 
+*Last updated: July 2025*
+
 This project implements [OCI (Open Container Initiative) standard labels](https://github.com/opencontainers/image-spec/blob/main/annotations.md) for all Docker images to provide consistent metadata.
 
 ## Implemented Labels

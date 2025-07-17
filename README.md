@@ -233,9 +233,9 @@ See the [Testing Guide](docs/testing.md) for detailed testing instructions.
 - [Project Context](CLAUDE.md) - AI assistant configuration and project guidelines
 
 ### Backend-Specific Documentation
-- [Database Development Workflow](backend/docs/development-db-workflow.md) - Database management during development
-- [Marketplace Search Implementation](backend/docs/marketplace-search-implementation.md) - Real marketplace search details
-- [Discogs OAuth Authentication](backend/docs/discogs_auth.md) - Technical implementation details
+- [Database Development Workflow](docs/backend/development-db-workflow.md) - Database management during development
+- [Marketplace Search Implementation](docs/backend/marketplace-search-implementation.md) - Real marketplace search details
+- [Discogs OAuth Authentication](docs/backend/discogs_auth.md) - Technical implementation details
 - [eBay Developer Setup](docs/backend/ebay-developer-setup.md) - eBay OAuth setup guide
 - [OAuth Authentication Fixes](docs/backend/oauth-authentication-fixes.md) - Recent OAuth improvements
 - [Backend Testing Guide](docs/backend/testing-guide.md) - Testing patterns and examples
@@ -298,7 +298,7 @@ After registering and logging in, authorize VinylDigger to access your accounts:
    - Go to Settings > Platform Authorizations
    - Click "Connect Discogs Account"
    - Authorize VinylDigger to access your Discogs data
-   - See [Discogs OAuth Guide](backend/docs/discogs_auth.md) for details
+   - See [Discogs OAuth Guide](docs/backend/discogs_auth.md) for details
 
 2. **eBay Authorization**
    - Go to Settings > Platform Authorizations
@@ -371,7 +371,7 @@ vinyldigger/
 
 #### Database Issues
 - **Missing tables error**: Run `just migrate` to apply migrations
-- **Development changes**: See [Database Development Workflow](backend/docs/development-db-workflow.md)
+- **Development changes**: See [Database Development Workflow](docs/backend/development-db-workflow.md)
 - **Connection errors**: Check DATABASE_URL in backend/.env matches docker-compose
 - **Clean slate**: Use `just clean` to remove all containers and volumes
 

@@ -1,5 +1,7 @@
 # VinylDigger API Documentation
 
+*Last updated: July 2025*
+
 ## Overview
 
 VinylDigger provides a RESTful API for automating vinyl record discovery across Discogs and eBay. The API is built with FastAPI and automatically generates OpenAPI/Swagger documentation.
@@ -613,15 +615,52 @@ For requests with invalid data, the API returns detailed validation errors:
 
 ## Rate Limiting
 
-Currently, the API does not implement rate limiting. This may be added in future versions.
+Currently, the API does not implement rate limiting internally. However, external API rate limits apply:
+- Discogs: 60 requests per minute
+- eBay: 5000 requests per day
+
+Future versions will implement:
+- Per-user rate limiting (100 requests/minute)
+- Endpoint-specific limits
+- Rate limit headers (X-RateLimit-*)
 
 ## Pagination
 
-Search results are limited to 100 items. Full pagination support is planned for future releases.
+Current implementation:
+- Search results: Limited to 100 items per request
+- Collections: No pagination (full sync)
+
+Planned improvements:
+- Cursor-based pagination for all list endpoints
+- Configurable page sizes (10-100 items)
+- Total count headers
+- Link headers for navigation
+
+Example (future):
+```
+GET /api/v1/searches?cursor=eyJpZCI6MTIzfQ&limit=20
+```
 
 ## Webhooks
 
-Webhook support for real-time notifications is planned for future releases.
+Webhook support is planned for real-time notifications:
+
+Planned events:
+- `search.completed` - When a search finishes
+- `analysis.ready` - When analysis is available
+- `deal.found` - When new deals are discovered
+- `sync.completed` - When collection sync finishes
+
+Future webhook format:
+```json
+{
+  "event": "search.completed",
+  "timestamp": "2025-01-15T10:30:00Z",
+  "data": {
+    "search_id": "uuid",
+    "results_count": 42
+  }
+}
 
 ## SDK and Client Libraries
 

@@ -1,5 +1,7 @@
 # VinylDigger API Client Examples
 
+*Last updated: July 2025*
+
 ## Overview
 
 This guide provides example code for interacting with the VinylDigger API in multiple programming languages. Each example demonstrates authentication, basic operations, and error handling.

@@ -1,5 +1,7 @@
 # VinylDigger Deployment Guide
 
+*Last updated: July 2025*
+
 ## Overview
 
 This guide covers deploying VinylDigger to production environments. The application is containerized and can be deployed to any platform that supports Docker.
@@ -44,6 +46,10 @@ SMTP_PASSWORD=your-smtp-password
 
 # Optional: Monitoring
 SENTRY_DSN=your-sentry-dsn-if-using-sentry
+
+# Scheduler Configuration
+TZ=America/Los_Angeles  # Set your timezone for accurate scheduling
+SCHEDULER_TIMEZONE=America/Los_Angeles  # Must match TZ
 ```
 
 ### Generating Secure Keys
@@ -89,12 +95,28 @@ python -c "from cryptography.fernet import Fernet; print(Fernet.generate_key().d
    docker-compose -f docker-compose.prod.yml up -d
    ```
 
-5. **Database migrations**:
-   Note: The backend container automatically runs migrations on startup if alembic/versions/ contains migration files. If you need to create the initial migration:
+5. **Database Setup and Migrations**:
+
+   **Important**: VinylDigger supports OAuth tokens up to 5000 characters. The database schema includes:
+   - `discogs_oauth_token` and `ebay_oauth_token` columns with VARCHAR(5000)
+   - Automatic migration on backend startup if migration files exist
+
+   **For new deployments**:
    ```bash
-   docker-compose -f docker-compose.prod.yml exec backend alembic revision --autogenerate -m "Initial migration"
+   # The backend will automatically run migrations on startup
+   # Check migration status
+   docker-compose -f docker-compose.prod.yml exec backend alembic current
+
+   # If you need to create a new migration
+   docker-compose -f docker-compose.prod.yml exec backend alembic revision --autogenerate -m "Your migration description"
    docker-compose -f docker-compose.prod.yml exec backend alembic upgrade head
    ```
+
+   **Database Requirements**:
+   - PostgreSQL 16+ recommended
+   - Minimum 2GB RAM for database server
+   - SSD storage recommended for performance
+   - Regular backups essential (see Backup Strategy section)
 
 ### Option 2: Kubernetes Deployment
 
@@ -179,13 +201,26 @@ python -c "from cryptography.fernet import Fernet; print(Fernet.generate_key().d
 
 ## Docker Image Standards
 
+### Building Production Images
+
+**Always use the provided build script for OCI-compliant images:**
+
+```bash
+# Build all images with proper OCI labels
+./scripts/docker-build.sh
+
+# Build specific service
+./scripts/docker-build.sh backend
+./scripts/docker-build.sh frontend
+```
+
 ### OCI Labels Compliance
 
 All VinylDigger Docker images implement [OCI standard labels](https://github.com/opencontainers/image-spec/blob/main/annotations.md) for better traceability and compliance:
 
 - Images include metadata like version, git commit SHA, build date
-- Use `./scripts/docker-build.sh` for building with proper labels
-- Validation is enforced with hadolint and build scripts
+- Validation is enforced with hadolint in CI/CD pipeline
+- Labels enable proper image tracking in registries
 - See [Docker OCI Labels Documentation](docker-oci-labels.md) for details
 
 ### Security Best Practices
@@ -194,6 +229,7 @@ All VinylDigger Docker images implement [OCI standard labels](https://github.com
 - **Pinned base images**: All base images use specific versions
 - **Multi-stage builds**: Minimizes final image size and attack surface
 - **Health checks**: All services include health check endpoints
+- **Hadolint validation**: Dockerfile best practices enforced
 
 ## Production Configuration
 
@@ -400,7 +436,8 @@ ssl_stapling_verify on;
        pool_size=20,
        max_overflow=40,
        pool_pre_ping=True,
-       pool_recycle=3600
+       pool_recycle=3600,
+       echo=False  # Set to True for SQL debugging in development only
    )
    ```
 
@@ -494,19 +531,29 @@ services:
 #!/bin/bash
 # deploy.sh - Blue-green deployment
 
-# Build new images
-docker-compose -f docker-compose.prod.yml build
+# Pull latest code
+git pull origin main
+
+# Build new images with OCI labels
+./scripts/docker-build.sh
+
+# Run any new migrations
+docker-compose -f docker-compose.prod.yml exec backend alembic upgrade head
 
 # Start new containers
 docker-compose -f docker-compose.prod.yml up -d --scale backend=2
 
 # Wait for health checks
+echo "Waiting for health checks..."
 sleep 30
 
-# Remove old containers
+# Verify new containers are healthy
+docker-compose -f docker-compose.prod.yml ps
+
+# Scale back to single instance
 docker-compose -f docker-compose.prod.yml up -d --scale backend=1
 
-# Cleanup
+# Cleanup old images
 docker system prune -f
 ```
 
@@ -538,19 +585,33 @@ docker system prune -f
 ### Common Issues
 
 1. **Database Connection Errors**:
-   - Check DATABASE_URL format
-   - Verify PostgreSQL is running
-   - Check firewall rules
+   - Check DATABASE_URL format (must use `postgresql+asyncpg://`)
+   - Verify PostgreSQL is running and accessible
+   - Check firewall rules and security groups
+   - Ensure database has proper OAuth token column sizes (VARCHAR(5000))
 
 2. **Redis Connection Errors**:
-   - Verify Redis is running
+   - Verify Redis is running (`redis-cli ping`)
    - Check REDIS_URL format
-   - Monitor memory usage
+   - Monitor memory usage (`redis-cli info memory`)
+   - For Python 3.13: Type annotation issues are already fixed
 
 3. **Worker Not Processing Tasks**:
-   - Check Celery logs
-   - Verify Redis connectivity
-   - Monitor queue depth
+   - Check Celery logs: `docker-compose logs worker`
+   - Verify Redis connectivity from worker container
+   - Monitor queue depth: `docker-compose exec worker celery -A src.workers.celery_app inspect active`
+   - Check for task failures: `docker-compose exec worker celery -A src.workers.celery_app inspect stats`
+
+4. **Scheduler Issues**:
+   - Verify timezone settings (TZ and SCHEDULER_TIMEZONE must match)
+   - Check scheduler logs: `docker-compose logs scheduler`
+   - Ensure APScheduler is running: look for "Scheduler started" in logs
+   - For timezone issues: Set both TZ and SCHEDULER_TIMEZONE environment variables
+
+5. **OAuth Token Storage Errors**:
+   - Database must support 5000-character OAuth tokens
+   - Run migrations to update column sizes if needed
+   - Check for truncation errors in logs
 
 ### Debug Mode
 

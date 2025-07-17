@@ -1,5 +1,7 @@
 # VinylDigger Analysis Engine
 
+*Last updated: July 2025*
+
 ## Overview
 
 The VinylDigger Analysis Engine is a sophisticated system that processes search results to provide intelligent recommendations, cross-platform item matching, and seller optimization insights. This document provides comprehensive technical details for developers working with the analysis system.

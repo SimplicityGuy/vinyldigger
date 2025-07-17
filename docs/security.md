@@ -1,5 +1,7 @@
 # VinylDigger Security Best Practices Guide
 
+*Last updated: July 2025*
+
 ## Overview
 
 This guide outlines security best practices for developing, deploying, and maintaining VinylDigger. It covers application security, infrastructure security, and operational security measures.

@@ -1,5 +1,7 @@
 # VinylDigger Monitoring and Observability Guide
 
+*Last updated: July 2025*
+
 ## Overview
 
 This guide covers monitoring, logging, metrics collection, and observability practices for VinylDigger. It includes both application-level monitoring and infrastructure monitoring strategies.

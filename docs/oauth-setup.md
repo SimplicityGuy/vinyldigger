@@ -1,5 +1,7 @@
 # OAuth Setup Guide
 
+*Last updated: July 2025*
+
 VinylDigger supports OAuth authentication for both Discogs and eBay, providing secure access to their APIs without storing your credentials.
 
 ## Overview

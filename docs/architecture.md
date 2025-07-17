@@ -1,5 +1,7 @@
 # VinylDigger Architecture Documentation
 
+*Last updated: July 2025*
+
 ## System Overview
 
 VinylDigger is a modern web application designed to help vinyl record collectors find the best deals across multiple marketplaces. The system employs a microservices architecture with clear separation between frontend, backend API, background workers, and scheduled tasks.
@@ -55,14 +57,14 @@ graph TB
 ## Technology Stack
 
 ### Backend
-- **Language**: Python 3.13
+- **Language**: Python 3.13 (with Redis type annotation fixes)
 - **Framework**: FastAPI
 - **ORM**: SQLAlchemy 2.0 (async)
-- **Database**: PostgreSQL 16
+- **Database**: PostgreSQL 16 (with 5000-char OAuth token support)
 - **Cache/Queue**: Redis 7
 - **Task Queue**: Celery 5.3
 - **Scheduler**: APScheduler 3.10
-- **Authentication**: JWT (python-jose)
+- **Authentication**: JWT (python-jose) + OAuth (Discogs 1.0a, eBay 2.0)
 - **Security**: passlib, cryptography (Fernet)
 
 ### Frontend
@@ -76,11 +78,12 @@ graph TB
 - **Forms**: react-hook-form + Zod
 
 ### Infrastructure
-- **Containerization**: Docker & Docker Compose
+- **Containerization**: Docker & Docker Compose (OCI-compliant images)
 - **Process Management**: Gunicorn (production)
 - **Reverse Proxy**: Nginx (production)
-- **CI/CD**: GitHub Actions
+- **CI/CD**: GitHub Actions with Hadolint validation
 - **Monitoring**: Structured logging (future: OpenTelemetry)
+- **Build Tools**: Docker build scripts with OCI labels
 
 ## Core Components
 
@@ -502,15 +505,81 @@ Consistent error format:
 
 ### Discogs API
 
+**Marketplace Search (January 2025 Update)**
+- **Critical Change**: Now using `/marketplace/search` endpoint (was `/database/search`)
+- **Data Source**: Live marketplace listings with real prices and seller info
+- **Benefits**: Actual inventory, real-time pricing, complete seller data
+
+**Technical Details**
 - Rate limiting: 60 requests/minute
 - Authentication: OAuth 1.0a
-- Used for: Collection sync, want list sync, search
+- Used for: Marketplace search, collection sync, want list sync
+- Filters: Condition, location, price range, format
+- Response: Listing-specific data with prices and sellers
 
 ### eBay API
 
 - Rate limiting: 5000 requests/day
 - Authentication: OAuth 2.0
 - Used for: Product search, seller information
+
+## Marketplace Search Implementation
+
+### Architecture Evolution (January 2025)
+
+VinylDigger transitioned from catalog database searches to live marketplace searches, fundamentally changing how the system operates:
+
+```mermaid
+graph TD
+    subgraph "Old Architecture"
+        A1[Search Query] --> B1[Discogs Database API]
+        B1 --> C1[Release Information]
+        C1 --> D1[No Prices/Sellers]
+    end
+
+    subgraph "New Architecture"
+        A2[Search Query] --> B2[Discogs Marketplace API]
+        B2 --> C2[Live Listings]
+        C2 --> D2[Real Prices + Sellers]
+        D2 --> E2[Enhanced Analysis]
+    end
+```
+
+### Key Implementation Changes
+
+1. **Dual ID System**
+   - **Listing ID**: Unique marketplace listing identifier
+   - **Release ID**: Catalog reference for collection/wantlist matching
+   - Enables accurate deduplication while maintaining collection awareness
+
+2. **Enhanced Data Structure**
+   ```python
+   {
+       "id": "listing_123456",          # Unique listing
+       "release_id": "release_789",     # For collection matching
+       "price": {"value": 25.00, "currency": "USD"},
+       "seller": {
+           "username": "vinylseller",
+           "rating": 99.5,
+           "location": "California, USA"
+       },
+       "condition": "Very Good Plus (VG+)",
+       "shipping_price": 5.00
+   }
+   ```
+
+3. **Analysis Engine Improvements**
+   - Direct seller reputation data
+   - Real-time price comparisons
+   - Accurate multi-item seller detection
+   - Location-based shipping optimization
+
+4. **Database Schema Updates**
+   - Separate tracking of listing_id and release_id
+   - Enhanced seller data storage
+   - Price history with marketplace context
+
+For detailed implementation guide, see [Marketplace Search Implementation](backend/marketplace-search-implementation.md).
 
 ## Future Architecture Enhancements
 
@@ -532,4 +601,5 @@ Consistent error format:
 - **[Testing Guide](testing.md)** - Testing strategies for the distributed architecture
 - **[Analysis Engine Guide](analysis-engine.md)** - Detailed analysis system architecture
 - **[OAuth Setup Guide](oauth-setup.md)** - External API integration architecture
-- **[Database Development Workflow](../backend/docs/development-db-workflow.md)** - Database architecture and migration patterns
+- **[Database Development Workflow](backend/development-db-workflow.md)** - Database architecture and migration patterns
+- **[Marketplace Search Implementation](backend/marketplace-search-implementation.md)** - Detailed marketplace search architecture

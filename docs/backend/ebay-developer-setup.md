@@ -1,5 +1,7 @@
 # eBay Developer Setup Guide for VinylDigger
 
+*Last updated: July 2025*
+
 ## Overview
 
 This guide helps you set up eBay OAuth2 authentication for VinylDigger. eBay requires HTTPS redirect URLs and has deprecated the out-of-band (OOB) OAuth flow (`urn:ietf:wg:oauth:2.0:oob`) as of 2024.

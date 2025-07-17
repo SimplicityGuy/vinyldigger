@@ -1,5 +1,7 @@
 # VinylDigger Testing Strategy
 
+*Last updated: July 2025*
+
 Comprehensive testing guide for the VinylDigger project, covering backend (pytest), frontend (Vitest), and E2E (Playwright) testing approaches.
 
 ## Quick Start
@@ -445,9 +447,57 @@ just test-services-up
 
 ## Related Documentation
 
-- **[Backend Testing Guide](backend/testing-guide.md)** - Detailed backend testing patterns and examples
 - **[E2E Testing Guide](../frontend/tests/e2e/README.md)** - Comprehensive Playwright testing documentation
 - **[Architecture Guide](architecture.md)** - Understanding the system architecture for better testing
 - **[API Documentation](api.md)** - API reference for integration testing
 - **[Troubleshooting Guide](troubleshooting.md)** - Common testing issues and solutions
 - **[Contributing Guide](../CONTRIBUTING.md)** - Development workflow including testing requirements
+
+## Backend Testing Patterns
+
+### Mocking External APIs
+```python
+# Mock Discogs marketplace search
+@patch('src.services.discogs_service.requests.get')
+def test_search_marketplace(mock_get):
+    mock_get.return_value.json.return_value = {
+        "listings": [{
+            "id": 123,
+            "release": {"id": 456, "title": "Test Album"},
+            "price": {"value": 25.00, "currency": "USD"},
+            "condition": "Very Good Plus (VG+)",
+            "seller": {"username": "seller1", "rating": 99.5}
+        }]
+    }
+    # Test your service
+```
+
+### Testing OAuth Flows
+```python
+# Test OAuth token storage (5000 chars max)
+async def test_oauth_token_storage(db_session):
+    user = await create_test_user(db_session)
+    long_token = "x" * 5000  # Maximum token length
+
+    user.discogs_oauth_token = long_token
+    await db_session.commit()
+
+    # Verify token stored correctly
+    assert len(user.discogs_oauth_token) == 5000
+```
+
+### Analysis Engine Testing
+```python
+# Test marketplace search analysis
+async def test_analyze_marketplace_results(db_session):
+    # Create test data with marketplace results
+    search = await create_test_search(db_session, platform="discogs")
+    results = create_marketplace_results()  # Helper for test data
+
+    analysis = await recommendation_engine.analyze_search_results(
+        search.id, results, db_session
+    )
+
+    assert analysis.total_unique_items > 0
+    assert analysis.deal_recommendations  # Should find deals
+```

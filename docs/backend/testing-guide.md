@@ -1,5 +1,7 @@
 # VinylDigger Testing Guide
 
+*Last updated: July 2025*
+
 ## Overview
 
 This guide covers testing strategies, patterns, and best practices for the VinylDigger project. We use pytest for backend testing and Vitest for frontend testing, with comprehensive mocking strategies to ensure fast, reliable tests.

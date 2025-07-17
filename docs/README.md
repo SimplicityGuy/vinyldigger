@@ -33,9 +33,9 @@ Welcome to the VinylDigger documentation! This index provides quick access to al
 - **[Docker OCI Labels](docker-oci-labels.md)** - Container labeling standards and best practices
 
 ### Backend-Specific Documentation
-- **[Database Development Workflow](../backend/docs/development-db-workflow.md)** - Database management during development
-- **[Marketplace Search Implementation](../backend/docs/marketplace-search-implementation.md)** - Real marketplace search architecture and benefits
-- **[Discogs OAuth Authentication](../backend/docs/discogs_auth.md)** - Setting up and using Discogs OAuth
+- **[Database Development Workflow](backend/development-db-workflow.md)** - Database management during development
+- **[Marketplace Search Implementation](backend/marketplace-search-implementation.md)** - Real marketplace search architecture and benefits
+- **[Discogs OAuth Authentication](backend/discogs_auth.md)** - Setting up and using Discogs OAuth
 - **[eBay Developer Setup Guide](backend/ebay-developer-setup.md)** - Complete eBay OAuth setup and troubleshooting
 - **[OAuth Authentication Fixes](backend/oauth-authentication-fixes.md)** - Recent critical OAuth fixes and improvements
 - **[Testing Guide](backend/testing-guide.md)** - Backend-specific testing patterns and examples

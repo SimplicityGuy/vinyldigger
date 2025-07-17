@@ -1,5 +1,7 @@
 # OAuth Authentication Fixes Documentation
 
+*Last updated: July 2025*
+
 ## Overview
 
 This document describes the recent critical fixes implemented for eBay OAuth authentication and background task scheduling in VinylDigger.

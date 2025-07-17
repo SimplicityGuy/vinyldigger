@@ -1,5 +1,7 @@
 # Discogs OAuth Authentication Guide
 
+*Last updated: July 2025*
+
 VinylDigger uses Discogs OAuth 1.0a to securely access your Discogs account. This guide explains how the authentication process works.
 
 ## Overview

@@ -1,5 +1,7 @@
 # VinylDigger Performance Tuning Guide
 
+*Last updated: July 2025*
+
 ## Overview
 
 This guide provides comprehensive performance optimization strategies for VinylDigger, covering database optimization, caching strategies, API performance, and frontend optimization.

@@ -1,5 +1,7 @@
 # Marketplace Search Implementation
 
+*Last updated: July 2025*
+
 ## Overview
 
 VinylDigger has been updated to search actual marketplace listings instead of catalog databases. This fundamental change ensures users see real items for sale with actual prices and seller information.

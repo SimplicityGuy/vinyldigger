@@ -1,5 +1,7 @@
 # VinylDigger Troubleshooting Guide
 
+*Last updated: July 2025*
+
 ## Overview
 
 This guide covers common issues and their solutions when developing or deploying VinylDigger.
@@ -13,6 +15,8 @@ This guide covers common issues and their solutions when developing or deploying
 - [Frontend Issues](#frontend-issues)
 - [Authentication Issues](#authentication-issues)
 - [Performance Issues](#performance-issues)
+- [Testing Issues](#testing-issues)
+- [Analysis & Search Issues](#analysis--search-issues)
 
 ## Development Issues
 
@@ -53,6 +57,18 @@ This guide covers common issues and their solutions when developing or deploying
    ```bash
    cd backend && uv add --dev types-requests types-redis
    ```
+
+### Redis Type Annotation Issues (Python 3.13)
+
+**Problem**: Type errors with Redis in Python 3.13.
+
+**Solution**: Add future annotations import:
+```python
+from __future__ import annotations
+# At the top of files using Redis
+```
+
+This is already implemented in the codebase but may be needed for new files.
 
 ### Pre-commit Failures
 
@@ -417,6 +433,120 @@ frontend:
 | Format code | `just format` |
 | Run tests | `just test` |
 
+## Testing Issues
+
+### Platform Name Consistency
+
+**Problem**: Tests failing due to platform name mismatches.
+
+**Solution**: Always use lowercase platform names in code:
+```python
+# Correct
+platform = "discogs"
+platform = "ebay"
+
+# Incorrect
+platform = "Discogs"  # Will cause foreign key errors
+platform = "DISCOGS"  # Will cause validation errors
+```
+
+### UUID Handling in Tests
+
+**Problem**: Test failures when using string UUIDs.
+
+**Solution**: Use UUID objects, not strings:
+```python
+# Correct
+from uuid import uuid4
+user_id = uuid4()
+
+# Incorrect
+user_id = "550e8400-e29b-41d4-a716-446655440000"
+```
+
+### Mock Type Mismatches
+
+**Problem**: Mock objects don't match actual API response types.
+
+**Solution**: Ensure mocks match the exact structure:
+```python
+# For async database operations
+from unittest.mock import AsyncMock
+
+mock_db = AsyncMock()
+mock_db.query.return_value.filter.return_value.first.return_value = user
+```
+
+## Analysis & Search Issues
+
+### Analysis Not Running
+
+**Problem**: Search completes but analysis doesn't run.
+
+**Key Points**:
+- Analysis is event-driven - it runs automatically after each search
+- There's no separate analysis schedule
+- Check worker logs for analysis task execution
+
+**Solutions**:
+1. Verify worker is processing tasks:
+   ```bash
+   docker-compose logs worker | grep "analyze_search_results"
+   ```
+
+2. Check for analysis data:
+   ```sql
+   SELECT * FROM search_result_analyses WHERE search_id = 'your-search-id';
+   ```
+
+### Marketplace Search Issues
+
+**Problem**: Getting "Price TBD" or no seller information.
+
+**Solution**: Ensure using marketplace endpoint:
+- The system should use `/marketplace/search` not `/database/search`
+- Check `src/services/discogs.py` for correct endpoint
+- Marketplace search provides real prices and seller data
+
+### Foreign Key Constraint Errors
+
+**Problem**: Database errors when saving search results.
+
+**Solution**: Use proper enums for platform:
+```python
+from src.models.search import SearchPlatform
+
+# Correct
+search.platform = SearchPlatform.DISCOGS
+
+# Incorrect
+search.platform = "discogs"  # String will cause FK error
+```
+
+### Scheduler Timezone Issues
+
+**Problem**: Tasks not running at expected times.
+
+**Solution**: Set consistent timezone in environment:
+```bash
+# In .env or docker-compose.yml
+TZ=America/Los_Angeles
+SCHEDULER_TIMEZONE=America/Los_Angeles
+```
+
+Both must match for accurate scheduling.
+
+### Analysis Frequency Configuration
+
+**Problem**: Want to change how often analysis runs.
+
+**Clarification**: Analysis runs with each search execution, not independently.
+
+To change search frequency:
+1. Update `check_interval_hours` in saved search
+2. Default is 24 hours, configurable from 6-48+ hours
+3. Analysis will run each time the search executes
+
 ## Getting Help
 
 If you're still experiencing issues:
@@ -424,7 +554,7 @@ If you're still experiencing issues:
 1. Check the [GitHub Issues](https://github.com/SimplicityGuy/vinyldigger/issues)
 2. Review the [API Documentation](api.md)
 3. Consult the [Architecture Guide](architecture.md)
-4. Check the [Backend Testing Guide](backend/testing-guide.md) for test-related issues
+4. Review [CLAUDE.md](../CLAUDE.md) for development best practices
 5. Create a new issue with:
    - Description of the problem
    - Steps to reproduce

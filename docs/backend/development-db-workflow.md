@@ -1,5 +1,7 @@
 # Database Development Workflow
 
+*Last updated: July 2025*
+
 ## Overview
 
 During development, VinylDigger uses a simplified database management approach:

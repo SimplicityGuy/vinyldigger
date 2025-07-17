@@ -1,5 +1,7 @@
 # VinylDigger UI/UX Design
 
+*Last updated: July 2025*
+
 ## Overview
 
 VinylDigger features a comprehensive user interface designed to provide an intuitive experience for vinyl record collectors. The UI focuses on clarity, efficiency, and ease of use while maintaining powerful functionality.

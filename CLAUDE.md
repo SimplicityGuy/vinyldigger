@@ -214,7 +214,7 @@ uv run alembic revision --autogenerate -m "Description"
 uv run alembic upgrade head
 ```
 
-See `backend/docs/development-db-workflow.md` for detailed instructions.
+See `docs/backend/development-db-workflow.md` for detailed instructions.
 
 ### API Development
 - All endpoints require authentication except health/auth routes
@@ -254,7 +254,7 @@ See `backend/docs/development-db-workflow.md` for detailed instructions.
 5. **Test error cases**: Always test both success and failure scenarios
 6. **Keep tests isolated**: Each test should be independent and repeatable
 
-See `backend/docs/testing-guide.md` for comprehensive testing patterns and examples.
+See `docs/backend/testing-guide.md` for comprehensive testing patterns and examples.
 
 ## Deployment Considerations
 
