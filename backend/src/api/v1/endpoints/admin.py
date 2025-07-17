@@ -24,7 +24,7 @@ class AppConfigCreate(BaseModel):
     @classmethod
     def normalize_provider(cls, v: Any) -> Any:
         if isinstance(v, str):
-            return v.upper()
+            return v.lower()
         return v
 
 
@@ -87,13 +87,16 @@ async def update_app_configuration(
     require_admin(current_user)
 
     # Convert provider string to enum
-    try:
-        provider_enum = OAuthProvider(provider.upper())
-    except ValueError:
+    provider_lower = provider.lower()
+    if provider_lower == "discogs":
+        provider_enum = OAuthProvider.DISCOGS
+    elif provider_lower == "ebay":
+        provider_enum = OAuthProvider.EBAY
+    else:
         raise HTTPException(
             status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-            detail=f"Invalid provider: {provider}. Must be one of: DISCOGS, EBAY",
-        ) from None
+            detail=f"Invalid provider: {provider}. Must be one of: discogs, ebay",
+        )
 
     if provider_enum != config_data.provider:
         raise HTTPException(
@@ -147,13 +150,16 @@ async def delete_app_configuration(
     require_admin(current_user)
 
     # Convert provider string to enum
-    try:
-        provider_enum = OAuthProvider(provider.upper())
-    except ValueError:
+    provider_lower = provider.lower()
+    if provider_lower == "discogs":
+        provider_enum = OAuthProvider.DISCOGS
+    elif provider_lower == "ebay":
+        provider_enum = OAuthProvider.EBAY
+    else:
         raise HTTPException(
             status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-            detail=f"Invalid provider: {provider}. Must be one of: DISCOGS, EBAY",
-        ) from None
+            detail=f"Invalid provider: {provider}. Must be one of: discogs, ebay",
+        )
 
     result = await db.execute(select(AppConfig).where(AppConfig.provider == provider_enum))
     config = result.scalar_one_or_none()

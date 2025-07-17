@@ -1,6 +1,6 @@
 import { useState, memo } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { Plus, Play, Trash2, BarChart3, Users, Edit, Eye } from 'lucide-react'
+import { Plus, Play, Trash2, BarChart3, Edit, Eye, TrendingDown } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import { useForm } from 'react-hook-form'
 import { Button } from '@/components/ui/button'
@@ -230,15 +230,15 @@ function SearchesPageComponent() {
                         Edit
                       </Button>
                       <Button size="sm" variant="outline" asChild className="gap-2">
-                        <Link to={`/searches/${search.id}/analysis`}>
+                        <Link to={`/searches/${search.id}/deals`}>
                           <BarChart3 className="h-3 w-3" />
-                          Analysis
+                          Deals
                         </Link>
                       </Button>
                       <Button size="sm" variant="outline" asChild className="gap-2">
-                        <Link to={`/searches/${search.id}/deals`}>
-                          <Users className="h-3 w-3" />
-                          Deals
+                        <Link to={`/searches/${search.id}/offers`}>
+                          <TrendingDown className="h-3 w-3" />
+                          Offers
                         </Link>
                       </Button>
                       <Button

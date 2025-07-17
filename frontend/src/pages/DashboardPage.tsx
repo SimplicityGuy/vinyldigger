@@ -366,7 +366,7 @@ export const DashboardPage = memo(function DashboardPage() {
                     </span>
                   </div>
                   <div className="flex items-center gap-2">
-                    <Link to={`/searches/${search.id}/analysis`}>
+                    <Link to={`/searches/${search.id}/deals`}>
                       <Button size="sm" variant="outline" className="gap-1">
                         <TrendingUp className="h-3 w-3" />
                         View

@@ -1,7 +1,9 @@
+from datetime import datetime
 from typing import Annotated
+from uuid import UUID
 
 from fastapi import APIRouter, Depends
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, field_validator
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -19,6 +21,20 @@ class CollectionResponse(BaseModel):
     item_count: int
     last_sync_at: str | None
 
+    @field_validator("id", mode="before")
+    @classmethod
+    def convert_uuid_to_str(cls, v: UUID | str) -> str:
+        if isinstance(v, UUID):
+            return str(v)
+        return v
+
+    @field_validator("last_sync_at", mode="before")
+    @classmethod
+    def convert_datetime_to_str(cls, v: datetime | str | None) -> str | None:
+        if isinstance(v, datetime):
+            return v.isoformat()
+        return v
+
     model_config = ConfigDict(from_attributes=True)
 
 
@@ -26,6 +42,20 @@ class WantListResponse(BaseModel):
     id: str
     item_count: int
     last_sync_at: str | None
+
+    @field_validator("id", mode="before")
+    @classmethod
+    def convert_uuid_to_str(cls, v: UUID | str) -> str:
+        if isinstance(v, UUID):
+            return str(v)
+        return v
+
+    @field_validator("last_sync_at", mode="before")
+    @classmethod
+    def convert_datetime_to_str(cls, v: datetime | str | None) -> str | None:
+        if isinstance(v, datetime):
+            return v.isoformat()
+        return v
 
     model_config = ConfigDict(from_attributes=True)
 

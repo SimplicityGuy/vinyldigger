@@ -178,29 +178,29 @@ export const SearchDetailPage = memo(function SearchDetailPage() {
       <div className="grid gap-4 md:grid-cols-3">
         <Card
           className="cursor-pointer hover:shadow-md transition-shadow"
-          onClick={() => navigate(`/searches/${searchId}/analysis`)}
+          onClick={() => navigate(`/searches/${searchId}/deals`)}
         >
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">View Analysis</CardTitle>
+            <CardTitle className="text-sm font-medium">Multi-Item Deals</CardTitle>
             <BarChart3 className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">View Results</div>
-            <p className="text-xs text-muted-foreground">Total results from last run</p>
+            <div className="text-2xl font-bold">View Deals</div>
+            <p className="text-xs text-muted-foreground">Sellers with multiple items and bulk discounts</p>
           </CardContent>
         </Card>
 
         <Card
           className="cursor-pointer hover:shadow-md transition-shadow"
-          onClick={() => navigate(`/searches/${searchId}/deals`)}
+          onClick={() => navigate(`/searches/${searchId}/offers`)}
         >
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Deals & Pricing</CardTitle>
+            <CardTitle className="text-sm font-medium">Price Comparison</CardTitle>
             <TrendingDown className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">View Deals</div>
-            <p className="text-xs text-muted-foreground">Multi-item deals and price comparisons</p>
+            <div className="text-2xl font-bold">Compare Offers</div>
+            <p className="text-xs text-muted-foreground">Individual listings and price comparisons</p>
           </CardContent>
         </Card>
 

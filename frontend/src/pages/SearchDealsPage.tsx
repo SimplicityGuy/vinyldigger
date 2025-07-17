@@ -1,65 +1,39 @@
 import { memo, useState } from 'react'
 import { useParams, Link } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
-import {
-  Package,
-  Users,
-  TrendingDown,
-  MapPin,
-  Star,
-  Award,
-  ChevronDown,
-  ChevronUp,
-  ExternalLink,
-  ChevronRight,
-} from 'lucide-react'
+import { BarChart3, TrendingUp, TrendingDown, Users, Star, MapPin, Award, ChevronRight, ChevronDown, ChevronUp, ExternalLink } from 'lucide-react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { searchAnalysisApi, searchApi } from '@/lib/api'
+import type { SearchResult } from '@/types/api'
+
+interface Recommendation {
+  id: string
+  type: string
+  deal_score: string
+  score_value: number
+  title: string
+  description: string
+  recommendation_reason: string
+  total_items: number
+  wantlist_items: number
+  total_value: number
+  estimated_shipping: number | null
+  total_cost: number
+  potential_savings: number | null
+  seller: {
+    id: string | null
+    name: string
+    location: string | null
+    feedback_score: number | null
+  } | null
+  item_ids: string[]
+}
 
 interface Seller {
   id: string | null
   name: string
   location: string | null
   feedback_score: number | null
-}
-
-interface ListingItemData {
-  id?: string
-  item_web_url?: string
-  release_id?: string
-  resource_url?: string
-  title?: string
-  artist?: string
-  year?: number
-  item_url?: string
-  seller?: {
-    id?: string
-    username?: string
-    url?: string
-  }
-  [key: string]: unknown
-}
-
-interface Listing {
-  id: string
-  platform: string
-  price: number | null
-  condition: string | null
-  seller: Seller | null
-  is_in_wantlist: boolean
-  shipping_price?: number
-  item_data?: ListingItemData
-}
-
-interface ItemMatch {
-  canonical_title: string
-  canonical_artist: string
-  total_matches: number
-}
-
-interface PriceComparison {
-  item_match: ItemMatch
-  listings: Listing[]
 }
 
 interface MultiItemDeal {
@@ -74,132 +48,174 @@ interface MultiItemDeal {
   item_ids: string[]
 }
 
-// Helper function to create URLs
-const createListingUrl = (listing: Listing): string | undefined => {
-  const platform = listing.platform.toLowerCase()
+interface SellerAnalysis {
+  rank: number
+  total_items: number
+  wantlist_items: number
+  total_value: number
+  overall_score: number
+  estimated_shipping: number | null
+  seller: {
+    id: string | null
+    name: string
+    location: string | null
+    feedback_score: number | null
+  } | null
+}
 
-  if (platform === 'ebay' && listing.item_data?.item_web_url) {
-    return listing.item_data.item_web_url
+interface ItemData {
+  id?: string
+  title?: string
+  name?: string
+  artist?: string
+  artists_sort?: string
+  price?: number
+  current_price?: number
+  uri?: string
+  item_url?: string
+  item_web_url?: string
+  [key: string]: unknown
+}
+
+// Helper function to extract listing URL from search result
+const getListingUrl = (result: SearchResult): string | undefined => {
+  const platform = result.platform.toLowerCase()
+  const itemData = result.item_data as ItemData
+
+  if (platform === 'ebay' && itemData?.item_web_url) {
+    return itemData.item_web_url
   }
+
   if (platform === 'discogs') {
     // Try different possible URL fields
-    if (listing.item_data?.uri) {
-      const uri = listing.item_data.uri
+    if (itemData?.uri) {
+      const uri = itemData.uri
       // Check if URI is already a full URL
       if (typeof uri === 'string' && uri.startsWith('http')) {
         return uri
       }
       return `https://www.discogs.com${uri}`
     }
-    if (listing.item_data?.item_url) {
-      return listing.item_data.item_url
+    if (itemData?.item_url) {
+      return itemData.item_url
     }
     // If we have a listing ID, construct the marketplace URL
-    if (listing.item_data?.id) {
-      return `https://www.discogs.com/sell/item/${listing.item_data.id}`
+    if (itemData?.id) {
+      return `https://www.discogs.com/sell/item/${itemData.id}`
     }
   }
+
   return undefined
 }
 
-const createDiscogsReleaseUrl = (listing: Listing): string | undefined => {
-  const platform = listing.platform.toLowerCase()
-  if (platform === 'discogs' && listing.item_data) {
-    const itemData = listing.item_data
-    // First check if we have release_id directly
-    if (itemData.release_id) {
-      return `https://www.discogs.com/release/${itemData.release_id}`
-    }
-    // Check if it's a release or master based on the resource_url
-    if (itemData.resource_url) {
-      if (itemData.resource_url.includes('/releases/')) {
-        return `https://www.discogs.com/release/${itemData.id}`
-      } else if (itemData.resource_url.includes('/masters/')) {
-        return `https://www.discogs.com/master/${itemData.id}`
-      }
-    }
-    // Fallback to release URL
-    if (itemData.id) {
-      return `https://www.discogs.com/release/${itemData.id}`
-    }
-  }
-  return undefined
+// Helper to get item title from search result
+const getItemTitle = (result: SearchResult): string => {
+  const itemData = result.item_data as ItemData
+  return itemData?.title || itemData?.name || 'Unknown Item'
 }
 
-const createSellerUrl = (listing: Listing): string | undefined => {
-  const platform = listing.platform.toLowerCase()
-  if (platform === 'discogs') {
-    // Try seller URL from item_data first
-    if (listing.item_data?.seller?.url) {
-      return listing.item_data.seller.url
-    }
-    // Try seller username to construct URL
-    if (listing.item_data?.seller?.username) {
-      return `https://www.discogs.com/seller/${listing.item_data.seller.username}`
-    }
-    // Fallback to main seller object
-    if (listing.seller?.name) {
-      return `https://www.discogs.com/seller/${listing.seller.name}`
-    }
-  }
-  if (platform === 'ebay' && listing.seller?.name) {
-    return `https://www.ebay.com/usr/${listing.seller.name}`
-  }
-  return undefined
+// Helper to get artist from search result
+const getItemArtist = (result: SearchResult): string => {
+  const itemData = result.item_data as ItemData
+  return itemData?.artist || itemData?.artists_sort || 'Unknown Artist'
 }
 
-// Helper to get seller name from listing data
-const getSellerName = (listing: Listing): string => {
-  // First check if we have seller info in the main seller object
-  if (listing.seller?.name) {
-    return listing.seller.name
-  }
-  // Then check in item_data for marketplace seller info
-  if (listing.item_data?.seller?.username) {
-    return listing.item_data.seller.username
-  }
-  return 'Unknown Seller'
+// Helper to get price from search result
+const getItemPrice = (result: SearchResult): number | null => {
+  const itemData = result.item_data as ItemData
+  return itemData?.price || itemData?.current_price || null
 }
 
 export const SearchDealsPage = memo(function SearchDealsPage() {
   const { searchId } = useParams<{ searchId: string }>()
-  const [expandedSections, setExpandedSections] = useState<Set<number>>(new Set())
+  const [expandedDealSellers, setExpandedDealSellers] = useState<Set<string>>(new Set())
 
-  const toggleSection = (index: number) => {
-    const newExpanded = new Set(expandedSections)
-    if (newExpanded.has(index)) {
-      newExpanded.delete(index)
+  const toggleDealSeller = (sellerKey: string) => {
+    const newExpanded = new Set(expandedDealSellers)
+    if (newExpanded.has(sellerKey)) {
+      newExpanded.delete(sellerKey)
     } else {
-      newExpanded.add(index)
+      newExpanded.add(sellerKey)
     }
-    setExpandedSections(newExpanded)
+    setExpandedDealSellers(newExpanded)
   }
 
-  const { data: searchData, isLoading: searchLoading } = useQuery({
-    queryKey: ['search', searchId],
+  const { data: search } = useQuery({
+    queryKey: ['searches', searchId],
     queryFn: () => searchApi.getSearch(searchId!),
     enabled: !!searchId,
   })
 
-  const { data: dealsData, isLoading: dealsLoading } = useQuery({
+  const { data: analysisData, isLoading } = useQuery({
+    queryKey: ['search-analysis', searchId],
+    queryFn: () => searchAnalysisApi.getSearchAnalysis(searchId!),
+    enabled: !!searchId,
+  })
+
+  const { data: dealsData } = useQuery({
     queryKey: ['multi-item-deals', searchId],
     queryFn: () => searchAnalysisApi.getMultiItemDeals(searchId!),
     enabled: !!searchId,
   })
 
-  const { data: priceData, isLoading: priceLoading } = useQuery({
-    queryKey: ['price-comparison', searchId],
-    queryFn: () => searchAnalysisApi.getPriceComparison(searchId!),
-    enabled: !!searchId,
+  // Fetch search results for getting item details
+  const { data: searchResults } = useQuery({
+    queryKey: ['search-results', searchId],
+    queryFn: () => searchApi.getSearchResults(searchId!),
+    enabled: !!searchId && !!dealsData?.multi_item_deals?.length,
   })
 
-  if (searchLoading || dealsLoading || priceLoading) {
+  if (isLoading) {
     return (
       <div className="flex justify-center py-8">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
       </div>
     )
   }
+
+  if (!analysisData?.analysis_completed) {
+    return (
+      <div className="space-y-6">
+        {/* Breadcrumb Navigation */}
+        <nav className="flex items-center space-x-2 text-sm text-muted-foreground">
+          <Link to="/searches" className="hover:text-foreground transition-colors">
+            Searches
+          </Link>
+          <ChevronRight className="h-4 w-4" />
+          {search && (
+            <>
+              <Link
+                to={`/searches/${searchId}`}
+                className="hover:text-foreground transition-colors"
+              >
+                {search.name}
+              </Link>
+              <ChevronRight className="h-4 w-4" />
+            </>
+          )}
+          <span className="text-foreground">Deals</span>
+        </nav>
+
+        <div>
+          <h2 className="text-3xl font-bold tracking-tight">Search Deals</h2>
+          <p className="text-muted-foreground">
+            {search
+              ? `Analysis for "${search.name}" is still processing or not available`
+              : 'Analysis is still processing or not available'}
+          </p>
+        </div>
+        <Card>
+          <CardContent className="py-8 text-center">
+            <p className="text-muted-foreground">
+              {analysisData?.message || 'Analysis not yet completed for this search'}
+            </p>
+          </CardContent>
+        </Card>
+      </div>
+    )
+  }
+
+  const { analysis, recommendations, seller_analyses } = analysisData
 
   return (
     <div className="space-y-6">
@@ -209,10 +225,10 @@ export const SearchDealsPage = memo(function SearchDealsPage() {
           Searches
         </Link>
         <ChevronRight className="h-4 w-4" />
-        {searchData && (
+        {search && (
           <>
             <Link to={`/searches/${searchId}`} className="hover:text-foreground transition-colors">
-              {searchData.name}
+              {search.name}
             </Link>
             <ChevronRight className="h-4 w-4" />
           </>
@@ -221,12 +237,61 @@ export const SearchDealsPage = memo(function SearchDealsPage() {
       </nav>
 
       <div>
-        <h2 className="text-3xl font-bold tracking-tight">Multi-Item Deals & Price Comparison</h2>
+        <h2 className="text-3xl font-bold tracking-tight">Search Deals</h2>
         <p className="text-muted-foreground">
-          {searchData
-            ? `Results for "${searchData.name}"`
-            : 'Find the best deals by combining multiple items from the same seller'}
+          {search
+            ? `Analysis for "${search.name}"`
+            : 'Comprehensive analysis of search results and recommendations'}
         </p>
+      </div>
+
+      {/* Summary Statistics */}
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Total Results</CardTitle>
+            <BarChart3 className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{analysis.total_results}</div>
+            <p className="text-xs text-muted-foreground">From {analysis.total_sellers} sellers</p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Want List Matches</CardTitle>
+            <Star className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{analysis.wantlist_matches}</div>
+            <p className="text-xs text-muted-foreground">Items on your want list</p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Multi-Item Deals</CardTitle>
+            <Users className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{analysis.multi_item_sellers}</div>
+            <p className="text-xs text-muted-foreground">Sellers with multiple items</p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Price Range</CardTitle>
+            <TrendingUp className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">
+              ${analysis.min_price?.toFixed(2)} - ${analysis.max_price?.toFixed(2)}
+            </div>
+            <p className="text-xs text-muted-foreground">Avg: ${analysis.avg_price?.toFixed(2)}</p>
+          </CardContent>
+        </Card>
       </div>
 
       {/* Multi-Item Deals */}
@@ -243,7 +308,7 @@ export const SearchDealsPage = memo(function SearchDealsPage() {
         <CardContent>
           {!dealsData?.multi_item_deals || dealsData.multi_item_deals.length === 0 ? (
             <div className="text-center py-8">
-              <Package className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+              <Users className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
               <p className="text-muted-foreground">No multi-item deals found</p>
               <p className="text-sm text-muted-foreground mt-2">
                 Run a search to find sellers with multiple items from your want list
@@ -251,164 +316,49 @@ export const SearchDealsPage = memo(function SearchDealsPage() {
             </div>
           ) : (
             <div className="space-y-4">
-              {dealsData.multi_item_deals.map((deal: MultiItemDeal, index: number) => (
-                <div key={index} className="border rounded-lg p-4 space-y-3">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <div
-                        className={`px-3 py-1 rounded-full text-sm font-medium ${
-                          deal.deal_score === 'EXCELLENT'
-                            ? 'bg-green-100 text-green-800'
-                            : deal.deal_score === 'VERY_GOOD'
-                              ? 'bg-blue-100 text-blue-800'
-                              : deal.deal_score === 'GOOD'
-                                ? 'bg-yellow-100 text-yellow-800'
-                                : 'bg-gray-100 text-gray-800'
-                        }`}
-                      >
-                        {deal.deal_score.replace('_', ' ')} DEAL
-                      </div>
-                      {deal.seller && (
-                        <div className="flex items-center gap-2">
-                          <span className="font-medium">{deal.seller.name}</span>
-                          {deal.seller.location && (
-                            <span className="text-muted-foreground flex items-center gap-1">
-                              <MapPin className="h-3 w-3" />
-                              {deal.seller.location}
-                            </span>
-                          )}
-                          {deal.seller.feedback_score && (
-                            <span className="text-muted-foreground flex items-center gap-1">
-                              <Award className="h-3 w-3" />
-                              {deal.seller.feedback_score.toFixed(1)}%
-                            </span>
-                          )}
-                        </div>
-                      )}
-                    </div>
-                  </div>
-
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
-                    <div>
-                      <div className="text-muted-foreground">Total Items</div>
-                      <div className="font-medium">{deal.total_items}</div>
-                    </div>
-                    <div>
-                      <div className="text-muted-foreground">Want List Items</div>
-                      <div className="font-medium text-green-600">{deal.wantlist_items}</div>
-                    </div>
-                    <div>
-                      <div className="text-muted-foreground">Items Value</div>
-                      <div className="font-medium">${deal.total_value.toFixed(2)}</div>
-                    </div>
-                    <div>
-                      <div className="text-muted-foreground">Est. Shipping</div>
-                      <div className="font-medium">
-                        {deal.estimated_shipping ? `$${deal.estimated_shipping.toFixed(2)}` : 'TBD'}
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="flex items-center justify-between pt-2 border-t">
-                    <div className="text-lg font-semibold">
-                      Total: ${deal.total_cost.toFixed(2)}
-                    </div>
-                    {deal.potential_savings && deal.potential_savings > 0 && (
-                      <div className="flex items-center gap-1 text-green-600 font-medium">
-                        <TrendingDown className="h-4 w-4" />
-                        Save ${deal.potential_savings.toFixed(2)} on shipping
-                      </div>
-                    )}
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </CardContent>
-      </Card>
-
-      {/* Price Comparison */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <TrendingDown className="h-5 w-5" />
-            Price Comparison
-          </CardTitle>
-          <CardDescription>Compare prices across different platforms and sellers</CardDescription>
-        </CardHeader>
-        <CardContent>
-          {!priceData?.price_comparisons || priceData.price_comparisons.length === 0 ? (
-            <div className="text-center py-8">
-              <TrendingDown className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-              <p className="text-muted-foreground">No price comparisons available</p>
-            </div>
-          ) : (
-            <div className="space-y-6">
-              {priceData.price_comparisons
-                // Sort comparisons so that items in wantlist appear first
-                .sort((a: PriceComparison, b: PriceComparison) => {
-                  const aHasWantlist = a.listings.some((l) => l.is_in_wantlist)
-                  const bHasWantlist = b.listings.some((l) => l.is_in_wantlist)
-                  if (aHasWantlist && !bHasWantlist) return -1
-                  if (!aHasWantlist && bHasWantlist) return 1
-                  return 0
-                })
-                .map((comparison: PriceComparison, index: number) => {
-                const isExpanded = expandedSections.has(index)
+              {dealsData.multi_item_deals.map((deal: MultiItemDeal, index: number) => {
+                const sellerKey = deal.seller?.name || `deal-${index}`
+                const isExpanded = expandedDealSellers.has(sellerKey)
+                const itemsInDeal = searchResults?.filter((result: SearchResult) => deal.item_ids.includes(result.id)) || []
 
                 return (
-                  <div key={index} className="border rounded-lg">
+                  <div key={index} className="border rounded-lg overflow-hidden">
                     <div
-                      className="p-4 cursor-pointer hover:bg-gray-50"
-                      onClick={() => toggleSection(index)}
+                      className="p-4 space-y-3 cursor-pointer hover:bg-gray-50 transition-colors"
+                      onClick={() => toggleDealSeller(sellerKey)}
                     >
                       <div className="flex items-center justify-between">
-                        <div className="flex-1">
-                          <div className="flex items-center gap-2">
-                            {comparison.listings.some((l) => l.is_in_wantlist) && (
-                              <span title="In your wantlist" className="flex items-center gap-1">
-                                <Star className="h-4 w-4 text-yellow-500 fill-current" />
-                                <span className="text-xs text-yellow-600 font-medium">WANT LIST</span>
-                              </span>
-                            )}
-                            <h4 className="font-medium">{comparison.item_match.canonical_title}</h4>
-                            {(() => {
-                              // Find any Discogs listing to get the release link
-                              const discogsListing = comparison.listings.find(
-                                (listing) => listing.platform.toLowerCase() === 'discogs'
-                              )
-                              if (discogsListing) {
-                                const releaseUrl = createDiscogsReleaseUrl(discogsListing)
-                                if (releaseUrl) {
-                                  return (
-                                    <a
-                                      href={releaseUrl}
-                                      target="_blank"
-                                      rel="noopener noreferrer"
-                                      className="text-blue-600 hover:text-blue-800 flex items-center gap-1"
-                                      onClick={(e) => e.stopPropagation()}
-                                    >
-                                      <ExternalLink className="h-3 w-3" />
-                                      <span className="text-xs">Discogs</span>
-                                    </a>
-                                  )
-                                }
-                              }
-                              return null
-                            })()}
+                        <div className="flex items-center gap-3">
+                          <div
+                            className={`px-3 py-1 rounded-full text-sm font-medium ${
+                              deal.deal_score === 'EXCELLENT'
+                                ? 'bg-green-100 text-green-800'
+                                : deal.deal_score === 'VERY_GOOD'
+                                  ? 'bg-blue-100 text-blue-800'
+                                  : deal.deal_score === 'GOOD'
+                                    ? 'bg-yellow-100 text-yellow-800'
+                                    : 'bg-gray-100 text-gray-800'
+                            }`}
+                          >
+                            {deal.deal_score.replace('_', ' ')} DEAL
                           </div>
-                          <p className="text-sm text-muted-foreground">
-                            by {comparison.item_match.canonical_artist || 'Unknown Artist'}
-                          </p>
-                          <div className="flex items-center gap-4 mt-2 text-xs text-muted-foreground">
-                            <span>{comparison.item_match.total_matches} listings found</span>
-                            <span>
-                              Best price:{' '}
-                              {comparison.listings[0]?.price
-                                ? `$${comparison.listings[0].price.toFixed(2)}`
-                                : 'Price TBD'}
-                            </span>
-                          </div>
+                          {deal.seller && (
+                            <div className="flex items-center gap-2">
+                              <span className="font-medium">{deal.seller.name}</span>
+                              {deal.seller.location && (
+                                <span className="text-muted-foreground flex items-center gap-1">
+                                  <MapPin className="h-3 w-3" />
+                                  {deal.seller.location}
+                                </span>
+                              )}
+                              {deal.seller.feedback_score && (
+                                <span className="text-muted-foreground flex items-center gap-1">
+                                  <Award className="h-3 w-3" />
+                                  {deal.seller.feedback_score.toFixed(1)}%
+                                </span>
+                              )}
+                            </div>
+                          )}
                         </div>
                         <div className="flex items-center gap-2">
                           {isExpanded ? (
@@ -418,136 +368,228 @@ export const SearchDealsPage = memo(function SearchDealsPage() {
                           )}
                         </div>
                       </div>
+
+                      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+                        <div>
+                          <div className="text-muted-foreground">Total Items</div>
+                          <div className="font-medium">{deal.total_items}</div>
+                        </div>
+                        <div>
+                          <div className="text-muted-foreground">Want List Items</div>
+                          <div className="font-medium text-green-600">{deal.wantlist_items}</div>
+                        </div>
+                        <div>
+                          <div className="text-muted-foreground">Items Value</div>
+                          <div className="font-medium">${deal.total_value.toFixed(2)}</div>
+                        </div>
+                        <div>
+                          <div className="text-muted-foreground">Est. Shipping</div>
+                          <div className="font-medium">
+                            {deal.estimated_shipping ? `$${deal.estimated_shipping.toFixed(2)}` : 'TBD'}
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center justify-between pt-2 border-t">
+                        <div className="text-lg font-semibold">
+                          Total: ${deal.total_cost.toFixed(2)}
+                        </div>
+                        {deal.potential_savings && deal.potential_savings > 0 && (
+                          <div className="flex items-center gap-1 text-green-600 font-medium">
+                            <TrendingDown className="h-4 w-4" />
+                            Save ${deal.potential_savings.toFixed(2)} on shipping
+                          </div>
+                        )}
+                      </div>
                     </div>
 
+                    {/* Expandable Items Section */}
                     {isExpanded && (
-                      <div className="border-t">
-                        <div className="p-4 space-y-2">
-                          {comparison.listings
-                            // Sort listings so wantlist items appear first
-                            .sort((a, b) => {
-                              if (a.is_in_wantlist && !b.is_in_wantlist) return -1
-                              if (!a.is_in_wantlist && b.is_in_wantlist) return 1
-                              // Then sort by price
-                              const priceA = a.price ?? Number.MAX_VALUE
-                              const priceB = b.price ?? Number.MAX_VALUE
-                              return priceA - priceB
-                            })
-                            .map((listing, listingIndex: number) => {
-                            const sellerName = getSellerName(listing)
-                            const sellerUrl = createSellerUrl(listing)
-                            const listingUrl = createListingUrl(listing)
+                      <div className="border-t bg-gray-50">
+                        <div className="p-4">
+                          <h5 className="font-medium text-sm mb-3">Items in this deal:</h5>
+                          <div className="space-y-2">
+                            {itemsInDeal.length === 0 ? (
+                              <p className="text-sm text-muted-foreground">Loading item details...</p>
+                            ) : (
+                              itemsInDeal.map((item) => {
+                                const listingUrl = getListingUrl(item)
+                                const price = getItemPrice(item)
 
-                            // Find the listing with the lowest price
-                            const lowestPriceListing = comparison.listings.reduce((min, current) => {
-                              const minPrice = min.price ?? Number.MAX_VALUE
-                              const currentPrice = current.price ?? Number.MAX_VALUE
-                              return currentPrice < minPrice ? current : min
-                            })
-                            const isLowestPrice = listing.id === lowestPriceListing.id
-
-                            return (
-                              <div
-                                key={listingIndex}
-                                className={`flex items-center justify-between p-3 rounded border ${
-                                  listing.is_in_wantlist
-                                    ? 'bg-yellow-50 border-yellow-200'
-                                    : isLowestPrice
-                                    ? 'bg-green-50 border-green-200'
-                                    : 'bg-gray-50'
-                                }`}
-                              >
-                                <div className="flex items-center gap-4">
-                                  {isLowestPrice && (
-                                    <div className="text-green-600 font-medium text-sm">
-                                      BEST PRICE
+                                return (
+                                  <div
+                                    key={item.id}
+                                    className="flex items-center justify-between p-3 bg-white rounded border"
+                                  >
+                                    <div className="flex-1">
+                                      <div className="flex items-center gap-2">
+                                        {item.is_in_wantlist && (
+                                          <Star className="h-4 w-4 text-yellow-500 fill-current" aria-label="In your wantlist" />
+                                        )}
+                                        <span className="font-medium text-sm">{getItemTitle(item)}</span>
+                                      </div>
+                                      <div className="text-xs text-muted-foreground mt-1">
+                                        by {getItemArtist(item)}
+                                      </div>
                                     </div>
-                                  )}
-                                  <div className="flex items-center gap-2">
-                                    <span className="px-2 py-1 bg-white rounded text-xs font-medium">
-                                      {listing.platform.charAt(0).toUpperCase() + listing.platform.slice(1).toLowerCase()}
-                                    </span>
-                                    {listing.is_in_wantlist ? (
-                                      <span className="flex items-center gap-1 px-2 py-1 bg-yellow-100 text-yellow-700 rounded text-xs font-medium">
-                                        <Star className="h-3 w-3 fill-current" />
-                                        WANT LIST
-                                      </span>
-                                    ) : (
-                                      <span className="px-2 py-1 bg-blue-100 text-blue-700 rounded text-xs font-medium">
-                                        NEW DISCOVERY
-                                      </span>
-                                    )}
-                                  </div>
-                                  <div>
-                                    <div className="text-sm flex items-center gap-2">
-                                      {sellerUrl ? (
+                                    <div className="flex items-center gap-3">
+                                      <div className="text-right">
+                                        <div className="text-sm font-medium">
+                                          {price ? `$${price.toFixed(2)}` : 'Price TBD'}
+                                        </div>
+                                        <div className="text-xs text-muted-foreground">
+                                          {item.platform.charAt(0).toUpperCase() + item.platform.slice(1).toLowerCase()}
+                                        </div>
+                                      </div>
+                                      {listingUrl && (
                                         <a
-                                          href={sellerUrl}
+                                          href={listingUrl}
                                           target="_blank"
                                           rel="noopener noreferrer"
-                                          className="text-blue-600 hover:text-blue-800 flex items-center gap-1"
+                                          className="text-blue-600 hover:text-blue-800 p-2 rounded hover:bg-blue-50 transition-colors flex items-center gap-1"
+                                          title="View listing"
                                           onClick={(e) => e.stopPropagation()}
                                         >
-                                          {sellerName}
-                                          <ExternalLink className="h-3 w-3" />
+                                          <ExternalLink className="h-4 w-4" />
+                                          <span className="text-xs">View</span>
                                         </a>
-                                      ) : (
-                                        <span className="font-medium">{sellerName}</span>
                                       )}
                                     </div>
-                                    {listing.seller?.location && (
-                                      <div className="text-xs text-muted-foreground">
-                                        {listing.seller.location}
-                                      </div>
-                                    )}
                                   </div>
-                                  {listing.condition && (
-                                    <div className="text-sm text-muted-foreground">
-                                      Condition: {listing.condition}
-                                    </div>
-                                  )}
-                                </div>
-                                <div className="text-right flex items-center gap-2">
-                                  <div>
-                                    <div className="font-medium">
-                                      {listing.price ? `$${listing.price.toFixed(2)}` : 'Price TBD'}
-                                    </div>
-                                    {listing.shipping_price !== undefined &&
-                                      listing.shipping_price !== null && (
-                                        <div className="text-xs text-muted-foreground">
-                                          + ${listing.shipping_price.toFixed(2)} shipping
-                                        </div>
-                                      )}
-                                    {listing.seller?.feedback_score && (
-                                      <div className="text-xs text-muted-foreground">
-                                        {listing.seller.feedback_score.toFixed(1)}% feedback
-                                      </div>
-                                    )}
-                                  </div>
-                                  {listingUrl ? (
-                                    <a
-                                      href={listingUrl}
-                                      target="_blank"
-                                      rel="noopener noreferrer"
-                                      className="text-blue-600 hover:text-blue-800 p-2 rounded hover:bg-blue-50 transition-colors flex items-center gap-1"
-                                      title="View listing"
-                                    >
-                                      <ExternalLink className="h-4 w-4" />
-                                      <span className="text-xs">View</span>
-                                    </a>
-                                  ) : (
-                                    <div className="text-xs text-muted-foreground p-2">No link</div>
-                                  )}
-                                </div>
-                              </div>
-                            )
-                          })}
+                                )
+                              })
+                            )}
+                          </div>
                         </div>
                       </div>
                     )}
                   </div>
                 )
               })}
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Other Recommendations */}
+      {recommendations.filter((rec: Recommendation) => rec.type !== 'MULTI_ITEM').length > 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle>Other Recommendations</CardTitle>
+            <CardDescription>Additional deals and opportunities</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              {recommendations.filter((rec: Recommendation) => rec.type !== 'MULTI_ITEM').map((rec: Recommendation) => (
+                <div key={rec.id} className="border rounded-lg p-4 space-y-3">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <div
+                        className={`px-2 py-1 rounded text-xs font-medium ${
+                          rec.deal_score === 'EXCELLENT'
+                            ? 'bg-green-100 text-green-800'
+                            : rec.deal_score === 'VERY_GOOD'
+                              ? 'bg-blue-100 text-blue-800'
+                              : rec.deal_score === 'GOOD'
+                                ? 'bg-yellow-100 text-yellow-800'
+                                : 'bg-gray-100 text-gray-800'
+                        }`}
+                      >
+                        {rec.deal_score.replace('_', ' ')}
+                      </div>
+                      <span className="text-sm text-muted-foreground">
+                        {rec.type.replace('_', ' ')}
+                      </span>
+                    </div>
+                    <div className="text-sm font-medium">Score: {rec.score_value.toFixed(0)}%</div>
+                  </div>
+
+                  <div>
+                    <h4 className="font-medium">{rec.title}</h4>
+                    <p className="text-sm text-muted-foreground">{rec.description}</p>
+                    <p className="text-sm text-blue-600 mt-1">{rec.recommendation_reason}</p>
+                  </div>
+
+                  <div className="flex items-center justify-between text-sm">
+                    <div className="flex items-center gap-4">
+                      <span>{rec.total_items} items</span>
+                      {rec.wantlist_items > 0 && (
+                        <span className="text-green-600">{rec.wantlist_items} want list items</span>
+                      )}
+                      {rec.seller && (
+                        <div className="flex items-center gap-1">
+                          <MapPin className="h-3 w-3" />
+                          <span>{rec.seller.name}</span>
+                          {rec.seller.location && (
+                            <span className="text-muted-foreground">({rec.seller.location})</span>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                    <div className="text-right">
+                      <div className="font-medium">${rec.total_cost.toFixed(2)} total</div>
+                      {rec.potential_savings && rec.potential_savings > 0 && (
+                        <div className="text-green-600 text-xs">
+                          Save ${rec.potential_savings.toFixed(2)}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Top Sellers */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Top Sellers</CardTitle>
+          <CardDescription>Sellers ranked by overall score</CardDescription>
+        </CardHeader>
+        <CardContent>
+          {seller_analyses.length === 0 ? (
+            <p className="text-muted-foreground">No seller analysis available</p>
+          ) : (
+            <div className="space-y-3">
+              {seller_analyses.slice(0, 10).map((seller: SellerAnalysis) => (
+                <div
+                  key={seller.seller?.id || `seller-${seller.rank}`}
+                  className="flex items-center justify-between p-3 border rounded-lg"
+                >
+                  <div className="flex items-center gap-3">
+                    <div className="flex items-center justify-center w-8 h-8 bg-muted rounded-full text-sm font-medium">
+                      #{seller.rank}
+                    </div>
+                    <div>
+                      <div className="font-medium">{seller.seller?.name || 'Unknown Seller'}</div>
+                      <div className="text-sm text-muted-foreground flex items-center gap-4">
+                        <span>{seller.total_items} items</span>
+                        {seller.wantlist_items > 0 && (
+                          <span className="text-green-600">{seller.wantlist_items} want list</span>
+                        )}
+                        {seller.seller?.location && <span>{seller.seller.location}</span>}
+                        {seller.seller?.feedback_score && (
+                          <div className="flex items-center gap-1">
+                            <Award className="h-3 w-3" />
+                            <span>{seller.seller.feedback_score.toFixed(1)}%</span>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <div className="font-medium">{seller.overall_score.toFixed(0)}% score</div>
+                    <div className="text-sm text-muted-foreground">
+                      ${seller.total_value.toFixed(2)}
+                      {seller.estimated_shipping && (
+                        <span> + ${seller.estimated_shipping.toFixed(2)} shipping</span>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              ))}
             </div>
           )}
         </CardContent>

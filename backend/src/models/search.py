@@ -20,9 +20,9 @@ if TYPE_CHECKING:
 
 
 class SearchPlatform(str, Enum):
-    EBAY = "EBAY"
-    DISCOGS = "DISCOGS"
-    BOTH = "BOTH"
+    EBAY = "ebay"
+    DISCOGS = "discogs"
+    BOTH = "both"
 
 
 class SavedSearch(Base):
@@ -32,7 +32,9 @@ class SavedSearch(Base):
     user_id: Mapped[UUID] = mapped_column(PGUUID(as_uuid=True), ForeignKey("users.id"), nullable=False)
     name: Mapped[str] = mapped_column(String(255), nullable=False)
     query: Mapped[str] = mapped_column(String(500), nullable=False)
-    platform: Mapped[SearchPlatform] = mapped_column(SQLEnum(SearchPlatform, create_type=False), nullable=False)
+    platform: Mapped[SearchPlatform] = mapped_column(
+        SQLEnum(SearchPlatform, create_type=False, values_callable=lambda obj: [e.value for e in obj]), nullable=False
+    )
     filters: Mapped[dict[str, Any]] = mapped_column(JSON, default=dict)
     is_active: Mapped[bool] = mapped_column(default=True)
     check_interval_hours: Mapped[int] = mapped_column(default=24)
@@ -63,7 +65,9 @@ class SearchResult(Base):
 
     id: Mapped[UUID] = mapped_column(PGUUID(as_uuid=True), primary_key=True, default=uuid4)
     search_id: Mapped[UUID] = mapped_column(PGUUID(as_uuid=True), ForeignKey("saved_searches.id"), nullable=False)
-    platform: Mapped[SearchPlatform] = mapped_column(SQLEnum(SearchPlatform, create_type=False), nullable=False)
+    platform: Mapped[SearchPlatform] = mapped_column(
+        SQLEnum(SearchPlatform, create_type=False, values_callable=lambda obj: [e.value for e in obj]), nullable=False
+    )
     item_id: Mapped[str] = mapped_column(String(255), nullable=False)
     item_data: Mapped[dict[str, Any]] = mapped_column(JSON, nullable=False)
     is_in_collection: Mapped[bool] = mapped_column(default=False)

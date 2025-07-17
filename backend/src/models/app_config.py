@@ -17,13 +17,13 @@ if TYPE_CHECKING:
 
 
 class OAuthProvider(str, Enum):
-    DISCOGS = "DISCOGS"
-    EBAY = "EBAY"
+    DISCOGS = "discogs"
+    EBAY = "ebay"
 
 
 class OAuthEnvironment(str, Enum):
-    PRODUCTION = "PRODUCTION"
-    SANDBOX = "SANDBOX"
+    PRODUCTION = "production"
+    SANDBOX = "sandbox"
 
 
 class AppConfig(Base):
@@ -36,9 +36,13 @@ class AppConfig(Base):
     __tablename__ = "app_config"
 
     id: Mapped[UUID] = mapped_column(PGUUID(as_uuid=True), primary_key=True, default=uuid4)
-    provider: Mapped[OAuthProvider] = mapped_column(SQLEnum(OAuthProvider, create_type=False), nullable=False)
+    provider: Mapped[OAuthProvider] = mapped_column(
+        SQLEnum(OAuthProvider, create_type=False, values_callable=lambda obj: [e.value for e in obj]), nullable=False
+    )
     environment: Mapped[OAuthEnvironment] = mapped_column(
-        SQLEnum(OAuthEnvironment, create_type=False), nullable=False, default=OAuthEnvironment.PRODUCTION
+        SQLEnum(OAuthEnvironment, create_type=False, values_callable=lambda obj: [e.value for e in obj]),
+        nullable=False,
+        default=OAuthEnvironment.PRODUCTION,
     )
     consumer_key: Mapped[str] = mapped_column(String(500), nullable=False)
     consumer_secret: Mapped[str] = mapped_column(String(500), nullable=False)

@@ -30,7 +30,7 @@ class SavedSearchCreate(BaseModel):
     @classmethod
     def normalize_platform(cls, v: Any) -> Any:
         if isinstance(v, str):
-            return v.upper()
+            return v.lower()
         return v
 
 
@@ -49,7 +49,7 @@ class SavedSearchUpdate(BaseModel):
     @classmethod
     def normalize_platform(cls, v: Any) -> Any:
         if v is not None and isinstance(v, str):
-            return v.upper()
+            return v.lower()
         return v
 
 
@@ -100,6 +100,20 @@ class SearchResultResponse(BaseModel):
     is_in_collection: bool
     is_in_wantlist: bool
     created_at: str
+
+    @field_validator("id", mode="before")
+    @classmethod
+    def convert_uuid_to_str(cls, v: UUID | str) -> str:
+        if isinstance(v, UUID):
+            return str(v)
+        return v
+
+    @field_validator("created_at", mode="before")
+    @classmethod
+    def convert_datetime_to_str(cls, v: datetime | str) -> str:
+        if isinstance(v, datetime):
+            return v.isoformat()
+        return v
 
     model_config = ConfigDict(from_attributes=True)
 

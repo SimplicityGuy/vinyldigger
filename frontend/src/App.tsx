@@ -6,8 +6,8 @@ import { RegisterPage } from '@/pages/RegisterPage'
 import { DashboardPage } from '@/pages/DashboardPage'
 import { SearchesPage } from '@/pages/SearchesPage'
 import { SearchDetailPage } from '@/pages/SearchDetailPage'
-import { SearchAnalysisPage } from '@/pages/SearchAnalysisPage'
 import { SearchDealsPage } from '@/pages/SearchDealsPage'
+import { SearchOffersPage } from '@/pages/SearchOffersPage'
 import SettingsPage from '@/pages/SettingsPage'
 import OAuthCallbackPage from '@/pages/OAuthCallbackPage'
 import AdminPage from '@/pages/AdminPage'
@@ -51,8 +51,8 @@ function App() {
             <Route path="/dashboard" element={<DashboardPage />} />
             <Route path="/searches" element={<SearchesPage />} />
             <Route path="/searches/:searchId" element={<SearchDetailPage />} />
-            <Route path="/searches/:searchId/analysis" element={<SearchAnalysisPage />} />
             <Route path="/searches/:searchId/deals" element={<SearchDealsPage />} />
+            <Route path="/searches/:searchId/offers" element={<SearchOffersPage />} />
             <Route path="/settings" element={<SettingsPage />} />
             <Route path="/admin" element={<AdminPage />} />
             <Route path="/" element={<Navigate to="/dashboard" />} />

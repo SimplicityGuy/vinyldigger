@@ -67,13 +67,16 @@ async def get_oauth_status(
 ) -> OAuthStatusResponse:
     """Check if the user has authorized the application for a specific provider."""
     # Convert provider string to enum
-    try:
-        provider_enum = OAuthProvider(provider.upper())
-    except ValueError:
+    provider_lower = provider.lower()
+    if provider_lower == "discogs":
+        provider_enum = OAuthProvider.DISCOGS
+    elif provider_lower == "ebay":
+        provider_enum = OAuthProvider.EBAY
+    else:
         raise HTTPException(
             status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-            detail=f"Invalid provider: {provider}. Must be one of: DISCOGS, EBAY",
-        ) from None
+            detail=f"Invalid provider: {provider}. Must be one of: discogs, ebay",
+        )
 
     # Check if app is configured
     app_config_result = await db.execute(select(AppConfig).where(AppConfig.provider == provider_enum))
@@ -104,13 +107,16 @@ async def initiate_oauth_flow(
 ) -> dict[str, str]:
     """Initiate the OAuth authorization flow for a provider."""
     # Convert provider string to enum
-    try:
-        provider_enum = OAuthProvider(provider.upper())
-    except ValueError:
+    provider_lower = provider.lower()
+    if provider_lower == "discogs":
+        provider_enum = OAuthProvider.DISCOGS
+    elif provider_lower == "ebay":
+        provider_enum = OAuthProvider.EBAY
+    else:
         raise HTTPException(
             status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-            detail=f"Invalid provider: {provider}. Must be one of: DISCOGS, EBAY",
-        ) from None
+            detail=f"Invalid provider: {provider}. Must be one of: discogs, ebay",
+        )
 
     # Get app configuration
     app_config_result = await db.execute(select(AppConfig).where(AppConfig.provider == provider_enum))
@@ -760,13 +766,16 @@ async def revoke_oauth_access(
 ) -> dict[str, str]:
     """Revoke OAuth access for a provider."""
     # Convert provider string to enum
-    try:
-        provider_enum = OAuthProvider(provider.upper())
-    except ValueError:
+    provider_lower = provider.lower()
+    if provider_lower == "discogs":
+        provider_enum = OAuthProvider.DISCOGS
+    elif provider_lower == "ebay":
+        provider_enum = OAuthProvider.EBAY
+    else:
         raise HTTPException(
             status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-            detail=f"Invalid provider: {provider}. Must be one of: DISCOGS, EBAY",
-        ) from None
+            detail=f"Invalid provider: {provider}. Must be one of: discogs, ebay",
+        )
 
     result = await db.execute(
         select(OAuthToken).where(

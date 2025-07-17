@@ -25,7 +25,9 @@ class Seller(Base):
     __tablename__ = "sellers"
 
     id: Mapped[UUID] = mapped_column(PGUUID(as_uuid=True), primary_key=True, default=uuid4)
-    platform: Mapped[SearchPlatform] = mapped_column(SQLEnum(SearchPlatform, create_type=False), nullable=False)
+    platform: Mapped[SearchPlatform] = mapped_column(
+        SQLEnum(SearchPlatform, create_type=False, values_callable=lambda obj: [e.value for e in obj]), nullable=False
+    )
     platform_seller_id: Mapped[str] = mapped_column(String(255), nullable=False)
     seller_name: Mapped[str] = mapped_column(String(255), nullable=False)
 

@@ -22,10 +22,10 @@ depends_on: str | Sequence[str] | None = None
 
 def upgrade() -> None:
     # Create enum types
-    op.execute("CREATE TYPE apiservice AS ENUM ('DISCOGS', 'EBAY')")
-    op.execute("CREATE TYPE oauthprovider AS ENUM ('DISCOGS', 'EBAY')")
-    op.execute("CREATE TYPE oauthenvironment AS ENUM ('PRODUCTION', 'SANDBOX')")
-    op.execute("CREATE TYPE searchplatform AS ENUM ('DISCOGS', 'EBAY', 'BOTH')")
+    op.execute("CREATE TYPE apiservice AS ENUM ('discogs', 'ebay')")
+    op.execute("CREATE TYPE oauthprovider AS ENUM ('discogs', 'ebay')")
+    op.execute("CREATE TYPE oauthenvironment AS ENUM ('production', 'sandbox')")
+    op.execute("CREATE TYPE searchplatform AS ENUM ('discogs', 'ebay', 'both')")
     op.execute("CREATE TYPE searchstatus AS ENUM ('PENDING', 'RUNNING', 'COMPLETED', 'FAILED')")
     op.execute(
         "CREATE TYPE recommendationtype AS ENUM "
@@ -52,13 +52,13 @@ def upgrade() -> None:
         "app_config",
         sa.Column("id", postgresql.UUID(as_uuid=True), nullable=False),
         sa.Column(
-            "provider", postgresql.ENUM("DISCOGS", "EBAY", name="oauthprovider", create_type=False), nullable=False
+            "provider", postgresql.ENUM("discogs", "ebay", name="oauthprovider", create_type=False), nullable=False
         ),
         sa.Column(
             "environment",
-            postgresql.ENUM("PRODUCTION", "SANDBOX", name="oauthenvironment", create_type=False),
+            postgresql.ENUM("production", "sandbox", name="oauthenvironment", create_type=False),
             nullable=False,
-            server_default="PRODUCTION",
+            server_default="production",
         ),
         sa.Column("consumer_key", sa.String(length=500), nullable=False),
         sa.Column("consumer_secret", sa.String(length=500), nullable=False),
@@ -76,7 +76,7 @@ def upgrade() -> None:
         "api_keys",
         sa.Column("id", postgresql.UUID(as_uuid=True), nullable=False),
         sa.Column("user_id", postgresql.UUID(as_uuid=True), nullable=False),
-        sa.Column("service", postgresql.ENUM("DISCOGS", "EBAY", name="apiservice", create_type=False), nullable=False),
+        sa.Column("service", postgresql.ENUM("discogs", "ebay", name="apiservice", create_type=False), nullable=False),
         sa.Column("encrypted_key", sa.String(length=500), nullable=False),
         sa.Column("encrypted_secret", sa.String(length=500), nullable=True),
         sa.Column("created_at", sa.DateTime(timezone=True), server_default=sa.text("now()"), nullable=False),
@@ -95,7 +95,7 @@ def upgrade() -> None:
         sa.Column("id", postgresql.UUID(as_uuid=True), nullable=False),
         sa.Column("user_id", postgresql.UUID(as_uuid=True), nullable=False),
         sa.Column(
-            "provider", postgresql.ENUM("DISCOGS", "EBAY", name="oauthprovider", create_type=False), nullable=False
+            "provider", postgresql.ENUM("discogs", "ebay", name="oauthprovider", create_type=False), nullable=False
         ),
         sa.Column("access_token", sa.String(length=5000), nullable=False),
         sa.Column("access_token_secret", sa.String(length=5000), nullable=True),
@@ -122,7 +122,7 @@ def upgrade() -> None:
         sa.Column("query", sa.String(length=500), nullable=False),
         sa.Column(
             "platform",
-            postgresql.ENUM("DISCOGS", "EBAY", "BOTH", name="searchplatform", create_type=False),
+            postgresql.ENUM("discogs", "ebay", "both", name="searchplatform", create_type=False),
             nullable=False,
         ),
         sa.Column("filters", postgresql.JSON(astext_type=sa.Text()), nullable=False),
@@ -153,7 +153,7 @@ def upgrade() -> None:
         sa.Column("search_id", postgresql.UUID(as_uuid=True), nullable=False),
         sa.Column(
             "platform",
-            postgresql.ENUM("DISCOGS", "EBAY", "BOTH", name="searchplatform", create_type=False),
+            postgresql.ENUM("discogs", "ebay", "both", name="searchplatform", create_type=False),
             nullable=False,
         ),
         sa.Column("item_id", sa.String(length=255), nullable=False),
@@ -179,7 +179,7 @@ def upgrade() -> None:
         sa.Column("user_id", postgresql.UUID(as_uuid=True), nullable=False),
         sa.Column(
             "platform",
-            postgresql.ENUM("DISCOGS", "EBAY", "BOTH", name="searchplatform", create_type=False),
+            postgresql.ENUM("discogs", "ebay", "both", name="searchplatform", create_type=False),
             nullable=False,
         ),
         sa.Column("platform_collection_id", sa.String(length=255), nullable=True),
@@ -227,7 +227,7 @@ def upgrade() -> None:
         sa.Column("user_id", postgresql.UUID(as_uuid=True), nullable=False),
         sa.Column(
             "platform",
-            postgresql.ENUM("DISCOGS", "EBAY", "BOTH", name="searchplatform", create_type=False),
+            postgresql.ENUM("discogs", "ebay", "both", name="searchplatform", create_type=False),
             nullable=False,
         ),
         sa.Column("item_count", sa.Integer(), nullable=False, server_default="0"),
@@ -307,7 +307,7 @@ def upgrade() -> None:
         sa.Column("id", postgresql.UUID(as_uuid=True), nullable=False),
         sa.Column(
             "platform",
-            postgresql.ENUM("DISCOGS", "EBAY", "BOTH", name="searchplatform", create_type=False),
+            postgresql.ENUM("discogs", "ebay", "both", name="searchplatform", create_type=False),
             nullable=False,
         ),
         sa.Column("platform_seller_id", sa.String(length=255), nullable=False),
