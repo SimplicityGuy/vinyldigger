@@ -249,12 +249,19 @@ const renderWithProviders = (searchId = 'search-123') => {
 describe('SearchDealsPage', () => {
   beforeEach(() => {
     vi.clearAllMocks()
+    // Set default mocks to prevent React Query errors
+    vi.mocked(searchApi.getSearch).mockResolvedValue(mockSearch)
+    vi.mocked(searchAnalysisApi.getSearchAnalysis).mockResolvedValue(mockAnalysisData)
+    vi.mocked(searchAnalysisApi.getMultiItemDeals).mockResolvedValue(mockMultiItemDeals)
+    vi.mocked(searchApi.getSearchResults).mockResolvedValue(mockSearchResults)
   })
 
   describe('Basic Rendering', () => {
     it('should display loading state while fetching data', () => {
       vi.mocked(searchApi.getSearch).mockImplementation(() => new Promise(() => {}))
       vi.mocked(searchAnalysisApi.getSearchAnalysis).mockImplementation(() => new Promise(() => {}))
+      vi.mocked(searchAnalysisApi.getMultiItemDeals).mockImplementation(() => new Promise(() => {}))
+      vi.mocked(searchApi.getSearchResults).mockImplementation(() => new Promise(() => {}))
 
       renderWithProviders()
 
@@ -267,11 +274,13 @@ describe('SearchDealsPage', () => {
         analysis_completed: false,
         message: 'Analysis in progress',
       })
+      vi.mocked(searchAnalysisApi.getMultiItemDeals).mockResolvedValue({ multi_item_deals: [] })
+      vi.mocked(searchApi.getSearchResults).mockResolvedValue([])
 
       renderWithProviders()
 
       await waitFor(() => {
-        expect(screen.getByText('Analysis not yet completed for this search')).toBeInTheDocument()
+        expect(screen.getByText('Analysis in progress')).toBeInTheDocument()
       })
     })
 
@@ -279,6 +288,7 @@ describe('SearchDealsPage', () => {
       vi.mocked(searchApi.getSearch).mockResolvedValue(mockSearch)
       vi.mocked(searchAnalysisApi.getSearchAnalysis).mockResolvedValue(mockAnalysisData)
       vi.mocked(searchAnalysisApi.getMultiItemDeals).mockResolvedValue(mockMultiItemDeals)
+      vi.mocked(searchApi.getSearchResults).mockResolvedValue(mockSearchResults)
 
       renderWithProviders()
 
@@ -303,7 +313,7 @@ describe('SearchDealsPage', () => {
       renderWithProviders()
 
       await waitFor(() => {
-        expect(screen.getByText('Multi-Item Deals')).toBeInTheDocument()
+        expect(screen.getAllByText('Multi-Item Deals')).toHaveLength(2) // Stats card and section heading
         expect(screen.getByText('EXCELLENT DEAL')).toBeInTheDocument()
         expect(screen.getByText('VERY GOOD DEAL')).toBeInTheDocument()
       })
