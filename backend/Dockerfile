@@ -68,7 +68,9 @@ COPY . .
 
 # Create non-root user and setup permissions
 RUN useradd -m -u 1000 appuser && \
-    chmod +x start.sh
+    chmod +x start.sh && \
+    mkdir -p logs && \
+    chown -R appuser:appuser logs
 
 # Set Playwright environment variables for consistent location
 ENV PLAYWRIGHT_BROWSERS_PATH=/opt/playwright-browsers

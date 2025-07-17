@@ -4,22 +4,28 @@ from pathlib import Path
 
 from src.core.config import settings
 
-# Create logs directory if it doesn't exist
-log_dir = Path("logs")
-log_dir.mkdir(exist_ok=True)
-
 
 def setup_logging() -> None:
     log_level = getattr(logging, settings.log_level.upper())
+
+    # In production/Docker, we only use stdout logging
+    # File logging can cause permission issues in containers
+    handlers: list[logging.Handler] = [logging.StreamHandler(sys.stdout)]
+
+    # Only add file handler if we can write to the directory
+    log_dir = Path("logs")
+    try:
+        log_dir.mkdir(exist_ok=True)
+        handlers.append(logging.FileHandler(log_dir / "app.log"))
+    except (PermissionError, OSError):
+        # If we can't create logs directory, just use stdout
+        pass
 
     # Configure root logger
     logging.basicConfig(
         level=log_level,
         format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
-        handlers=[
-            logging.StreamHandler(sys.stdout),
-            logging.FileHandler(log_dir / "app.log"),
-        ],
+        handlers=handlers,
     )
 
     # Set specific loggers
