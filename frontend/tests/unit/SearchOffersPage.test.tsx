@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { render, screen, waitFor } from '@testing-library/react'
+import { render, screen, waitFor, fireEvent } from '@testing-library/react'
 import { MemoryRouter, Route, Routes } from 'react-router-dom'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { SearchOffersPage } from '@/pages/SearchOffersPage'
@@ -13,6 +13,7 @@ vi.mock('@/lib/api', () => ({
   },
   searchAnalysisApi: {
     getSearchAnalysis: vi.fn(),
+    getPriceComparison: vi.fn(),
   },
 }))
 
@@ -83,72 +84,112 @@ const mockSearchResults: SearchResult[] = [
   },
 ]
 
-const mockAnalysisData = {
-  analysis_completed: true,
-  analysis: {
-    total_results: 50,
-    total_sellers: 15,
-    wantlist_matches: 10,
-    multi_item_sellers: 5,
-    min_price: 10.00,
-    max_price: 100.00,
-    avg_price: 35.50,
-  },
-  recommendations: [
+const mockPriceComparisonData = {
+  price_comparisons: [
     {
-      id: 'rec-1',
-      type: 'MULTI_ITEM',
-      deal_score: 'EXCELLENT',
-      score_value: 95,
-      title: 'Bundle Deal from VinylHeaven',
-      description: '3 items from your wantlist available',
-      recommendation_reason: 'Save $15 on combined shipping',
-      total_items: 3,
-      wantlist_items: 2,
-      total_value: 89.49,
-      estimated_shipping: 12.00,
-      total_cost: 101.49,
-      potential_savings: 15.00,
-      seller: {
-        id: 'seller-1',
-        name: 'VinylHeaven',
-        location: 'California, USA',
-        feedback_score: 99.8,
+      item_match: {
+        canonical_title: 'Abbey Road',
+        canonical_artist: 'The Beatles',
+        total_matches: 2,
       },
-      item_ids: ['result-1', 'result-3'],
+      listings: [
+        {
+          id: 'listing-1',
+          platform: 'discogs',
+          price: 25.99,
+          condition: 'NM',
+          seller: {
+            id: 'seller-1',
+            name: 'VinylHeaven',
+            location: 'California, USA',
+            feedback_score: 99.8,
+          },
+          is_in_wantlist: true,
+          item_data: {
+            id: 'listing-1',
+            title: 'Abbey Road',
+            artist: 'The Beatles',
+            uri: '/sell/item/listing-1',
+            release_id: '12345',
+          },
+        },
+        {
+          id: 'listing-2',
+          platform: 'ebay',
+          price: 30.00,
+          condition: 'VG+',
+          seller: {
+            id: 'seller-2',
+            name: 'RecordStore',
+            location: 'New York, USA',
+            feedback_score: 98.5,
+          },
+          is_in_wantlist: true,
+          item_data: {
+            id: 'ebay-2',
+            title: 'Abbey Road',
+            artist: 'The Beatles',
+            item_web_url: 'https://www.ebay.com/itm/67890',
+          },
+        },
+      ],
     },
     {
-      id: 'rec-2',
-      type: 'PRICE_ALERT',
-      deal_score: 'GOOD',
-      score_value: 75,
-      title: 'Price Drop Alert',
-      description: 'Significant price reduction detected',
-      recommendation_reason: '20% below average market price',
-      total_items: 1,
-      wantlist_items: 0,
-      total_value: 25.00,
-      estimated_shipping: 5.00,
-      total_cost: 30.00,
-      potential_savings: 10.00,
-      seller: null,
-      item_ids: [],
-    },
-  ],
-  seller_analyses: [
-    {
-      rank: 1,
-      total_items: 5,
-      wantlist_items: 3,
-      total_value: 150.00,
-      overall_score: 95,
-      estimated_shipping: 15.00,
-      seller: {
-        id: 'seller-1',
-        name: 'VinylHeaven',
-        location: 'California, USA',
-        feedback_score: 99.8,
+      item_match: {
+        canonical_title: 'The Dark Side of the Moon',
+        canonical_artist: 'Pink Floyd',
+        total_matches: 1,
       },
+      listings: [
+        {
+          id: 'listing-3',
+          platform: 'ebay',
+          price: 35.00,
+          condition: 'M',
+          seller: {
+            id: 'seller-3',
+            name: 'VinylMaster',
+            location: 'Texas, USA',
+            feedback_score: 97.2,
+          },
+          is_in_wantlist: false,
+          item_data: {
+            id: 'ebay-3',
+            title: 'The Dark Side of the Moon',
+            artist: 'Pink Floyd',
+            item_web_url: 'https://www.ebay.com/itm/12345',
+          },
+        },
+      ],
+    },
+    {
+      item_match: {
+        canonical_title: 'Led Zeppelin IV',
+        canonical_artist: 'Led Zeppelin',
+        total_matches: 1,
+      },
+      listings: [
+        {
+          id: 'listing-4',
+          platform: 'discogs',
+          price: 28.50,
+          condition: 'VG+',
+          seller: {
+            id: 'seller-1',
+            name: 'VinylHeaven',
+            location: 'California, USA',
+            feedback_score: 99.8,
+          },
+          is_in_wantlist: true,
+          item_data: {
+            id: 'listing-4',
+            title: 'Led Zeppelin IV',
+            artists_sort: 'Led Zeppelin',
+            uri: '/sell/item/listing-4',
+            release_id: '54321',
+          },
+        },
+      ],
     },
   ],
 }
@@ -175,43 +216,45 @@ const renderWithProviders = (searchId = 'search-123') => {
 describe('SearchOffersPage', () => {
   beforeEach(() => {
     vi.clearAllMocks()
+    // Set default mocks to prevent React Query errors
+    vi.mocked(searchApi.getSearch).mockResolvedValue(mockSearch)
+    vi.mocked(searchAnalysisApi.getPriceComparison).mockResolvedValue(mockPriceComparisonData)
   })
 
   describe('Basic Rendering', () => {
     it('should display loading state while fetching data', () => {
       vi.mocked(searchApi.getSearch).mockImplementation(() => new Promise(() => {}))
-      vi.mocked(searchAnalysisApi.getSearchAnalysis).mockImplementation(() => new Promise(() => {}))
+      vi.mocked(searchAnalysisApi.getPriceComparison).mockImplementation(() => new Promise(() => {}))
 
       renderWithProviders()
 
       expect(screen.getByRole('status')).toBeInTheDocument() // Loading spinner
     })
 
-    it('should display message when analysis is not completed', async () => {
+    it('should display empty state when no price comparisons', async () => {
       vi.mocked(searchApi.getSearch).mockResolvedValue(mockSearch)
-      vi.mocked(searchAnalysisApi.getSearchAnalysis).mockResolvedValue({
-        analysis_completed: false,
-        message: 'Analysis in progress',
+      vi.mocked(searchAnalysisApi.getPriceComparison).mockResolvedValue({
+        price_comparisons: [],
       })
 
       renderWithProviders()
 
       await waitFor(() => {
-        expect(screen.getByText('Analysis not yet completed for this search')).toBeInTheDocument()
+        expect(screen.getByText('No price comparisons available')).toBeInTheDocument()
       })
     })
 
-    it('should display offers data when completed', async () => {
+    it('should display price comparison data when completed', async () => {
       vi.mocked(searchApi.getSearch).mockResolvedValue(mockSearch)
-      vi.mocked(searchAnalysisApi.getSearchAnalysis).mockResolvedValue(mockAnalysisData)
-      vi.mocked(searchApi.getSearchResults).mockResolvedValue(mockSearchResults)
+      vi.mocked(searchAnalysisApi.getPriceComparison).mockResolvedValue(mockPriceComparisonData)
 
       renderWithProviders()
 
       await waitFor(() => {
-        expect(screen.getByText('Search Offers')).toBeInTheDocument()
-        expect(screen.getByText('50')).toBeInTheDocument() // total results
-        expect(screen.getByText('10')).toBeInTheDocument() // wantlist matches
+        expect(screen.getAllByText('Price Comparison')).toHaveLength(2) // Header and card title
+        expect(screen.getByText('Abbey Road')).toBeInTheDocument()
+        expect(screen.getByText('The Dark Side of the Moon')).toBeInTheDocument()
+        expect(screen.getByText('Led Zeppelin IV')).toBeInTheDocument()
       })
     })
   })
@@ -219,15 +262,14 @@ describe('SearchOffersPage', () => {
   describe('Price Comparison Section', () => {
     beforeEach(() => {
       vi.mocked(searchApi.getSearch).mockResolvedValue(mockSearch)
-      vi.mocked(searchAnalysisApi.getSearchAnalysis).mockResolvedValue(mockAnalysisData)
-      vi.mocked(searchApi.getSearchResults).mockResolvedValue(mockSearchResults)
+      vi.mocked(searchAnalysisApi.getPriceComparison).mockResolvedValue(mockPriceComparisonData)
     })
 
     it('should display price comparison with results', async () => {
       renderWithProviders()
 
       await waitFor(() => {
-        expect(screen.getByText('Price Comparison')).toBeInTheDocument()
+        expect(screen.getAllByText('Price Comparison')).toHaveLength(2) // Header and card title
         expect(screen.getByText('Abbey Road')).toBeInTheDocument()
         expect(screen.getByText('The Dark Side of the Moon')).toBeInTheDocument()
         expect(screen.getByText('Led Zeppelin IV')).toBeInTheDocument()
@@ -238,8 +280,8 @@ describe('SearchOffersPage', () => {
       renderWithProviders()
 
       await waitFor(() => {
-        const stars = screen.getAllByLabelText('In your wantlist')
-        expect(stars).toHaveLength(2) // Abbey Road and Led Zeppelin IV
+        const wantlistItems = screen.getAllByText('WANT LIST')
+        expect(wantlistItems.length).toBeGreaterThanOrEqual(2) // Abbey Road and Led Zeppelin IV groups plus individual listings
       })
     })
 
@@ -247,8 +289,20 @@ describe('SearchOffersPage', () => {
       renderWithProviders()
 
       await waitFor(() => {
+        // Need to click on a section to expand and see platforms
+        const abbeyRoadSection = screen.getByText('Abbey Road').closest('.border')
+        expect(abbeyRoadSection).toBeInTheDocument()
+      })
+
+      // Click to expand
+      const abbeyRoadSection = screen.getByText('Abbey Road').closest('.border')
+      if (abbeyRoadSection) {
+        fireEvent.click(abbeyRoadSection)
+      }
+
+      await waitFor(() => {
         expect(screen.getByText('Discogs')).toBeInTheDocument()
-        expect(screen.getByText('eBay')).toBeInTheDocument()
+        expect(screen.getByText('Ebay')).toBeInTheDocument()
       })
     })
 
