@@ -41,7 +41,7 @@ Project Documentation Structure:
 │   └── troubleshooting.md (issue resolution)
 ├── backend/docs/ (2 files)
 │   ├── development_db_workflow.md (database workflow)
-│   └── discogs_auth.md (OAuth setup)
+│   └── discogs-auth.md (OAuth setup)
 └── frontend/tests/e2e/ (1 file)
     └── README.md (E2E testing guide)
 ```
@@ -49,7 +49,7 @@ Project Documentation Structure:
 ### ✅ Naming Convention Compliance
 **All files now follow proper conventions:**
 - ✅ **Lowercase with hyphens**: `api-examples.md`, `docker-oci-labels.md`, `documentation-status.md`
-- ✅ **Lowercase with underscores**: `development_db_workflow.md`, `discogs_auth.md`
+- ✅ **Lowercase with underscores**: `development_db_workflow.md`, `discogs-auth.md`
 - ✅ **Single lowercase words**: All other `.md` files
 - ✅ **Standard uppercase**: `README.md`, `CONTRIBUTING.md`, `CLAUDE.md`, `LICENSE` (open-source conventions)
 

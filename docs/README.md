@@ -35,7 +35,7 @@ Welcome to the VinylDigger documentation! This index provides quick access to al
 ### Backend-Specific Documentation
 - **[Database Development Workflow](backend/development-db-workflow.md)** - Database management during development
 - **[Marketplace Search Implementation](backend/marketplace-search-implementation.md)** - Real marketplace search architecture and benefits
-- **[Discogs OAuth Authentication](backend/discogs_auth.md)** - Setting up and using Discogs OAuth
+- **[Discogs OAuth Authentication](backend/discogs-auth.md)** - Setting up and using Discogs OAuth
 - **[eBay Developer Setup Guide](backend/ebay-developer-setup.md)** - Complete eBay OAuth setup and troubleshooting
 - **[OAuth Authentication Fixes](backend/oauth-authentication-fixes.md)** - Recent critical OAuth fixes and improvements
 - **[Testing Guide](backend/testing-guide.md)** - Backend-specific testing patterns and examples
@@ -88,7 +88,7 @@ docs/
 ├── ui-ux-design.md             # UI/UX design documentation
 └── backend/                    # Backend-specific documentation
     ├── development-db-workflow.md    # Database development workflow
-    ├── discogs_auth.md              # Discogs OAuth authentication guide
+    ├── discogs-auth.md              # Discogs OAuth authentication guide
     ├── ebay-developer-setup.md      # eBay OAuth setup and troubleshooting
     ├── oauth-authentication-fixes.md # Recent OAuth fixes documentation
     └── testing-guide.md             # Backend testing patterns and examples
@@ -96,7 +96,7 @@ docs/
 Additional Backend Documentation:
 backend/docs/
 ├── development-db-workflow.md  # Database development workflow
-├── discogs_auth.md             # Discogs OAuth authentication
+├── discogs-auth.md             # Discogs OAuth authentication
 └── marketplace-search-implementation.md  # Marketplace search architecture
 ```
 

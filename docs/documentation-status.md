@@ -15,7 +15,7 @@
 All documentation links have been verified and are working correctly:
 - ✅ Main README.md links to all documentation
 - ✅ docs/README.md provides comprehensive navigation
-- ✅ Fixed case mismatch: `DISCOGS_AUTH.md` → `discogs_auth.md`
+- ✅ Fixed naming convention: `discogs_auth.md` → `discogs-auth.md`
 - ✅ All cross-references between documents are functional
 
 ### ✅ Recent Updates Applied
@@ -86,7 +86,7 @@ Documentation Tree:
 │   └── troubleshooting.md (Issue resolution)
 ├── backend/docs/
 │   ├── development_db_workflow.md (Database workflow)
-│   └── discogs_auth.md (OAuth setup)
+│   └── discogs-auth.md (OAuth setup)
 └── frontend/tests/e2e/
     └── README.md (E2E testing guide)
 ```

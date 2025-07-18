@@ -62,7 +62,7 @@ Project Documentation Structure:
 │   └── Backend Specific (5 files)
 ├── backend/docs/ (3 files)
 │   ├── development-db-workflow.md
-│   ├── discogs_auth.md
+│   ├── discogs-auth.md
 │   └── marketplace-search-implementation.md
 └── frontend/tests/e2e/
     └── README.md (E2E testing guide)

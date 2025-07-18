@@ -235,7 +235,7 @@ See the [Testing Guide](docs/testing.md) for detailed testing instructions.
 ### Backend-Specific Documentation
 - [Database Development Workflow](docs/backend/development-db-workflow.md) - Database management during development
 - [Marketplace Search Implementation](docs/backend/marketplace-search-implementation.md) - Real marketplace search details
-- [Discogs OAuth Authentication](docs/backend/discogs_auth.md) - Technical implementation details
+- [Discogs OAuth Authentication](docs/backend/discogs-auth.md) - Technical implementation details
 - [eBay Developer Setup](docs/backend/ebay-developer-setup.md) - eBay OAuth setup guide
 - [OAuth Authentication Fixes](docs/backend/oauth-authentication-fixes.md) - Recent OAuth improvements
 - [Backend Testing Guide](docs/backend/testing-guide.md) - Testing patterns and examples
@@ -298,7 +298,7 @@ After registering and logging in, authorize VinylDigger to access your accounts:
    - Go to Settings > Platform Authorizations
    - Click "Connect Discogs Account"
    - Authorize VinylDigger to access your Discogs data
-   - See [Discogs OAuth Guide](docs/backend/discogs_auth.md) for details
+   - See [Discogs OAuth Guide](docs/backend/discogs-auth.md) for details
 
 2. **eBay Authorization**
    - Go to Settings > Platform Authorizations
