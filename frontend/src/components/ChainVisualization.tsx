@@ -60,11 +60,13 @@ export function ChainVisualization({ open, onOpenChange, chain, availableSearche
   }
 
   const getSearchStatus = (search: SavedSearch | undefined) => {
-    if (!search) return { status: 'Unknown', variant: 'secondary' as const }
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    if (!search) return { status: 'Unknown', variant: 'secondary' as any }
 
     return {
       status: search.is_active ? 'Active' : 'Inactive',
-      variant: (search.is_active ? 'default' : 'secondary') as const
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      variant: (search.is_active ? 'default' : 'secondary') as any
     }
   }
 

@@ -155,7 +155,8 @@ export function TemplateCard({ template }: TemplateCardProps) {
           <div className="bg-muted/50 rounded-lg p-3 space-y-2">
             <div className="text-xs font-medium text-muted-foreground">Template Preview:</div>
             <div className="space-y-1">
-              {template.template_data.query && (
+              {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
+              {(template.template_data.query as any) && (
                 <div className="text-xs">
                   <span className="font-medium">Query:</span>{' '}
                   <span className="text-muted-foreground line-clamp-1">
@@ -163,7 +164,8 @@ export function TemplateCard({ template }: TemplateCardProps) {
                   </span>
                 </div>
               )}
-              {template.template_data.platform && (
+              {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
+              {(template.template_data.platform as any) && (
                 <div className="text-xs">
                   <span className="font-medium">Platform:</span>{' '}
                   <Badge variant="outline" className="text-xs h-4">

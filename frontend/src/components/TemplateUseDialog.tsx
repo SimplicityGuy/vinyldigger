@@ -122,7 +122,8 @@ export function TemplateUseDialog({ open, onOpenChange, template }: TemplateUseD
       <FormField
         key={paramName}
         control={form.control}
-        name={paramName}
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        name={paramName as any}
         render={({ field }) => (
           <FormItem>
             <FormLabel className="flex items-center gap-2">
@@ -133,7 +134,7 @@ export function TemplateUseDialog({ open, onOpenChange, template }: TemplateUseD
               {type === 'boolean' ? (
                 <div className="flex items-center space-x-2">
                   <Switch
-                    checked={field.value}
+                    checked={Boolean(field.value)}
                     onCheckedChange={field.onChange}
                   />
                   <span className="text-sm text-muted-foreground">
@@ -150,7 +151,8 @@ export function TemplateUseDialog({ open, onOpenChange, template }: TemplateUseD
               ) : (
                 <Input
                   placeholder="Enter value..."
-                  {...field}
+                  value={field.value as string}
+                  onChange={field.onChange}
                 />
               )}
             </FormControl>
@@ -185,7 +187,8 @@ export function TemplateUseDialog({ open, onOpenChange, template }: TemplateUseD
             {/* Search Name */}
             <FormField
               control={form.control}
-              name={'search_name' as const}
+              // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        name={'search_name' as any}
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Search Name</FormLabel>

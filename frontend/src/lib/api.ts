@@ -27,6 +27,7 @@ import type {
   SearchScheduleSuggestion,
   BudgetAlert,
   SpendingAnalytics,
+  TemplateAnalytics,
 } from '@/types/api'
 
 const API_BASE_URL = '/api/v1'
@@ -416,6 +417,11 @@ export const budgetApi = {
     return response.json()
   },
 
+  async getBudgetUsage(): Promise<SearchBudgetSummary> {
+    const response = await fetchApi('/budgets/summary')
+    return response.json()
+  },
+
   async getSpendingAnalytics(days = 30): Promise<SpendingAnalytics> {
     const response = await fetchApi(`/budgets/analytics?days=${days}`)
     return response.json()
@@ -454,6 +460,11 @@ export const templateApi = {
 
   async getTemplateCategories(): Promise<string[]> {
     const response = await fetchApi('/templates/categories')
+    return response.json()
+  },
+
+  async getTemplateAnalytics(): Promise<TemplateAnalytics> {
+    const response = await fetchApi('/templates/analytics/overview')
     return response.json()
   },
 

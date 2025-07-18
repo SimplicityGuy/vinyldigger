@@ -1,5 +1,5 @@
 import { Outlet, Link, useLocation } from 'react-router-dom'
-import { Home, Search, Settings, LogOut, Disc, FileText, Link as LinkIcon, DollarSign } from 'lucide-react'
+import { Home, Search, Settings, LogOut, Disc, FileText, Link as LinkIcon, DollarSign, Activity } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { useAuth } from '@/hooks/useAuth'
 import { cn } from '@/lib/utils'
@@ -10,6 +10,7 @@ const navigation = [
   { name: 'Templates', href: '/templates', icon: FileText },
   { name: 'Chains', href: '/chains', icon: LinkIcon },
   { name: 'Budget', href: '/budget', icon: DollarSign },
+  { name: 'Orchestration', href: '/orchestration', icon: Activity },
   { name: 'Settings', href: '/settings', icon: Settings },
 ]
 

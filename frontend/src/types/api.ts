@@ -44,6 +44,18 @@ export interface SavedSearch {
   min_record_condition?: string
   min_sleeve_condition?: string
   seller_location_preference?: string
+  // Orchestration fields
+  status?: string | null
+  results_count: number
+  chain_id?: string | null
+  template_id?: string | null
+  depends_on_search?: string | null
+  trigger_conditions?: Record<string, unknown>
+  budget_id?: string | null
+  estimated_cost_per_result?: number
+  optimal_run_times: number[]
+  avoid_run_times: number[]
+  priority_level?: number
 }
 
 export interface SearchResult {
@@ -258,8 +270,8 @@ export interface SpendingAnalytics {
   days_remaining: number
 }
 
-// Extended SavedSearch with orchestration fields
-export interface EnhancedSavedSearch extends SavedSearch {
+// Extended SavedSearch with orchestration fields (deprecated - use SavedSearch directly)
+export interface EnhancedSavedSearch extends Omit<SavedSearch, 'optimal_run_times' | 'avoid_run_times'> {
   depends_on_search?: string
   trigger_conditions?: Record<string, unknown>
   budget_id?: string
@@ -271,3 +283,29 @@ export interface EnhancedSavedSearch extends SavedSearch {
 
 // Export alias for backward compatibility
 export type Search = SavedSearch
+
+export interface TemplateAnalytics {
+  total_templates: number
+  total_uses: number
+  avg_uses_per_template: number
+  public_templates: number
+  private_templates: number
+  avg_parameters_per_template: number
+  searches_from_templates: number
+  most_used_templates: Array<{
+    id: string
+    name: string
+    category: string
+    usage_count: number
+    is_public: boolean
+  }>
+  category_breakdown: Record<string, {
+    count: number
+    uses: number
+  }>
+  template_efficiency: {
+    templates_with_uses: number
+    templates_unused: number
+    most_productive_category: string | null
+  }
+}

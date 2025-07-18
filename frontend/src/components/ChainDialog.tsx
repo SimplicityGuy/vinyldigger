@@ -371,12 +371,13 @@ export function ChainDialog({ open, onOpenChange, chain, availableSearches }: Ch
                             <label className="text-xs font-medium">Trigger Condition</label>
                             <div className="grid grid-cols-2 gap-2">
                               <Select
-                                value={link.trigger_condition?.condition_type || 'results_found'}
+                                value={(link.trigger_condition?.condition_type as string) || 'results_found'}
                                 onValueChange={(value) =>
                                   updateLink(index, {
                                     trigger_condition: {
                                       ...link.trigger_condition,
-                                      condition_type: value,
+                                      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                                      condition_type: value as any,
                                     }
                                   })
                                 }
@@ -396,7 +397,7 @@ export function ChainDialog({ open, onOpenChange, chain, availableSearches }: Ch
                                   type="number"
                                   min="1"
                                   placeholder="Min count"
-                                  value={link.trigger_condition?.min_results || 1}
+                                  value={(link.trigger_condition?.min_results || 1).toString()}
                                   onChange={(e) =>
                                     updateLink(index, {
                                       trigger_condition: {

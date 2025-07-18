@@ -107,7 +107,7 @@ export function TemplatePreviewDialog({ open, onOpenChange, template }: Template
               {type === 'boolean' ? (
                 <div className="flex items-center space-x-2">
                   <Switch
-                    checked={field.value}
+                    checked={field.value as boolean}
                     onCheckedChange={field.onChange}
                   />
                   <span className="text-sm text-muted-foreground">
@@ -118,13 +118,14 @@ export function TemplatePreviewDialog({ open, onOpenChange, template }: Template
                 <Input
                   type="number"
                   placeholder="Enter number..."
-                  {...field}
+                  value={field.value as string}
                   onChange={(e) => field.onChange(parseFloat(e.target.value) || '')}
                 />
               ) : (
                 <Input
                   placeholder="Enter value..."
-                  {...field}
+                  value={field.value as string}
+                  onChange={field.onChange}
                 />
               )}
             </FormControl>

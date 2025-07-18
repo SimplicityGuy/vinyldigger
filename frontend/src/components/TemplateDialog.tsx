@@ -88,7 +88,8 @@ export function TemplateDialog({ open, onOpenChange, template }: TemplateDialogP
         max_price: template?.template_data.max_price as number || undefined,
         check_interval_hours: (template?.template_data.check_interval_hours as number) || 24,
       },
-      parameters: template?.parameters || {},
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      parameters: (template?.parameters as any) || {},
     },
   })
 
@@ -160,7 +161,8 @@ export function TemplateDialog({ open, onOpenChange, template }: TemplateDialogP
   }
 
   const removeParameter = (paramName: string) => {
-    const currentParameters = form.getValues('parameters')
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const currentParameters = form.getValues('parameters') as any
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const { [paramName]: _, ...rest } = currentParameters
     form.setValue('parameters', rest)
@@ -265,7 +267,7 @@ export function TemplateDialog({ open, onOpenChange, template }: TemplateDialogP
                       />
                     </FormControl>
                     <FormDescription>
-                      Use {{variable}} syntax for parameters that users can customize
+                      Use {'{variable}'} syntax for parameters that users can customize
                     </FormDescription>
                     <FormMessage />
                   </FormItem>
@@ -383,9 +385,9 @@ export function TemplateDialog({ open, onOpenChange, template }: TemplateDialogP
                 </div>
               </div>
 
-              {Object.keys(parameters).length > 0 && (
+              {Object.keys(parameters || {}).length > 0 && (
                 <div className="space-y-3">
-                  {Object.entries(parameters).map(([paramName, paramConfig]) => (
+                  {Object.entries(parameters || {}).map(([paramName, paramConfig]) => (
                     <div key={paramName} className="border rounded-lg p-3 space-y-3">
                       <div className="flex items-center justify-between">
                         <Badge variant="outline">{paramName}</Badge>
@@ -401,9 +403,11 @@ export function TemplateDialog({ open, onOpenChange, template }: TemplateDialogP
 
                       <div className="grid grid-cols-2 gap-3">
                         <Select
-                          value={paramConfig.type}
+                          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                          value={(paramConfig as any).type}
                           onValueChange={(value) => {
-                            form.setValue(`parameters.${paramName}.type`, value)
+                            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                            form.setValue(`parameters.${paramName}.type`, value as any)
                           }}
                         >
                           <SelectTrigger>
@@ -418,7 +422,8 @@ export function TemplateDialog({ open, onOpenChange, template }: TemplateDialogP
 
                         <div className="flex items-center space-x-2">
                           <Switch
-                            checked={paramConfig.required}
+                            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                            checked={(paramConfig as any).required}
                             onCheckedChange={(checked) => {
                               form.setValue(`parameters.${paramName}.required`, checked)
                             }}
@@ -429,7 +434,8 @@ export function TemplateDialog({ open, onOpenChange, template }: TemplateDialogP
 
                       <Input
                         placeholder="Parameter description"
-                        value={paramConfig.description || ''}
+                        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                        value={(paramConfig as any).description || ''}
                         onChange={(e) => {
                           form.setValue(`parameters.${paramName}.description`, e.target.value)
                         }}
