@@ -8,10 +8,15 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.api.v1.endpoints.auth import get_current_user
+from src.api.v1.schemas.search_orchestration import (
+    SavedSearchOrchestrationUpdate,
+    SearchScheduleSuggestion,
+)
 from src.core.database import get_db
 from src.models.search import SavedSearch, SearchPlatform, SearchResult
 from src.models.user import User
 from src.services.search import SearchService
+from src.services.search_orchestrator import SearchOrchestrator
 
 router = APIRouter()
 
@@ -68,9 +73,22 @@ class SavedSearchResponse(BaseModel):
     min_sleeve_condition: str | None
     seller_location_preference: str | None
 
-    @field_validator("id", mode="before")
+    # Orchestration status fields
+    status: str | None
+    results_count: int
+    chain_id: str | None
+    template_id: str | None
+    budget_id: str | None
+    estimated_cost_per_result: float
+    depends_on_search: str | None
+    trigger_conditions: dict[str, Any]
+    optimal_run_times: list[int]
+    avoid_run_times: list[int]
+    priority_level: int
+
+    @field_validator("id", "chain_id", "template_id", "budget_id", "depends_on_search", mode="before")
     @classmethod
-    def convert_uuid_to_str(cls, v: UUID | str) -> str:
+    def convert_uuid_to_str(cls, v: UUID | str | None) -> str | None:
         if isinstance(v, UUID):
             return str(v)
         return v
@@ -80,6 +98,15 @@ class SavedSearchResponse(BaseModel):
     def convert_datetime_to_str(cls, v: datetime | str | None) -> str | None:
         if isinstance(v, datetime):
             return v.isoformat()
+        return v
+
+    @field_validator("estimated_cost_per_result", mode="before")
+    @classmethod
+    def convert_decimal_to_float(cls, v: Any) -> float:
+        from decimal import Decimal
+
+        if isinstance(v, Decimal):
+            return float(v)
         return v
 
     @field_validator("created_at", "updated_at", mode="before")
@@ -295,3 +322,159 @@ async def get_search_results(
         .limit(100)
     )
     return list(result.scalars().all())
+
+
+# Search Orchestration Endpoints
+
+orchestrator = SearchOrchestrator()
+
+
+@router.put("/{search_id}/orchestration", response_model=SavedSearchResponse)
+async def update_search_orchestration(
+    search_id: UUID,
+    orchestration_data: SavedSearchOrchestrationUpdate,
+    current_user: Annotated[User, Depends(get_current_user)],
+    db: AsyncSession = Depends(get_db),
+) -> SavedSearch:
+    """Update orchestration settings for a search."""
+    result = await db.execute(
+        select(SavedSearch).where(
+            SavedSearch.id == search_id,
+            SavedSearch.user_id == current_user.id,
+        )
+    )
+    search = result.scalar_one_or_none()
+    if not search:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Search not found",
+        )
+
+    # Update orchestration fields
+    update_data = orchestration_data.model_dump(exclude_unset=True)
+    for field, value in update_data.items():
+        if hasattr(search, field):
+            setattr(search, field, value)
+
+    await db.commit()
+    return search
+
+
+@router.get("/{search_id}/schedule-suggestion", response_model=SearchScheduleSuggestion)
+async def get_schedule_suggestion(
+    search_id: UUID,
+    current_user: Annotated[User, Depends(get_current_user)],
+    db: AsyncSession = Depends(get_db),
+) -> SearchScheduleSuggestion:
+    """Get scheduling suggestions for a search."""
+    result = await db.execute(
+        select(SavedSearch).where(
+            SavedSearch.id == search_id,
+            SavedSearch.user_id == current_user.id,
+        )
+    )
+    search = result.scalar_one_or_none()
+    if not search:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Search not found",
+        )
+
+    # Generate suggestions based on current settings
+    current_schedule = f"Every {search.check_interval_hours} hours"
+
+    suggested_times = []
+    reasoning = "Based on your search patterns"
+    estimated_improvement = "Potentially better results"
+
+    # Add some intelligent suggestions
+    if search.optimal_run_times:
+        suggested_times = search.optimal_run_times
+        reasoning = "Using your preferred run times"
+    else:
+        # Suggest common optimal times (morning, evening)
+        suggested_times = [9, 18, 22]  # 9 AM, 6 PM, 10 PM
+        reasoning = "Peak marketplace activity times"
+
+    if search.check_interval_hours > 24:
+        estimated_improvement = "More frequent checks may find better deals"
+    elif search.check_interval_hours < 12:
+        estimated_improvement = "Less frequent checks may reduce costs"
+
+    return SearchScheduleSuggestion(
+        current_schedule=current_schedule,
+        suggested_times=suggested_times,
+        reasoning=reasoning,
+        estimated_improvement=estimated_improvement,
+    )
+
+
+@router.get("/{search_id}/dependencies", response_model=list[SavedSearchResponse])
+async def get_search_dependencies(
+    search_id: UUID,
+    current_user: Annotated[User, Depends(get_current_user)],
+    db: AsyncSession = Depends(get_db),
+) -> list[SavedSearch]:
+    """Get all searches that depend on this search."""
+    # Verify the search exists and belongs to the user
+    result = await db.execute(
+        select(SavedSearch).where(
+            SavedSearch.id == search_id,
+            SavedSearch.user_id == current_user.id,
+        )
+    )
+    search = result.scalar_one_or_none()
+    if not search:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Search not found",
+        )
+
+    # Get dependent searches
+    dependent_searches = await orchestrator.get_dependent_searches(db, search_id)
+    return dependent_searches
+
+
+@router.post("/{search_id}/trigger", response_model=dict[str, Any])
+async def trigger_search_manually(
+    search_id: UUID,
+    current_user: Annotated[User, Depends(get_current_user)],
+    db: AsyncSession = Depends(get_db),
+) -> dict[str, Any]:
+    """Manually trigger a search execution."""
+    result = await db.execute(
+        select(SavedSearch).where(
+            SavedSearch.id == search_id,
+            SavedSearch.user_id == current_user.id,
+        )
+    )
+    search = result.scalar_one_or_none()
+    if not search:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Search not found",
+        )
+
+    if not search.is_active:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Cannot trigger inactive search",
+        )
+
+    # Check budget constraints if applicable
+    if search.budget_id:
+        budget_ok = await orchestrator.check_budget_constraints(db, current_user.id, search.estimated_cost_per_result)
+        if not budget_ok:
+            raise HTTPException(
+                status_code=status.HTTP_402_PAYMENT_REQUIRED,
+                detail="Insufficient budget to run search",
+            )
+
+    # Queue the search task
+    search_service = SearchService()
+    await search_service.queue_search(search.id, current_user.id)
+
+    return {
+        "message": f"Search '{search.name}' queued for execution",
+        "search_id": search.id,
+    }
