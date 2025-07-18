@@ -217,6 +217,7 @@ class SearchOrchestrator:
             min_record_condition=search_data.get("min_record_condition"),
             min_sleeve_condition=search_data.get("min_sleeve_condition"),
             seller_location_preference=search_data.get("seller_location_preference"),
+            template_id=template_id,  # Track which template was used
         )
 
         db.add(new_search)

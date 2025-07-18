@@ -73,9 +73,22 @@ class SavedSearchResponse(BaseModel):
     min_sleeve_condition: str | None
     seller_location_preference: str | None
 
-    @field_validator("id", mode="before")
+    # Orchestration status fields
+    status: str | None
+    results_count: int
+    chain_id: str | None
+    template_id: str | None
+    budget_id: str | None
+    estimated_cost_per_result: float
+    depends_on_search: str | None
+    trigger_conditions: dict[str, Any]
+    optimal_run_times: list[int]
+    avoid_run_times: list[int]
+    priority_level: int
+
+    @field_validator("id", "chain_id", "template_id", "budget_id", "depends_on_search", mode="before")
     @classmethod
-    def convert_uuid_to_str(cls, v: UUID | str) -> str:
+    def convert_uuid_to_str(cls, v: UUID | str | None) -> str | None:
         if isinstance(v, UUID):
             return str(v)
         return v
@@ -85,6 +98,15 @@ class SavedSearchResponse(BaseModel):
     def convert_datetime_to_str(cls, v: datetime | str | None) -> str | None:
         if isinstance(v, datetime):
             return v.isoformat()
+        return v
+
+    @field_validator("estimated_cost_per_result", mode="before")
+    @classmethod
+    def convert_decimal_to_float(cls, v: Any) -> float:
+        from decimal import Decimal
+
+        if isinstance(v, Decimal):
+            return float(v)
         return v
 
     @field_validator("created_at", "updated_at", mode="before")

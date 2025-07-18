@@ -6,6 +6,7 @@ from typing import Any
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.api.v1.endpoints.auth import get_current_user
@@ -19,6 +20,7 @@ from src.api.v1.schemas.search_orchestration import (
     SearchTemplateUse,
 )
 from src.core.database import get_db
+from src.models.search import SavedSearch
 from src.models.search_template import SearchTemplate
 from src.models.user import User
 from src.services.search_orchestrator import SearchOrchestrator
@@ -271,3 +273,72 @@ async def validate_template_parameters(
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Failed to validate parameters: {str(e)}"
         ) from e
+
+
+@router.get("/analytics/overview", response_model=dict[str, Any])
+async def get_template_analytics(
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+) -> dict[str, Any]:
+    """Get template usage analytics for the current user."""
+    # Get user's templates
+    templates_result = await db.execute(select(SearchTemplate).where(SearchTemplate.created_by == current_user.id))
+    templates = templates_result.scalars().all()
+
+    # Calculate analytics
+    total_templates = len(templates)
+    total_uses = sum(t.usage_count for t in templates)
+    avg_uses_per_template = total_uses / total_templates if total_templates > 0 else 0
+
+    # Most used templates
+    most_used = sorted(templates, key=lambda t: t.usage_count, reverse=True)[:5]
+
+    # Category breakdown
+    category_stats = {}
+    for template in templates:
+        if template.category not in category_stats:
+            category_stats[template.category] = {"count": 0, "uses": 0}
+        category_stats[template.category]["count"] += 1
+        category_stats[template.category]["uses"] += template.usage_count
+
+    # Public vs private
+    public_templates = [t for t in templates if t.is_public]
+    private_templates = [t for t in templates if not t.is_public]
+
+    # Parameter statistics
+    total_parameters = sum(len(t.parameters) for t in templates)
+    avg_parameters = total_parameters / total_templates if total_templates > 0 else 0
+
+    # Get searches created from templates
+    searches_from_templates_result = await db.execute(
+        select(SavedSearch).where(SavedSearch.user_id == current_user.id, SavedSearch.template_id.is_not(None))
+    )
+    searches_from_templates = searches_from_templates_result.scalars().all()
+
+    return {
+        "total_templates": total_templates,
+        "total_uses": total_uses,
+        "avg_uses_per_template": round(avg_uses_per_template, 2),
+        "public_templates": len(public_templates),
+        "private_templates": len(private_templates),
+        "avg_parameters_per_template": round(avg_parameters, 2),
+        "searches_from_templates": len(searches_from_templates),
+        "most_used_templates": [
+            {
+                "id": str(t.id),
+                "name": t.name,
+                "category": t.category,
+                "usage_count": t.usage_count,
+                "is_public": t.is_public,
+            }
+            for t in most_used
+        ],
+        "category_breakdown": category_stats,
+        "template_efficiency": {
+            "templates_with_uses": len([t for t in templates if t.usage_count > 0]),
+            "templates_unused": len([t for t in templates if t.usage_count == 0]),
+            "most_productive_category": max(category_stats.items(), key=lambda x: x[1]["uses"])[0]
+            if category_stats
+            else None,
+        },
+    }

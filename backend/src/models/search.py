@@ -66,6 +66,16 @@ class SavedSearch(Base):
     avoid_run_times: Mapped[list[int]] = mapped_column(JSON, default=list)  # Hours to avoid [1, 2, 3]
     priority_level: Mapped[int] = mapped_column(default=5)  # 1-10 priority for scheduling
 
+    # Orchestration status tracking
+    status: Mapped[str | None] = mapped_column(
+        String(50), nullable=True
+    )  # "running", "completed", "budget_exceeded", etc.
+    results_count: Mapped[int] = mapped_column(default=0)  # Number of results from last run
+    chain_id: Mapped[UUID | None] = mapped_column(PGUUID(as_uuid=True), ForeignKey("search_chains.id"), nullable=True)
+    template_id: Mapped[UUID | None] = mapped_column(
+        PGUUID(as_uuid=True), ForeignKey("search_templates.id"), nullable=True
+    )
+
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
     updated_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), onupdate=func.now()
