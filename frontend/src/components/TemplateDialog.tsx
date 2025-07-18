@@ -82,14 +82,13 @@ export function TemplateDialog({ open, onOpenChange, template }: TemplateDialogP
       category: template?.category || '',
       is_public: template?.is_public || false,
       template_data: {
-        query: template?.template_data.query as string || '',
-        platform: (template?.template_data.platform as 'discogs' | 'ebay' | 'both') || 'both',
-        min_price: template?.template_data.min_price as number || undefined,
-        max_price: template?.template_data.max_price as number || undefined,
-        check_interval_hours: (template?.template_data.check_interval_hours as number) || 24,
+        query: template?.template_data.query || '',
+        platform: template?.template_data.platform || 'both',
+        min_price: template?.template_data.min_price || undefined,
+        max_price: template?.template_data.max_price || undefined,
+        check_interval_hours: template?.template_data.check_interval_hours || 24,
       },
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      parameters: (template?.parameters as any) || {},
+      parameters: template?.parameters || {},
     },
   })
 
@@ -161,8 +160,7 @@ export function TemplateDialog({ open, onOpenChange, template }: TemplateDialogP
   }
 
   const removeParameter = (paramName: string) => {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const currentParameters = form.getValues('parameters') as any
+    const currentParameters = form.getValues('parameters') || {}
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const { [paramName]: _, ...rest } = currentParameters
     form.setValue('parameters', rest)
@@ -403,11 +401,9 @@ export function TemplateDialog({ open, onOpenChange, template }: TemplateDialogP
 
                       <div className="grid grid-cols-2 gap-3">
                         <Select
-                          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                          value={(paramConfig as any).type}
+                            value={paramConfig.type}
                           onValueChange={(value) => {
-                            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                            form.setValue(`parameters.${paramName}.type`, value as any)
+                            form.setValue(`parameters.${paramName}.type`, value as 'string' | 'number' | 'boolean')
                           }}
                         >
                           <SelectTrigger>
@@ -422,8 +418,7 @@ export function TemplateDialog({ open, onOpenChange, template }: TemplateDialogP
 
                         <div className="flex items-center space-x-2">
                           <Switch
-                            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                            checked={(paramConfig as any).required}
+                            checked={paramConfig.required || false}
                             onCheckedChange={(checked) => {
                               form.setValue(`parameters.${paramName}.required`, checked)
                             }}
@@ -434,8 +429,7 @@ export function TemplateDialog({ open, onOpenChange, template }: TemplateDialogP
 
                       <Input
                         placeholder="Parameter description"
-                        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                        value={(paramConfig as any).description || ''}
+                        value={paramConfig.description || ''}
                         onChange={(e) => {
                           form.setValue(`parameters.${paramName}.description`, e.target.value)
                         }}

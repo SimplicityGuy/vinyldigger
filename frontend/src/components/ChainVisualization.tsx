@@ -7,7 +7,7 @@ import {
 } from '@/components/ui/dialog'
 import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
-import { SearchChain, SavedSearch } from '@/types/api'
+import { SearchChain, SavedSearch, TriggerCondition } from '@/types/api'
 import {
   ArrowRight,
   Search,
@@ -33,7 +33,7 @@ export function ChainVisualization({ open, onOpenChange, chain, availableSearche
     search: availableSearches.find(search => search.id === link.search_id)
   })).sort((a, b) => a.link.order_index - b.link.order_index)
 
-  const getConditionDescription = (condition: { condition_type?: string; min_results?: number } | undefined) => {
+  const getConditionDescription = (condition: TriggerCondition | undefined) => {
     switch (condition?.condition_type) {
       case 'results_found':
         return 'When results are found'
@@ -46,7 +46,7 @@ export function ChainVisualization({ open, onOpenChange, chain, availableSearche
     }
   }
 
-  const getConditionIcon = (condition: { condition_type?: string; min_results?: number } | undefined) => {
+  const getConditionIcon = (condition: TriggerCondition | undefined) => {
     switch (condition?.condition_type) {
       case 'results_found':
         return <CheckCircle className="h-3 w-3 text-green-500" />
@@ -59,14 +59,12 @@ export function ChainVisualization({ open, onOpenChange, chain, availableSearche
     }
   }
 
-  const getSearchStatus = (search: SavedSearch | undefined) => {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    if (!search) return { status: 'Unknown', variant: 'secondary' as any }
+  const getSearchStatus = (search: SavedSearch | undefined): { status: string; variant: 'default' | 'secondary' } => {
+    if (!search) return { status: 'Unknown', variant: 'secondary' }
 
     return {
       status: search.is_active ? 'Active' : 'Inactive',
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      variant: (search.is_active ? 'default' : 'secondary') as any
+      variant: search.is_active ? 'default' : 'secondary'
     }
   }
 

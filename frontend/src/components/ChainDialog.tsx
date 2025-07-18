@@ -35,7 +35,7 @@ import { Badge } from '@/components/ui/badge'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { chainApi } from '@/lib/api'
 import { useToast } from '@/hooks/useToast'
-import { SearchChain, SavedSearch, SearchChainLinkCreate } from '@/types/api'
+import { SearchChain, SavedSearch, SearchChainLinkCreate, TriggerCondition } from '@/types/api'
 import { Loader2, Plus, X, ArrowRight, Link } from 'lucide-react'
 
 const chainSchema = z.object({
@@ -160,8 +160,8 @@ export function ChainDialog({ open, onOpenChange, chain, availableSearches }: Ch
       search_id: '',
       order_index: chainLinks.length,
       trigger_condition: {
-        min_results: 1,
-        condition_type: 'results_found'
+        condition_type: 'results_found',
+        min_results: 1
       },
     }])
   }
@@ -371,13 +371,12 @@ export function ChainDialog({ open, onOpenChange, chain, availableSearches }: Ch
                             <label className="text-xs font-medium">Trigger Condition</label>
                             <div className="grid grid-cols-2 gap-2">
                               <Select
-                                value={(link.trigger_condition?.condition_type as string) || 'results_found'}
+                                value={link.trigger_condition?.condition_type || 'results_found'}
                                 onValueChange={(value) =>
                                   updateLink(index, {
                                     trigger_condition: {
-                                      ...link.trigger_condition,
-                                      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                                      condition_type: value as any,
+                                      condition_type: value as TriggerCondition['condition_type'],
+                                      ...(value === 'min_results' && { min_results: link.trigger_condition?.min_results || 1 })
                                     }
                                   })
                                 }
@@ -401,7 +400,7 @@ export function ChainDialog({ open, onOpenChange, chain, availableSearches }: Ch
                                   onChange={(e) =>
                                     updateLink(index, {
                                       trigger_condition: {
-                                        ...link.trigger_condition,
+                                        condition_type: link.trigger_condition?.condition_type || 'min_results',
                                         min_results: parseInt(e.target.value) || 1,
                                       }
                                     })

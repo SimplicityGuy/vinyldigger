@@ -145,13 +145,39 @@ export interface SearchBudgetUpdate {
   is_active?: boolean
 }
 
+// Template data structure for search configuration
+export interface TemplateData {
+  query: string
+  platform: 'discogs' | 'ebay' | 'both'
+  min_price?: number
+  max_price?: number
+  check_interval_hours: number
+}
+
+// Template parameter definition
+export interface TemplateParameter {
+  type: 'string' | 'number' | 'boolean'
+  required?: boolean
+  default?: string | number | boolean
+  description?: string
+  enum?: string[]
+  min?: number
+  max?: number
+}
+
+// Trigger condition for chain links
+export interface TriggerCondition {
+  condition_type: 'results_found' | 'no_results' | 'min_results'
+  min_results?: number
+}
+
 export interface SearchTemplate {
   id: string
   name: string
   description: string
   category: string
-  template_data: Record<string, unknown>
-  parameters: Record<string, unknown>
+  template_data: TemplateData
+  parameters: Record<string, TemplateParameter>
   is_public: boolean
   created_by: string | null
   usage_count: number
@@ -163,8 +189,8 @@ export interface SearchTemplateCreate {
   name: string
   description: string
   category: string
-  template_data: Record<string, unknown>
-  parameters?: Record<string, unknown>
+  template_data: TemplateData
+  parameters?: Record<string, TemplateParameter>
   is_public?: boolean
 }
 
@@ -172,8 +198,8 @@ export interface SearchTemplateUpdate {
   name?: string
   description?: string
   category?: string
-  template_data?: Record<string, unknown>
-  parameters?: Record<string, unknown>
+  template_data?: TemplateData
+  parameters?: Record<string, TemplateParameter>
   is_public?: boolean
 }
 
@@ -209,7 +235,7 @@ export interface SearchChainLink {
   chain_id: string
   search_id: string
   order_index: number
-  trigger_condition: Record<string, unknown>
+  trigger_condition: TriggerCondition
   created_at: string
 }
 
@@ -228,13 +254,13 @@ export interface SearchChainUpdate {
 export interface SearchChainLinkCreate {
   search_id: string
   order_index: number
-  trigger_condition?: Record<string, unknown>
+  trigger_condition?: TriggerCondition
 }
 
 export interface SearchChainLinkUpdate {
   search_id?: string
   order_index?: number
-  trigger_condition?: Record<string, unknown>
+  trigger_condition?: TriggerCondition
 }
 
 export interface SearchOrchestrationUpdate {

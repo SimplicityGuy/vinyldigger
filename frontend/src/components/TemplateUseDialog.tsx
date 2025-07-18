@@ -23,7 +23,7 @@ import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Switch } from '@/components/ui/switch'
 import { templateApi } from '@/lib/api'
-import { SearchTemplate } from '@/types/api'
+import { SearchTemplate, TemplateParameter } from '@/types/api'
 import { useToast } from '@/hooks/useToast'
 import { Play, Loader2, AlertCircle } from 'lucide-react'
 
@@ -39,12 +39,16 @@ export function TemplateUseDialog({ open, onOpenChange, template }: TemplateUseD
   const queryClient = useQueryClient()
   const [validationErrors, setValidationErrors] = useState<string[]>([])
 
-  const form = useForm({
+  type FormData = {
+    search_name: string
+  } & Record<string, string | number | boolean>
+
+  const form = useForm<FormData>({
     defaultValues: {
       search_name: `Search from ${template.name}`,
       ...Object.keys(template.parameters).reduce((acc, paramName) => {
         const param = template.parameters[paramName]
-        acc[paramName] = (param as { default?: string | number | boolean; type: string }).default || ((param as { type: string }).type === 'boolean' ? false : '')
+        acc[paramName] = param.default || (param.type === 'boolean' ? false : '')
         return acc
       }, {} as Record<string, string | number | boolean>)
     }
@@ -115,15 +119,14 @@ export function TemplateUseDialog({ open, onOpenChange, template }: TemplateUseD
     }
   }
 
-  const renderParameterInput = (paramName: string, paramConfig: { type: string; required?: boolean; description?: string; enum?: string[]; min?: number; max?: number }) => {
+  const renderParameterInput = (paramName: string, paramConfig: TemplateParameter) => {
     const { type, required, description } = paramConfig
 
     return (
       <FormField
         key={paramName}
         control={form.control}
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        name={paramName as any}
+        name={paramName as keyof FormData}
         render={({ field }) => (
           <FormItem>
             <FormLabel className="flex items-center gap-2">
@@ -145,8 +148,8 @@ export function TemplateUseDialog({ open, onOpenChange, template }: TemplateUseD
                 <Input
                   type="number"
                   placeholder="Enter number..."
-                  {...field}
-                  onChange={(e) => field.onChange(parseFloat(e.target.value) || '')}
+                  value={typeof field.value === 'number' ? field.value.toString() : ''}
+                  onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
                 />
               ) : (
                 <Input
@@ -187,8 +190,7 @@ export function TemplateUseDialog({ open, onOpenChange, template }: TemplateUseD
             {/* Search Name */}
             <FormField
               control={form.control}
-              // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        name={'search_name' as any}
+              name={'search_name'}
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Search Name</FormLabel>
@@ -215,7 +217,7 @@ export function TemplateUseDialog({ open, onOpenChange, template }: TemplateUseD
 
                 <div className="space-y-4">
                   {Object.entries(template.parameters).map(([paramName, paramConfig]) =>
-                    renderParameterInput(paramName, paramConfig as { type: string; required?: boolean; description?: string; enum?: string[]; min?: number; max?: number })
+                    renderParameterInput(paramName, paramConfig)
                   )}
                 </div>
               </div>
