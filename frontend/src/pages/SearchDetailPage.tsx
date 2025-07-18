@@ -17,6 +17,7 @@ import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { searchApi } from '@/lib/api'
 import { useToast } from '@/hooks/useToast'
+import { SearchOptimizer } from '@/components/SearchOptimizer'
 
 export const SearchDetailPage = memo(function SearchDetailPage() {
   const { searchId } = useParams<{ searchId: string }>()
@@ -218,6 +219,9 @@ export const SearchDetailPage = memo(function SearchDetailPage() {
           </CardContent>
         </Card>
       </div>
+
+      {/* AI Optimization */}
+      <SearchOptimizer search={search} />
 
       {/* Status Information */}
       <Card>

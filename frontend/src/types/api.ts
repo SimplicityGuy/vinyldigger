@@ -97,5 +97,177 @@ export interface UpdatePreferencesData {
   check_interval_hours?: number
 }
 
+// Advanced Search Orchestration Types (Phase 2+)
+
+export interface SearchBudget {
+  id: string
+  user_id: string
+  monthly_limit: number
+  current_spent: number
+  period_start: string
+  period_end: string
+  is_active: boolean
+  created_at: string
+  updated_at: string
+}
+
+export interface SearchBudgetSummary {
+  budget: SearchBudget | null
+  remaining_budget: number | null
+  spending_this_month: number
+  percentage_used: number | null
+  days_remaining: number
+}
+
+export interface SearchBudgetCreate {
+  monthly_limit: number
+  period_start: string
+  period_end: string
+  is_active?: boolean
+}
+
+export interface SearchBudgetUpdate {
+  monthly_limit?: number
+  period_start?: string
+  period_end?: string
+  is_active?: boolean
+}
+
+export interface SearchTemplate {
+  id: string
+  name: string
+  description: string
+  category: string
+  template_data: Record<string, unknown>
+  parameters: Record<string, unknown>
+  is_public: boolean
+  created_by: string | null
+  usage_count: number
+  created_at: string
+  updated_at: string
+}
+
+export interface SearchTemplateCreate {
+  name: string
+  description: string
+  category: string
+  template_data: Record<string, unknown>
+  parameters?: Record<string, unknown>
+  is_public?: boolean
+}
+
+export interface SearchTemplateUpdate {
+  name?: string
+  description?: string
+  category?: string
+  template_data?: Record<string, unknown>
+  parameters?: Record<string, unknown>
+  is_public?: boolean
+}
+
+export interface SearchTemplateUse {
+  template_id: string
+  parameters?: Record<string, unknown>
+  name?: string
+}
+
+export interface SearchTemplatePreview {
+  name: string
+  query: string
+  platform: string
+  filters: Record<string, unknown>
+  min_price: number | null
+  max_price: number | null
+  check_interval_hours: number
+}
+
+export interface SearchChain {
+  id: string
+  user_id: string
+  name: string
+  description: string | null
+  is_active: boolean
+  links: SearchChainLink[]
+  created_at: string
+  updated_at: string
+}
+
+export interface SearchChainLink {
+  id: string
+  chain_id: string
+  search_id: string
+  order_index: number
+  trigger_condition: Record<string, unknown>
+  created_at: string
+}
+
+export interface SearchChainCreate {
+  name: string
+  description?: string
+  is_active?: boolean
+}
+
+export interface SearchChainUpdate {
+  name?: string
+  description?: string
+  is_active?: boolean
+}
+
+export interface SearchChainLinkCreate {
+  search_id: string
+  order_index: number
+  trigger_condition?: Record<string, unknown>
+}
+
+export interface SearchChainLinkUpdate {
+  search_id?: string
+  order_index?: number
+  trigger_condition?: Record<string, unknown>
+}
+
+export interface SearchOrchestrationUpdate {
+  depends_on_search?: string
+  trigger_conditions?: Record<string, unknown>
+  budget_id?: string
+  estimated_cost_per_result?: number
+  optimal_run_times?: number[]
+  avoid_run_times?: number[]
+  priority_level?: number
+}
+
+export interface SearchScheduleSuggestion {
+  current_schedule: string
+  suggested_times: number[]
+  reasoning: string
+  estimated_improvement: string
+}
+
+export interface BudgetAlert {
+  type: 'budget_critical' | 'budget_warning' | 'budget_underutilized'
+  message: string
+  severity: 'high' | 'medium' | 'low'
+}
+
+export interface SpendingAnalytics {
+  total_spent: number
+  average_daily: number
+  trend: 'over_budget' | 'on_track' | 'under_budget'
+  projection: number
+  budget_limit: number
+  days_elapsed: number
+  days_remaining: number
+}
+
+// Extended SavedSearch with orchestration fields
+export interface EnhancedSavedSearch extends SavedSearch {
+  depends_on_search?: string
+  trigger_conditions?: Record<string, unknown>
+  budget_id?: string
+  estimated_cost_per_result?: number
+  optimal_run_times?: number[]
+  avoid_run_times?: number[]
+  priority_level?: number
+}
+
 // Export alias for backward compatibility
 export type Search = SavedSearch

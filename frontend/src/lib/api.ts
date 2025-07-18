@@ -8,6 +8,25 @@ import type {
   CollectionStatus,
   CreateSearchData,
   UpdatePreferencesData,
+  SearchBudget,
+  SearchBudgetSummary,
+  SearchBudgetCreate,
+  SearchBudgetUpdate,
+  SearchTemplate,
+  SearchTemplateCreate,
+  SearchTemplateUpdate,
+  SearchTemplateUse,
+  SearchTemplatePreview,
+  SearchChain,
+  SearchChainCreate,
+  SearchChainUpdate,
+  SearchChainLink,
+  SearchChainLinkCreate,
+  SearchChainLinkUpdate,
+  SearchOrchestrationUpdate,
+  SearchScheduleSuggestion,
+  BudgetAlert,
+  SpendingAnalytics,
 } from '@/types/api'
 
 const API_BASE_URL = '/api/v1'
@@ -230,6 +249,32 @@ export const searchApi = {
     })
     return response.json()
   },
+
+  // Search Orchestration endpoints
+  async updateSearchOrchestration(searchId: string, data: SearchOrchestrationUpdate): Promise<SavedSearch> {
+    const response = await fetchApi(`/searches/${searchId}/orchestration`, {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    })
+    return response.json()
+  },
+
+  async getScheduleSuggestion(searchId: string): Promise<SearchScheduleSuggestion> {
+    const response = await fetchApi(`/searches/${searchId}/schedule-suggestion`)
+    return response.json()
+  },
+
+  async getSearchDependencies(searchId: string): Promise<SavedSearch[]> {
+    const response = await fetchApi(`/searches/${searchId}/dependencies`)
+    return response.json()
+  },
+
+  async triggerSearchManually(searchId: string): Promise<{ message: string; search_id: string }> {
+    const response = await fetchApi(`/searches/${searchId}/trigger`, {
+      method: 'POST',
+    })
+    return response.json()
+  },
 }
 
 export const searchAnalysisApi = {
@@ -343,6 +388,206 @@ export const oauthApi = {
   },
 }
 
+// Budget Management API
+export const budgetApi = {
+  async getCurrentBudget(): Promise<SearchBudget | null> {
+    const response = await fetchApi('/budgets')
+    return response.json()
+  },
+
+  async createBudget(data: SearchBudgetCreate): Promise<SearchBudget> {
+    const response = await fetchApi('/budgets', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    })
+    return response.json()
+  },
+
+  async updateBudget(budgetId: string, data: SearchBudgetUpdate): Promise<SearchBudget> {
+    const response = await fetchApi(`/budgets/${budgetId}`, {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    })
+    return response.json()
+  },
+
+  async getBudgetSummary(): Promise<SearchBudgetSummary> {
+    const response = await fetchApi('/budgets/summary')
+    return response.json()
+  },
+
+  async getSpendingAnalytics(days = 30): Promise<SpendingAnalytics> {
+    const response = await fetchApi(`/budgets/analytics?days=${days}`)
+    return response.json()
+  },
+
+  async getBudgetAlerts(): Promise<BudgetAlert[]> {
+    const response = await fetchApi('/budgets/alerts')
+    return response.json()
+  },
+
+  async resetMonthlyBudget(): Promise<SearchBudget> {
+    const response = await fetchApi('/budgets/reset', {
+      method: 'POST',
+    })
+    return response.json()
+  },
+}
+
+// Template Management API
+export const templateApi = {
+  async getTemplates(params?: {
+    category?: string
+    search?: string
+    popular?: boolean
+    limit?: number
+  }): Promise<SearchTemplate[]> {
+    const queryParams = new URLSearchParams()
+    if (params?.category) queryParams.set('category', params.category)
+    if (params?.search) queryParams.set('search', params.search)
+    if (params?.popular) queryParams.set('popular', 'true')
+    if (params?.limit) queryParams.set('limit', params.limit.toString())
+
+    const response = await fetchApi(`/templates?${queryParams.toString()}`)
+    return response.json()
+  },
+
+  async getTemplateCategories(): Promise<string[]> {
+    const response = await fetchApi('/templates/categories')
+    return response.json()
+  },
+
+  async getTemplate(templateId: string): Promise<SearchTemplate> {
+    const response = await fetchApi(`/templates/${templateId}`)
+    return response.json()
+  },
+
+  async createTemplate(data: SearchTemplateCreate): Promise<SearchTemplate> {
+    const response = await fetchApi('/templates', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    })
+    return response.json()
+  },
+
+  async updateTemplate(templateId: string, data: SearchTemplateUpdate): Promise<SearchTemplate> {
+    const response = await fetchApi(`/templates/${templateId}`, {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    })
+    return response.json()
+  },
+
+  async deleteTemplate(templateId: string): Promise<void> {
+    await fetchApi(`/templates/${templateId}`, {
+      method: 'DELETE',
+    })
+  },
+
+  async previewTemplate(templateId: string, parameters: Record<string, unknown>): Promise<SearchTemplatePreview> {
+    const response = await fetchApi(`/templates/${templateId}/preview`, {
+      method: 'POST',
+      body: JSON.stringify(parameters),
+    })
+    return response.json()
+  },
+
+  async useTemplate(templateId: string, data: SearchTemplateUse): Promise<{ search_id: string; message: string }> {
+    const response = await fetchApi(`/templates/${templateId}/use`, {
+      method: 'POST',
+      body: JSON.stringify(data),
+    })
+    return response.json()
+  },
+
+  async validateTemplateParameters(templateId: string, parameters: Record<string, unknown>): Promise<{
+    valid: boolean
+    issues: string[]
+    template_name: string
+  }> {
+    const response = await fetchApi(`/templates/${templateId}/validate`, {
+      method: 'POST',
+      body: JSON.stringify(parameters),
+    })
+    return response.json()
+  },
+}
+
+// Search Chain Management API
+export const chainApi = {
+  async getChains(): Promise<SearchChain[]> {
+    const response = await fetchApi('/chains')
+    return response.json()
+  },
+
+  async getChain(chainId: string): Promise<SearchChain> {
+    const response = await fetchApi(`/chains/${chainId}`)
+    return response.json()
+  },
+
+  async createChain(data: SearchChainCreate): Promise<SearchChain> {
+    const response = await fetchApi('/chains', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    })
+    return response.json()
+  },
+
+  async updateChain(chainId: string, data: SearchChainUpdate): Promise<SearchChain> {
+    const response = await fetchApi(`/chains/${chainId}`, {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    })
+    return response.json()
+  },
+
+  async deleteChain(chainId: string): Promise<void> {
+    await fetchApi(`/chains/${chainId}`, {
+      method: 'DELETE',
+    })
+  },
+
+  async getChainLinks(chainId: string): Promise<SearchChainLink[]> {
+    const response = await fetchApi(`/chains/${chainId}/links`)
+    return response.json()
+  },
+
+  async createChainLink(chainId: string, data: SearchChainLinkCreate): Promise<SearchChainLink> {
+    const response = await fetchApi(`/chains/${chainId}/links`, {
+      method: 'POST',
+      body: JSON.stringify(data),
+    })
+    return response.json()
+  },
+
+  async updateChainLink(chainId: string, linkId: string, data: SearchChainLinkUpdate): Promise<SearchChainLink> {
+    const response = await fetchApi(`/chains/${chainId}/links/${linkId}`, {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    })
+    return response.json()
+  },
+
+  async deleteChainLink(chainId: string, linkId: string): Promise<void> {
+    await fetchApi(`/chains/${chainId}/links/${linkId}`, {
+      method: 'DELETE',
+    })
+  },
+
+  async evaluateChain(chainId: string): Promise<{
+    chain_id: string
+    chain_name: string
+    triggered_searches: string[]
+    count: number
+    message: string
+  }> {
+    const response = await fetchApi(`/chains/${chainId}/evaluate`, {
+      method: 'POST',
+    })
+    return response.json()
+  },
+}
+
 // Default export for convenience
 const api = {
   ...authApi,
@@ -351,6 +596,9 @@ const api = {
   ...searchAnalysisApi,
   ...collectionApi,
   ...oauthApi,
+  ...budgetApi,
+  ...templateApi,
+  ...chainApi,
 }
 
 export default api
