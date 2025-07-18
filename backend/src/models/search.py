@@ -15,6 +15,8 @@ from src.core.database import Base
 
 if TYPE_CHECKING:
     from src.models.item_match import ItemMatch
+    from src.models.search_budget import SearchBudget
+    from src.models.search_chain import SearchChainLink
     from src.models.seller import Seller
     from src.models.user import User
 
@@ -48,6 +50,22 @@ class SavedSearch(Base):
     min_sleeve_condition: Mapped[str | None] = mapped_column(String(10), nullable=True)  # VG, VG+, NM, M
     seller_location_preference: Mapped[str | None] = mapped_column(String(10), nullable=True)  # US, EU, UK, ANY
 
+    # Orchestration fields
+    depends_on_search: Mapped[UUID | None] = mapped_column(
+        PGUUID(as_uuid=True), ForeignKey("saved_searches.id"), nullable=True
+    )
+    trigger_conditions: Mapped[dict[str, Any]] = mapped_column(JSON, default=dict)
+    # Example: {"min_results": 5, "max_price": 100, "found_in_wantlist": True}
+
+    # Budget awareness
+    budget_id: Mapped[UUID | None] = mapped_column(PGUUID(as_uuid=True), ForeignKey("search_budgets.id"), nullable=True)
+    estimated_cost_per_result: Mapped[Decimal] = mapped_column(Numeric(5, 2), default=Decimal("0.10"))
+
+    # Smart scheduling
+    optimal_run_times: Mapped[list[int]] = mapped_column(JSON, default=list)  # Hours of day [9, 14, 20]
+    avoid_run_times: Mapped[list[int]] = mapped_column(JSON, default=list)  # Hours to avoid [1, 2, 3]
+    priority_level: Mapped[int] = mapped_column(default=5)  # 1-10 priority for scheduling
+
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
     updated_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), onupdate=func.now()
@@ -57,6 +75,16 @@ class SavedSearch(Base):
     user: Mapped[User] = relationship("User", back_populates="saved_searches")
     results: Mapped[list[SearchResult]] = relationship(
         "SearchResult", back_populates="search", cascade="all, delete-orphan"
+    )
+
+    # Orchestration relationships
+    budget: Mapped[SearchBudget | None] = relationship("SearchBudget", back_populates="searches")
+    chain_links: Mapped[list[SearchChainLink]] = relationship("SearchChainLink", back_populates="search")
+    dependent_searches: Mapped[list[SavedSearch]] = relationship(
+        "SavedSearch", remote_side=[id], back_populates="parent_search"
+    )
+    parent_search: Mapped[SavedSearch | None] = relationship(
+        "SavedSearch", remote_side=[depends_on_search], back_populates="dependent_searches"
     )
 
 

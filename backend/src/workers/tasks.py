@@ -34,6 +34,7 @@ from src.services.discogs import DiscogsService
 from src.services.ebay import EbayService
 from src.services.item_matcher import ItemMatchingService
 from src.services.recommendation_engine import RecommendationEngine
+from src.services.search_orchestrator import SearchOrchestrator
 from src.services.seller_analyzer import SellerAnalysisService
 from src.workers.celery_app import celery_app
 
@@ -62,6 +63,7 @@ class RunSearchTask(AsyncTask):
         self.item_matcher = ItemMatchingService()
         self.seller_analyzer = SellerAnalysisService()
         self.recommendation_engine = RecommendationEngine()
+        self.orchestrator = SearchOrchestrator()
 
     async def async_run(self, search_id: str, user_id: str) -> None:
         logger.info(f"Running enhanced search {search_id} for user {user_id}")
@@ -149,6 +151,12 @@ class RunSearchTask(AsyncTask):
 
                 # Update last_run_at
                 search.last_run_at = datetime.now(UTC)
+
+                # Update budget spending if results were found
+                if results_added > 0:
+                    actual_cost = search.estimated_cost_per_result * Decimal(str(results_added))
+                    await self.orchestrator.update_budget_spending(db, UUID(user_id), actual_cost)
+
                 await db.flush()
                 await db.commit()
 
