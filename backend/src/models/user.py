@@ -15,6 +15,9 @@ if TYPE_CHECKING:
     from src.models.collection import Collection, WantList
     from src.models.oauth_token import OAuthToken
     from src.models.search import SavedSearch
+    from src.models.search_budget import SearchBudget
+    from src.models.search_chain import SearchChain
+    from src.models.search_template import SearchTemplate
 
 
 class User(Base):
@@ -41,3 +44,14 @@ class User(Base):
         "Collection", back_populates="user", cascade="all, delete-orphan"
     )
     want_lists: Mapped[list[WantList]] = relationship("WantList", back_populates="user", cascade="all, delete-orphan")
+
+    # Orchestration relationships
+    search_chains: Mapped[list[SearchChain]] = relationship(
+        "SearchChain", back_populates="user", cascade="all, delete-orphan"
+    )
+    search_budgets: Mapped[list[SearchBudget]] = relationship(
+        "SearchBudget", back_populates="user", cascade="all, delete-orphan"
+    )
+    search_templates: Mapped[list[SearchTemplate]] = relationship(
+        "SearchTemplate", back_populates="creator", cascade="all, delete-orphan"
+    )

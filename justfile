@@ -238,7 +238,8 @@ test-frontend:
 
 # Run frontend tests in CI
 test-frontend-ci:
-    cd frontend && npm run test:ci
+    echo "🎨 Running frontend tests in CI mode..."
+    cd frontend && npm run lint && npm run typecheck && npm run test:ci -- --coverage --reporter=junit --outputFile=test-report.junit.xml --maxWorkers=50%
 
 # Build frontend
 build-frontend:

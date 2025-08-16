@@ -13,6 +13,9 @@ from src.models.search_analysis import (
     SearchResultAnalysis,
     SellerAnalysis,
 )
+from src.models.search_budget import SearchBudget
+from src.models.search_chain import SearchChain, SearchChainLink
+from src.models.search_template import SearchTemplate
 from src.models.seller import Seller, SellerInventory
 from src.models.user import User
 
@@ -40,4 +43,8 @@ __all__ = [
     "SellerAnalysis",
     "RecommendationType",
     "DealScore",
+    "SearchBudget",
+    "SearchChain",
+    "SearchChainLink",
+    "SearchTemplate",
 ]

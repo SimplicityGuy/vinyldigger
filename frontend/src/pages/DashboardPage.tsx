@@ -19,6 +19,7 @@ import { collectionApi, oauthApi, searchApi } from '@/lib/api'
 import { useToast } from '@/hooks/useToast'
 import { Link } from 'react-router-dom'
 import type { SavedSearch } from '@/types/api'
+import { BudgetWidget } from '@/components/BudgetWidget'
 
 export const DashboardPage = memo(function DashboardPage() {
   const { toast } = useToast()
@@ -263,7 +264,7 @@ export const DashboardPage = memo(function DashboardPage() {
       )}
 
       {/* Enhanced Stats Grid */}
-      <div className="grid gap-4 md:grid-cols-4">
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-5">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Collection</CardTitle>
@@ -334,6 +335,9 @@ export const DashboardPage = memo(function DashboardPage() {
             </p>
           </CardContent>
         </Card>
+
+        {/* Budget Widget as 5th Card */}
+        <BudgetWidget />
       </div>
 
       {/* Recent Activity */}
