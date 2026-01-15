@@ -11,6 +11,10 @@ import { SearchOffersPage } from '@/pages/SearchOffersPage'
 import SettingsPage from '@/pages/SettingsPage'
 import OAuthCallbackPage from '@/pages/OAuthCallbackPage'
 import AdminPage from '@/pages/AdminPage'
+import { TemplatesPage } from '@/pages/TemplatesPage'
+import { ChainsPage } from '@/pages/ChainsPage'
+import { BudgetPage } from '@/pages/BudgetPage'
+import { OrchestrationPage } from '@/pages/OrchestrationPage'
 import { Toaster } from '@/components/ui/toaster'
 import { ErrorBoundary } from '@/components/ErrorBoundary'
 import { Loader2 } from 'lucide-react'
@@ -53,6 +57,10 @@ function App() {
             <Route path="/searches/:searchId" element={<SearchDetailPage />} />
             <Route path="/searches/:searchId/deals" element={<SearchDealsPage />} />
             <Route path="/searches/:searchId/offers" element={<SearchOffersPage />} />
+            <Route path="/templates" element={<TemplatesPage />} />
+            <Route path="/chains" element={<ChainsPage />} />
+            <Route path="/budget" element={<BudgetPage />} />
+            <Route path="/orchestration" element={<OrchestrationPage />} />
             <Route path="/settings" element={<SettingsPage />} />
             <Route path="/admin" element={<AdminPage />} />
             <Route path="/" element={<Navigate to="/dashboard" />} />

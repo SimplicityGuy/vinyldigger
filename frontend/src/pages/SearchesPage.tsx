@@ -15,7 +15,7 @@ import {
 } from '@/components/ui/dialog'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { Select } from '@/components/ui/select'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { searchApi } from '@/lib/api'
 import { useToast } from '@/hooks/useToast'
 import { formatProvider } from '@/lib/utils'
@@ -335,10 +335,15 @@ function SearchesPageComponent() {
             </div>
             <div>
               <Label htmlFor="platform">Platform</Label>
-              <Select id="platform" {...register('platform')}>
-                <option value="both">Both</option>
-                <option value="discogs">Discogs Only</option>
-                <option value="ebay">eBay Only</option>
+              <Select {...register('platform')}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select platform" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="both">Both</SelectItem>
+                  <SelectItem value="discogs">Discogs Only</SelectItem>
+                  <SelectItem value="ebay">eBay Only</SelectItem>
+                </SelectContent>
               </Select>
             </div>
             <div>
@@ -363,32 +368,47 @@ function SearchesPageComponent() {
             <div className="grid gap-4 md:grid-cols-2">
               <div>
                 <Label htmlFor="min_record_condition">Minimum Record Condition</Label>
-                <Select id="min_record_condition" {...register('min_record_condition')}>
-                  <option value="M">Mint (M)</option>
-                  <option value="NM">Near Mint (NM)</option>
-                  <option value="VG+">Very Good Plus (VG+)</option>
-                  <option value="VG">Very Good (VG)</option>
-                  <option value="G+">Good Plus (G+)</option>
+                <Select {...register('min_record_condition')}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select condition" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="M">Mint (M)</SelectItem>
+                    <SelectItem value="NM">Near Mint (NM)</SelectItem>
+                    <SelectItem value="VG+">Very Good Plus (VG+)</SelectItem>
+                    <SelectItem value="VG">Very Good (VG)</SelectItem>
+                    <SelectItem value="G+">Good Plus (G+)</SelectItem>
+                  </SelectContent>
                 </Select>
               </div>
               <div>
                 <Label htmlFor="min_sleeve_condition">Minimum Sleeve Condition</Label>
-                <Select id="min_sleeve_condition" {...register('min_sleeve_condition')}>
-                  <option value="M">Mint (M)</option>
-                  <option value="NM">Near Mint (NM)</option>
-                  <option value="VG+">Very Good Plus (VG+)</option>
-                  <option value="VG">Very Good (VG)</option>
-                  <option value="G+">Good Plus (G+)</option>
+                <Select {...register('min_sleeve_condition')}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select condition" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="M">Mint (M)</SelectItem>
+                    <SelectItem value="NM">Near Mint (NM)</SelectItem>
+                    <SelectItem value="VG+">Very Good Plus (VG+)</SelectItem>
+                    <SelectItem value="VG">Very Good (VG)</SelectItem>
+                    <SelectItem value="G+">Good Plus (G+)</SelectItem>
+                  </SelectContent>
                 </Select>
               </div>
             </div>
             <div>
               <Label htmlFor="seller_location_preference">Preferred Seller Location</Label>
-              <Select id="seller_location_preference" {...register('seller_location_preference')}>
-                <option value="US">United States</option>
-                <option value="EU">Europe</option>
-                <option value="UK">United Kingdom</option>
-                <option value="ANY">Any Location</option>
+              <Select {...register('seller_location_preference')}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select location" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="US">United States</SelectItem>
+                  <SelectItem value="EU">Europe</SelectItem>
+                  <SelectItem value="UK">United Kingdom</SelectItem>
+                  <SelectItem value="ANY">Any Location</SelectItem>
+                </SelectContent>
               </Select>
             </div>
             <div className="flex justify-end gap-3 pt-4">
